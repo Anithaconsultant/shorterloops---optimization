@@ -1,0 +1,45 @@
+<div class="chart_Container">
+  <div style="margin: auto; margin-top: 50px">
+    <canvas
+      baseChart
+      [datasets]="barChartData"
+      [labels]="barChartLabels"
+      [options]="barChartOptions"
+      [legend]="barChartLegend"
+      [type]="barChartType"
+    >
+    </canvas>
+  </div>
+  <div style="margin: auto; margin-top: 50px">
+    <canvas
+      baseChart
+      [datasets]="datasets"
+      [labels]="locationLabels"
+      [options]="secondchartOptions"
+      [legend]="seconddisplayLegend"
+      [type]="chartType"
+    >
+    </canvas>
+  </div>
+
+  <div style="margin: 50px auto">
+    <canvas
+      baseChart
+      [datasets]="oprChartdata"
+      [labels]="oprlabel"
+      [options]="chartOptions"
+      [legend]="true"
+      [type]="'bar'"
+    ></canvas>
+  </div>
+  <div style="margin: 50px auto">
+    <canvas
+      baseChart
+      [datasets]="quarterbarChartData"
+      [options]="quarterbarChartOptions"
+      [type]="'bar'"
+      [legend]="barChartLegend"
+    >
+    </canvas>
+  </div>
+</div>

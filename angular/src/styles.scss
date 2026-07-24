@@ -1,0 +1,2405 @@
+/* You can add global styles to this file, and also import other style files */
+
+/* Importing Bootstrap SCSS file. */
+@import "bootstrap/scss/bootstrap";
+
+@font-face {
+  font-family: "poppin";
+  src: url("./assets/font/Poppins.otf");
+}
+
+html,
+body {
+  height: 100%;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: "poppin" !important;
+}
+
+app-maincity,
+app-login,
+app-signup,
+app-home {
+  height: 100%;
+  width: 100%;
+}
+
+::ng-deep .modal-dialog {
+  max-width: 80%;
+  width: 80%;
+}
+
+.pic_0 {
+  background-image: url("./assets/img/male1.svg");
+}
+
+.pic_1 {
+  background-image: url("./assets/img/male2.svg");
+}
+
+.pic_2 {
+  background-image: url("./assets/img/male3.svg");
+}
+
+.pic_3 {
+  background-image: url("./assets/img/male4.svg");
+}
+
+.pic_4 {
+  background-image: url("./assets/img/male5.svg");
+}
+
+.pic_5 {
+  background-image: url("./assets/img/male6.svg");
+}
+
+.pic_6 {
+  background-image: url("./assets/img/male7.svg");
+}
+
+.pic_7 {
+  background-image: url("./assets/img/male8.svg");
+}
+
+.pic_8 {
+  background-image: url("./assets/img/male9.svg");
+}
+
+.pic_9 {
+  background-image: url("./assets/img/male10.svg");
+}
+
+.pic_10 {
+  background-image: url("./assets/img/male11.svg");
+}
+
+.pic_11 {
+  background-image: url("./assets/img/male12.svg");
+}
+
+.pic_12 {
+  background-image: url("./assets/img/male13.svg");
+}
+
+.pic_13 {
+  background-image: url("./assets/img/male14.svg");
+}
+
+.pic_14 {
+  background-image: url("./assets/img/male15.svg");
+}
+
+.pic_15 {
+  background-image: url("./assets/img/male16.svg");
+}
+
+.pic_16 {
+  background-image: url("./assets/img/male17.svg");
+}
+
+.pic_17 {
+  background-image: url("./assets/img/male18.svg");
+}
+
+.pic_18 {
+  background-image: url("./assets/img/male19.svg");
+}
+
+.pic_19 {
+  background-image: url("./assets/img/male20.svg");
+}
+
+.pic_20 {
+  background-image: url("./assets/img/female1.svg");
+}
+
+.pic_21 {
+  background-image: url("./assets/img/female2.svg");
+}
+
+.pic_22 {
+  background-image: url("./assets/img/female3.svg");
+}
+
+.pic_23 {
+  background-image: url("./assets/img/female4.svg");
+}
+
+.pic_24 {
+  background-image: url("./assets/img/female5.svg");
+}
+
+.pic_25 {
+  background-image: url("./assets/img/female6.svg");
+}
+
+.pic_26 {
+  background-image: url("./assets/img/female7.svg");
+}
+
+.pic_27 {
+  background-image: url("./assets/img/female8.svg");
+}
+
+.pic_28 {
+  background-image: url("./assets/img/female9.svg");
+}
+
+.pic_29 {
+  background-image: url("./assets/img/female10.svg");
+}
+
+.pic_30 {
+  background-image: url("./assets/img/female11.svg");
+}
+
+.pic_31 {
+  background-image: url("./assets/img/female12.svg");
+}
+
+.pic_32 {
+  background-image: url("./assets/img/female13.svg");
+}
+
+.pic_33 {
+  background-image: url("./assets/img/female14.svg");
+}
+
+.pic_34 {
+  background-image: url("./assets/img/female15.svg");
+}
+
+.pic_35 {
+  background-image: url("./assets/img/female16.svg");
+}
+
+.pic_36 {
+  background-image: url("./assets/img/female17.svg");
+}
+
+.pic_37 {
+  background-image: url("./assets/img/female18.svg");
+}
+
+.pic_38 {
+  background-image: url("./assets/img/female19.svg");
+}
+
+.pic_39 {
+  background-image: url("./assets/img/female20.svg");
+}
+
+.pics {
+  width: 150px;
+  height: 150px;
+  margin: 12px;
+  padding: 20px;
+  border-radius: 50%;
+  display: inline-block;
+  border: 4px solid #fff;
+
+  &:hover {
+    border: 4px solid gainsboro;
+    cursor: pointer;
+  }
+
+  &:user-select {
+    border: 4px solid gray;
+  }
+}
+
+input::placeholder {
+  opacity: 0.5 !important;
+}
+
+.form-control {
+  font-size: 12px !important;
+}
+
+.dropdown-toggle::after {
+  border-top: 0.4em solid #fff !important;
+  border-right: 0.4em solid transparent !important;
+  border-bottom: 0;
+  border-left: 0.4em solid transparent !important;
+}
+
+#dropdownBasic1 {
+  font-size: 14px;
+}
+
+#dropdownBasic1::after {
+  border-top: 0.4em solid #555 !important;
+}
+
+.dropdown-toggle:empty::after {
+  margin-left: 0;
+  position: absolute;
+  right: -14px;
+  top: 18px;
+}
+
+.dropdown-menu.show {
+  display: block;
+  background: rgba(255, 255, 255, 0.7);
+  transform: translate(20px, 52px) !important;
+  width: 170px !important;
+  font-size: 12px;
+}
+
+.mat-tree-node {
+  min-height: 30px !important;
+  padding-left: 20px;
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.5);
+  }
+}
+
+.mat-tree {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+app-login,
+app-signup {
+  .form-control {
+    width: 92% !important;
+    margin: 0 auto !important;
+  }
+}
+
+.maincity_container {
+  .topbar {
+    position: absolute;
+    height: 50px;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.4);
+    display: flex;
+    align-items: center;
+
+    #logout {
+      font-size: 12px;
+    }
+
+    .picholder {
+      position: absolute;
+      right: 28px;
+      width: 40px;
+      height: 40px;
+    }
+
+    .muteBtn {
+      position: absolute;
+      right: 74px;
+      width: 30px;
+      height: 30px;
+      background: transparent;
+      border: 1px solid #fff;
+      border-radius: 30px;
+    }
+
+    .displaypic {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      background-size: cover;
+      border-radius: 50%;
+    }
+
+    .cityname {
+      position: absolute;
+      margin: 0 auto;
+      font-size: 26px;
+      color: #000;
+      text-align: center;
+      font-weight: bold;
+      width: 100%;
+    }
+
+    .displayrole {
+      width: 100px;
+      position: absolute;
+      right: 69px;
+      font-size: 12px;
+      font-weight: bold;
+      text-align: center;
+      height: 50px;
+      display: flex;
+      @extend .commmoncenter;
+    }
+
+    .iihslogo {
+      width: 45px !important;
+      height: 40px !important;
+      top: unset !important;
+      background-image: url("./assets/img/iihs.png");
+      background-size: cover;
+      left: 56px;
+      position: absolute;
+    }
+
+    .shorterloopslogo {
+      position: absolute;
+      left: 0px;
+      right: 0;
+      top: unset !important;
+      margin: auto;
+      width: 104px !important;
+      height: 33px !important;
+      background-image: url("./assets/img/shorteloopslogo.png") !important;
+      background-size: cover;
+      cursor: pointer;
+    }
+  }
+
+  .maincity {
+    .common {
+      position: absolute;
+      width: 271px;
+      height: 78px;
+      color: #fff;
+      font-size: 27px;
+      text-align: center;
+      line-height: 34px;
+      @extend .commmoncenter;
+    }
+
+    .mayorofzboard {
+      @extend .common;
+      top: 2853px;
+      left: 3518px;
+    }
+
+    .rightcolony {
+      @extend .common;
+      top: 3285px;
+      left: 5457px;
+    }
+
+    .CityDustBin {
+      @extend .common;
+      top: 3570px;
+      left: 3511px;
+      border: 1px solid;
+      width: 55px;
+      height: 40px;
+
+      .dustbin_bottles {
+        height: 100%;
+
+        .bottle {
+          width: 17px;
+          height: 37px;
+        }
+      }
+    }
+
+    .leftcolony {
+      @extend .common;
+      top: 3285px;
+      left: 2301px;
+    }
+
+    .house {
+      position: absolute;
+      width: 223px;
+      height: 198px;
+    }
+
+    .House1_Owner {
+      top: 3378px;
+      left: 630px;
+    }
+
+    .House2_Owner {
+      top: 3378px;
+      left: 968px;
+    }
+
+    .House3_Owner {
+      top: 3378px;
+      left: 1305px;
+    }
+
+    .House4_Owner {
+      top: 3378px;
+      left: 1644px;
+    }
+
+    .House5_Owner {
+      top: 3378px;
+      left: 1981px;
+    }
+
+    .House6_Owner {
+      top: 3803px;
+      left: 630px;
+    }
+
+    .House7_Owner {
+      top: 3803px;
+      left: 968px;
+    }
+
+    .House8_Owner {
+      top: 3803px;
+      left: 1305px;
+    }
+
+    .House9_Owner {
+      top: 3803px;
+      left: 1644px;
+    }
+
+    .House10_Owner {
+      top: 3803px;
+      left: 1981px;
+    }
+
+    .Plastic_Recycling_Plant_Owner {
+      top: 3800px;
+      left: 5868px;
+    }
+
+    .Supermarket_Owner {
+      top: 3800px;
+      left: 6205px;
+    }
+
+    .RefillingBOARD {
+      left: 5622px;
+      top: 2499px;
+    }
+
+    .B1_Shampoo_Producer {
+      top: 3800px;
+      left: 6541px;
+    }
+
+    .B2_Shampoo_Producer {
+      top: 3378px;
+      left: 6877px;
+    }
+
+    .B3_Shampoo_Producer {
+      top: 3800px;
+      left: 6877px;
+    }
+
+    .B4_Shampoo_Producer {
+      top: 3800px;
+      left: 7214px;
+    }
+
+    .B5_Shampoo_Producer {
+      top: 3800px;
+      left: 7561px;
+    }
+
+    .Bottle_Reverse_Vending_Machine_Owner {
+      top: 3378px;
+      left: 7214px;
+    }
+
+    .Universal_Bottle_Manufacturing_Plant_owner {
+      top: 3378px;
+      left: 7561px;
+    }
+
+    .Shampoo_Refilling_Station_Owner {
+      top: 3378px;
+      left: 6541px;
+    }
+
+    .Universal_Bottle_Cleaning_Plant_Owner {
+      top: 3378px;
+      left: 6203px;
+    }
+
+    .Mayor {
+      top: 3378px;
+      left: 5866px;
+    }
+
+    .bottombasketholder {
+      width: 53px;
+      position: absolute;
+      left: 5px;
+      top: 46px;
+      height: 25px;
+      display: flex;
+      overflow: hidden;
+
+      .bottle {
+        width: 9px !important;
+        height: 23px !important;
+      }
+    }
+
+    .topbasketholder {
+      width: 41px;
+      position: absolute;
+      left: 10px;
+      top: 12px;
+      height: 25px;
+      display: flex;
+      overflow: hidden;
+
+      .newbottle_list {
+        div {
+          width: 9px !important;
+          height: 23px !important;
+        }
+      }
+    }
+  }
+
+  .Inhouseshelf_bottles {
+    flex-wrap: wrap;
+
+    .bottle {
+      width: 9px !important;
+      height: 23px !important;
+    }
+  }
+
+  .boardholder {
+    .commoncls {
+      position: absolute;
+      background-size: cover;
+      color: #fff;
+      font-size: 20px;
+      width: 100px;
+      height: 38px;
+      @extend .commmoncenter;
+    }
+
+    .Supermarket_Owner {
+      @extend .commoncls;
+      left: 1909px;
+      top: 2457px;
+      height: 49px;
+      border-radius: 11%;
+      background: #555;
+    }
+
+    .Plastic_Recycling_Plant_Owner {
+      @extend .commoncls;
+      left: 1982px;
+      top: 871px;
+    }
+
+    .Universal_Bottle_Manufacturing_Plant_owner {
+      @extend .commoncls;
+      left: 4185px;
+      top: 611px;
+    }
+
+    .Universal_Bottle_Cleaning_Plant_Owner {
+      @extend .commoncls;
+      left: 4614px;
+      top: 1498px;
+    }
+
+    .Shampoo_Refilling_Station_Owner {
+      @extend .commoncls;
+      left: 5818px;
+      top: 2430px;
+    }
+  }
+
+  .commmoncenter {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .cartimg {
+    background-image: url("./assets/img/neoncart.svg");
+    background-repeat: no-repeat;
+    position: absolute;
+    background-size: contain;
+  }
+
+  .maincity {
+    .cart {
+      @extend .cartimg;
+      height: 99px;
+      width: 67px;
+
+      .cartavatar {
+        width: 30px;
+        height: 30px;
+        position: absolute;
+        left: -30px;
+        border-radius: 50%;
+      }
+
+      .cartid {
+        position: absolute;
+        color: #000;
+        left: 20px;
+        font-size: 9px;
+        top: -3px;
+        cursor: pointer;
+      }
+    }
+  }
+
+  .supermarketstage {
+    .newrak {
+      background-image: url("./assets/img/rak.png");
+      width: 1516px;
+      height: 671px;
+      position: absolute;
+      left: 6925px;
+      top: 2335px;
+
+      .dropper {
+        width: 135px;
+        position: absolute;
+        height: 93px;
+        display: flex;
+        overflow: hidden;
+      }
+
+      .shinyshelf {
+        left: 25px;
+        top: 528px;
+      }
+
+      .wavyshelf {
+        left: 902px;
+        top: 528px;
+      }
+
+      .silkyshelf {
+        left: 1207px;
+        top: 528px;
+      }
+
+      .bouncyshelf {
+        left: 609px;
+        top: 528px;
+      }
+    }
+
+    .cart {
+      @extend .cartimg;
+      height: 399px;
+      width: 367px;
+
+      .cartavatar {
+        width: 90px;
+        height: 90px;
+        position: absolute;
+        left: -90px;
+        border-radius: 50%;
+      }
+
+      .cartid {
+        position: absolute;
+        color: #000;
+        left: 81px;
+        font-size: 30px;
+        top: 1px;
+        cursor: pointer;
+        border: 6px solid transparent;
+        width: 106px;
+        height: 49px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+    }
+
+    .scanneranimation {
+      position: absolute;
+      width: 324px;
+      height: 27px;
+      left: 6731px;
+      top: 669px;
+
+      .scanner {
+        position: absolute;
+        width: 36px;
+        height: 29px;
+        transform: rotate(-90deg);
+        background-size: cover;
+        background-image: url("./assets/img/scanner.png");
+      }
+
+      .beam {
+        position: absolute;
+        width: 206px;
+        height: 121px;
+        transform: rotate(90deg);
+        top: 68px;
+        left: -84px;
+        display: none;
+        background-image: url("./assets/img/rays.png");
+      }
+    }
+
+    .displaynetamount {
+      @extend .commonds;
+      width: 243px;
+      height: 48px;
+      left: 6131px;
+      top: 396px;
+      font-size: 34px !important;
+    }
+
+    .displaymoniter {
+      @extend .commonds;
+      width: 238px;
+      height: 136px;
+      left: 6287px;
+      top: 465px;
+      line-height: 28px;
+      font-size: 24px;
+    }
+
+    .displaycallout {
+      position: absolute;
+      width: 218px;
+      height: 135px;
+      left: -135px;
+      top: -134px;
+      background-size: cover;
+      display: none;
+      background-image: url("./assets/img/callout.png");
+    }
+
+    .commonds {
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      position: absolute;
+      text-align: center;
+    }
+  }
+
+  .supermarketcart {
+    .newbottleholder {
+      width: 165px;
+      position: absolute;
+      left: 48px;
+      top: 51px;
+      height: 93px;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .bottleholder {
+      width: 144px;
+      position: absolute;
+      left: 70px;
+      top: 200px;
+      height: 93px;
+      display: flex;
+      overflow: hidden;
+
+      .bottle {
+        position: relative;
+        background-size: cover;
+        display: flex;
+        cursor: move;
+        z-index: 1;
+        transition: box-shadow 200ms cubic-bezier(0, 0, 0.2, 1);
+      }
+    }
+  }
+
+  .bottle {
+    position: relative;
+    background-size: cover;
+    display: flex;
+    cursor: move;
+    z-index: 1;
+    transition: box-shadow 200ms cubic-bezier(0, 0, 0.2, 1);
+  }
+
+  .conveyorbottledropper {
+    width: 171px;
+    position: absolute;
+    left: 1694px;
+    top: 2579px;
+    border: 4px dashed #2eddb8;
+    height: 93px;
+    display: flex;
+  }
+
+  .displayconveyor {
+    width: 258px;
+    position: absolute;
+    left: 1541px;
+    top: 2490px;
+    height: 102px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #ff0;
+    font-size: 24px;
+    line-height: 28px;
+    text-align: center;
+  }
+
+  .loadimgrefill {
+    .gearbox {
+      position: absolute;
+      width: 410px;
+      height: 21px;
+      left: -2px;
+      top: 99px;
+
+      .gearicon {
+        background-image: url("./assets/img/gearicon.png");
+        width: 15px;
+        height: 15px;
+        position: absolute;
+        background-size: contain;
+      }
+
+      .gear_0 {
+        @extend .gearicon;
+        left: 4px;
+        top: 2px;
+      }
+
+      .gear_1 {
+        left: 134px;
+        top: 2px;
+        @extend .gearicon;
+      }
+
+      .gear_2 {
+        left: 269px;
+        top: 2px;
+        @extend .gearicon;
+      }
+
+      .gear_3 {
+        left: 386px;
+        top: 1px;
+        @extend .gearicon;
+      }
+
+      .icon {
+        animation: like 0.5s infinite linear;
+      }
+
+      @keyframes like {
+        0% {
+          transform: rotate(90deg);
+        }
+
+        25% {
+          transform: rotate(180deg);
+        }
+
+        50% {
+          transform: rotate(270deg);
+        }
+
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+    }
+
+    .displaylight {
+      &.off {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        left: 184px;
+        top: -11px;
+        background-size: cover;
+        background-image: url("./assets/img/displaylight.png");
+      }
+
+      &.on {
+        position: absolute;
+        width: 40px;
+        height: 40px;
+        left: 168px;
+        top: -26px;
+        background-size: cover;
+        background-image: url("./assets/img/displaylite.png");
+      }
+    }
+
+    #refillcart {
+      @extend .cartimg;
+      height: 100px;
+      width: 70px;
+
+      .cartavatar {
+        width: 20px;
+        height: 20px;
+        position: absolute;
+        left: -20px;
+        border-radius: 50%;
+      }
+
+      .cartid {
+        position: absolute;
+        color: #000;
+        left: 20px;
+        font-size: 9px;
+        top: -3px;
+      }
+
+      .refillbottleholder {
+        width: 42px;
+        position: absolute;
+        left: 22px;
+        top: 49px;
+        height: 28px;
+        display: flex;
+        overflow: hidden;
+      }
+
+      .refilledholder {
+        width: 39px;
+        position: absolute;
+        left: 13px;
+        top: 11px;
+        height: 27px;
+        display: flex;
+        overflow: hidden;
+      }
+    }
+
+    .panel {
+      position: absolute;
+      left: 225px;
+      border: 1px solid;
+      width: 229px;
+      height: 157px;
+      top: 132px;
+
+      .displayboard {
+        position: absolute;
+        top: 5px;
+        left: 5px;
+        width: 215px;
+        height: 70px;
+        font-size: 8px;
+        line-height: 10px;
+        color: #fff;
+        display: flex;
+        justify-content: center;
+        padding: 5px;
+        align-items: center;
+      }
+
+      .controlbtn {
+        position: absolute;
+        width: 45px;
+        height: 24px;
+        cursor: pointer;
+      }
+
+      .start {
+        @extend .controlbtn;
+        top: 79px;
+        left: 176px;
+      }
+
+      .cancel {
+        @extend .controlbtn;
+        top: 108px;
+        left: 176px;
+      }
+
+      .continue {
+        position: absolute;
+        width: 78px;
+        height: 18px;
+        display: block;
+        left: 142px;
+        top: 135px;
+        cursor: pointer;
+      }
+
+      .adjustment {
+        position: absolute;
+        width: 31px;
+        top: 78px;
+        left: 142px;
+        height: 55px;
+
+        .operation {
+          position: absolute;
+          width: 31px;
+          height: 24px;
+          cursor: pointer;
+        }
+
+        .up {
+          @extend .operation;
+          top: -1px;
+          left: -1px;
+        }
+
+        .down {
+          @extend .operation;
+          top: 30px;
+          left: -1px;
+        }
+      }
+
+      .brandsection {
+        position: absolute;
+        left: 3px;
+        top: 77px;
+        width: 57px;
+        height: 38px;
+        cursor: pointer;
+
+        .btncls {
+          position: absolute;
+          width: 31px;
+          height: 31px;
+        }
+
+        .shiny {
+          @extend .btncls;
+          left: 2px;
+          top: 2px;
+        }
+
+        .bouncy {
+          @extend .btncls;
+          left: 82px;
+          top: 2px;
+        }
+
+        .spiky {
+          @extend .btncls;
+          left: 44px;
+          top: 2px;
+        }
+
+        .silky {
+          @extend .btncls;
+          left: 44px;
+          top: 42px;
+        }
+
+        .wavy {
+          @extend .btncls;
+          left: 2px;
+          top: 42px;
+        }
+      }
+    }
+
+    .bdropper {
+      position: absolute;
+      left: 479px;
+      top: 234px;
+
+      .bdrop {
+        width: 13px;
+        position: absolute;
+        border: 1px dotted #00ffbd;
+        height: 27px;
+        display: flex;
+      }
+
+      .refilldropper {
+        @extend .bdrop;
+        left: 8px;
+        top: 10px;
+      }
+    }
+  }
+}
+
+.shinyvpn_list,
+.shinyvpr_list,
+.shinyrpn_list,
+.shinyrpr_list,
+.shinyuvpn_list,
+.shinyuvpr_list,
+.shinyurpn_list,
+.shinyurpr_list,
+.spikyvpn_list,
+.spikyvpr_list,
+.spikyrpn_list,
+.spikyrpr_list,
+.spikyuvpn_list,
+.spikyuvpr_list,
+.spikyurpn_list,
+.spikyurpr_list,
+.bouncyvpn_list,
+.bouncyvpr_list,
+.bouncyrpn_list,
+.bouncyrpr_list,
+.bouncyuvpn_list,
+.bouncyuvpr_list,
+.bouncyurpn_list,
+.bouncyurpr_list,
+.wavyvpn_list,
+.wavyvpr_list,
+.wavyrpn_list,
+.wavyrpr_list,
+.wavyuvpn_list,
+.wavyuvpr_list,
+.wavyurpn_list,
+.wavyurpr_list,
+.silkyvpn_list,
+.silkyvpr_list,
+.silkyrpn_list,
+.silkyrpr_list,
+.silkyuvpn_list,
+.silkyuvpr_list,
+.silkyurpn_list,
+.silkyurpr_list {
+  display: flex;
+  width: 275px;
+}
+
+@mixin shelf($left, $top) {
+  left: $left;
+  top: $top;
+
+}
+
+$shelves: (
+  shinyvpn_shelf: (17px, 92px),
+  shinyvpr_shelf: (162px, 92px),
+  shinyrpn_shelf: (17px, 230px),
+  shinyrpr_shelf: (162px, 230px),
+  shinyuvpn_shelf: (17px, 376px),
+  shinyuvpr_shelf: (162px, 376px),
+  shinyurpn_shelf: (17px, 507px),
+  shinyurpr_shelf: (162px, 507px),
+
+  spikyvpn_shelf:(317px, 92px),
+  spikyvpr_shelf:(457px, 92px),
+  spikyrpn_shelf:(317px, 236px),
+  spikyrpr_shelf:(457px, 236px),
+  spikyuvpn_shelf:(317px, 376px),
+  spikyuvpr_shelf:(457px, 376px),
+  spikyurpn_shelf:(317px, 512px),
+  spikyurpr_shelf:(457px, 512px),
+
+  bouncyvpn_shelf :(615px, 92px),
+  bouncyvpr_shelf :(757px, 92px),
+  bouncyrpn_shelf :(615px, 236px),
+  bouncyrpr_shelf :(757px, 236px),
+  bouncyuvpn_shelf :(615px, 376px),
+  bouncyuvpr_shelf :(757px, 376px),
+  bouncyurpn_shelf :(615px, 512px),
+  bouncyurpr_shelf :(757px, 512px),
+
+  wavyvpn_shelf:(917px, 92px),
+  wavyvpr_shelf:(1059px, 92px),
+  wavyrpn_shelf:(917px, 236px),
+  wavyrpr_shelf:(1059px, 236px),
+  wavyuvpn_shelf:(917px, 376px),
+  wavyuvpr_shelf:(1059px, 376px),
+  wavyurpn_shelf:(917px, 512px),
+  wavyurpr_shelf:(1059px, 512px),
+
+  silkyvpn_shelf:(1218px, 92px),
+  silkyvpr_shelf:(1365px, 92px),
+  silkyrpn_shelf:(1218px, 236px),
+  silkyrpr_shelf:(1365px, 236px),
+  silkyuvpn_shelf:(1218px, 376px),
+  silkyuvpr_shelf:(1365px, 376px),
+  silkyurpn_shelf:(1218px, 512px),
+  silkyurpr_shelf:(1365px, 512px),
+);
+
+@each $name, $values in $shelves {
+  .#{$name} {
+    @include shelf(nth($values, 1), nth($values, 2));
+  }
+}
+
+
+.accordion-item,
+.accordion-header,
+.accordion-button {
+  background-color: transparent !important;
+  border: none !important;
+}
+
+.accordion {
+  width: 100% !important;
+}
+
+
+
+
+
+
+$contents: (
+  shiny: B1,
+  spiky: B2,
+  bouncy: B3,
+  wavy: B4,
+  silky: B5
+);
+
+$variants: vpn, vpr, rpn, rpr;
+
+@each $name, $img in $contents {
+
+  // InUse + Empty-Dirty
+  @each $v in $variants {
+
+    .#{$name}#{$v}_InUse,
+    .#{$name}#{$v}_Empty-Dirty {
+      background-image: url("./assets/img/#{$img}_use.png");
+    }
+  }
+
+  // Damaged
+  @each $v in $variants {
+
+    .#{$name}#{$v}_Damaged-Empty,
+    .#{$name}#{$v}_Damaged-InUse {
+      background-image: url("./assets/img/#{$img}_dmg.png");
+    }
+  }
+}
+
+$contents: shiny, spiky, bouncy, wavy, silky;
+$types: vpn, vpr, rpn, rpr;
+$statuses-use: InUse, Empty-Dirty;
+$statuses-dmg: Damaged-Empty, Damaged-InUse;
+
+$ub-width: 96px;
+$ub-height: 253px;
+
+/* =========================
+   UB — USE / EMPTY-DIRTY
+   ========================= */
+@each $content in $contents {
+  @each $type in $types {
+    @each $status in $statuses-use {
+      .#{$content}u#{$type}_#{$status} {
+        background-image: url("./assets/img/UB_use.png");
+        width: $ub-width !important;
+        height: $ub-height !important;
+      }
+    }
+  }
+}
+
+/* =========================
+   UB — DAMAGED
+   ========================= */
+@each $content in $contents {
+  @each $type in $types {
+    @each $status in $statuses-dmg {
+      .#{$content}u#{$type}_#{$status} {
+        background-image: url("./assets/img/UB_dmg.png");
+        width: $ub-width !important;
+        height: $ub-height !important;
+      }
+    }
+  }
+}
+
+.Street {
+  background-image: url("./assets/img/throwbottle.gif");
+  width: 253px !important;
+  height: 253px !important;
+}
+
+
+.bottle {
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+@mixin bottle($img,
+  $w,
+  $h,
+  $img-without: null,
+  $refill-w: null,
+  $refill-h: null) {
+  @extend .bottle;
+  background-image: url($img);
+  width: $w;
+  height: $h;
+
+  &.refillbtl {
+    @if $refill-w and $refill-h {
+      width: $refill-w !important;
+      height: $refill-h !important;
+    }
+  }
+
+  &.removedcap {
+    @if $img-without {
+      background-image: url($img-without) !important;
+    }
+  }
+}
+
+$bottles: (
+  shiny: (img: "./assets/img/shiny.png",
+    img_no: "./assets/img/shiny_without.png",
+    w: 40px,
+    h: 91px,
+    rw: 11px,
+    rh: 24px),
+
+  bouncy: (img: "./assets/img/bouncy.png",
+    img_no: "./assets/img/bouncy_without.png",
+    w: 42px,
+    h: 90px,
+    rw: 9px,
+    rh: 24px),
+
+  spiky: (img: "./assets/img/spiky.png",
+    img_no: "./assets/img/spiky_without.png",
+    w: 42px,
+    h: 90px,
+    rw: 11px,
+    rh: 24px),
+
+  silky: (img: "./assets/img/silky.png",
+    img_no: "./assets/img/silky_without.png",
+    w: 34px,
+    h: 90px,
+    rw: 9px,
+    rh: 24px),
+
+  wavy: (img: "./assets/img/wavy.png",
+    img_no: "./assets/img/wavy_without.png",
+    w: 34px,
+    h: 90px,
+    rw: 9px,
+    rh: 24px)
+);
+
+@each $name, $cfg in $bottles {
+
+  .#{$name}vpn,
+  .#{$name}vpr,
+  .#{$name}rpn,
+  .#{$name}rpr {
+    @include bottle(map-get($cfg, img),
+      map-get($cfg, w),
+      map-get($cfg, h),
+      map-get($cfg, img_no),
+      map-get($cfg, rw),
+      map-get($cfg, rh));
+  }
+}
+
+$uv-bottles: (
+  shiny: (img: "./assets/img/shiny_uvpn.png",
+    img_no: "./assets/img/shinyub_without.png",
+    w: 38px,
+    h: 94px),
+
+  wavy: (img: "./assets/img/wavy_uvpn.png",
+    img_no: "./assets/img/wavyub_without.png",
+    w: 34px,
+    h: 90px),
+
+  bouncy: (img: "./assets/img/bouncy_uvpn.png",
+    img_no: "./assets/img/bouncyub_without.png",
+    w: 38px,
+    h: 94px),
+
+  spiky: (img: "./assets/img/spiky_uvpn.png",
+    img_no: "./assets/img/spikyub_without.png",
+    w: 38px,
+    h: 94px),
+  silky: (img: "./assets/img/silky_uvpn.png",
+    img_no: "./assets/img/silkyub_without.png",
+    w: 38px,
+    h: 94px)
+);
+
+@each $name, $cfg in $uv-bottles {
+
+  .#{$name}uvpn,
+  .#{$name}uvpr,
+  .#{$name}urpn,
+  .#{$name}urpr {
+    position: relative;
+    @include bottle(map-get($cfg, img),
+      map-get($cfg, w),
+      map-get($cfg, h),
+      map-get($cfg, img_no),
+      10px,
+      24px);
+  }
+}
+
+
+.labelholder {
+  position: absolute;
+  top: 476px;
+  font-size: 11px;
+  left: 224px;
+  width: 100%;
+
+  div {
+    width: 100% !important;
+  }
+
+  .Quantity {
+    position: absolute;
+    left: -37px;
+    top: 17px;
+  }
+
+  .Current_PlantRefill_Count {
+    position: absolute;
+    top: 34px;
+    left: -16px;
+  }
+
+  .Latest_Refill_Date {
+    position: absolute;
+    top: 49px;
+  }
+
+  .Shampoo_Price {
+    position: absolute;
+    top: 85px;
+    left: 17px;
+  }
+
+  .Content_Price {
+    position: absolute;
+    top: 103px;
+  }
+
+  .Bottle_Price {
+    position: absolute;
+    left: 22px;
+    top: 120px;
+  }
+
+  .Discount_RefillB {
+    position: absolute;
+    left: 47px;
+    top: 141px;
+    width: 35px;
+  }
+
+  .Total_price {
+    position: absolute;
+    top: 203px;
+    left: -20px;
+  }
+
+  .Max_Refill_Count {
+    position: absolute;
+    left: -87px;
+    top: 225px;
+    font-size: 9px;
+  }
+
+  .Redeem_Good {
+    position: absolute;
+    left: 47px;
+    top: 153px;
+    width: 37px;
+  }
+
+  .AssetId {
+    position: absolute;
+    left: -235px;
+    top: 72px;
+    transform: rotate(-90deg);
+    color: #000;
+    width: 60px;
+    height: 30px;
+    font-size: 9px;
+  }
+
+  .Discard_fine {
+    position: absolute;
+    left: 54px;
+    top: 170px;
+    width: 20px;
+  }
+
+  .Env_Tax_Customer {
+    position: absolute;
+    top: 185px;
+    left: 5px;
+  }
+}
+
+
+.big-view {
+  height: 768px;
+  position: absolute;
+  top: 26px;
+  left: 178px;
+  background-size: contain;
+}
+
+.back-view {
+  background-size: contain;
+  position: relative;
+}
+
+.back-big {
+  margin-left: 541px;
+}
+
+.back-small {
+  margin-left: 450px;
+}
+
+@mixin big-front($img, $width) {
+  background-image: url($img);
+  width: $width;
+}
+
+@mixin back-view($img, $w, $h) {
+  background-image: url($img);
+  width: $w;
+  height: $h;
+}
+
+$big-fronts: (
+  shinyuvpn_big: ("./assets/img/universal.png", 300px),
+  shinyuvpr_big: ("./assets/img/universal.png", 300px),
+  shinyurpn_big: ("./assets/img/universal.png", 300px),
+  shinyurpr_big: ("./assets/img/universal.png", 300px),
+
+  bouncyurpn_big: ("./assets/img/universal.png", 300px),
+  bouncyuvpn_big: ("./assets/img/universal.png", 300px),
+  bouncyurpr_big: ("./assets/img/universal.png", 300px),
+  bouncyuvpr_big: ("./assets/img/universal.png", 300px),
+
+  wavyurpn_big: ("./assets/img/universal.png", 300px),
+  wavyurpr_big: ("./assets/img/universal.png", 300px),
+  wavyuvpn_big: ("./assets/img/universal.png", 300px),
+  wavyuvpr_big: ("./assets/img/universal.png", 300px),
+
+  spikyurpn_big: ("./assets/img/universal.png", 300px),
+  spikyurpr_big: ("./assets/img/universal.png", 300px),
+  spikyuvpn_big: ("./assets/img/universal.png", 300px),
+  spikyuvpr_big: ("./assets/img/universal.png", 300px),
+
+  silkyurpn_big: ("./assets/img/universal.png", 300px),
+  silkyurpr_big: ("./assets/img/universal.png", 300px),
+  silkyuvpn_big: ("./assets/img/universal.png", 300px),
+  silkyuvpr_big: ("./assets/img/universal.png", 300px),
+
+  bouncyrpn_big: ("./assets/img/bouncy.png", 355px),
+  bouncyrpr_big: ("./assets/img/bouncy.png", 355px),
+  bouncyvpn_big: ("./assets/img/bouncy.png", 355px),
+  bouncyvpr_big: ("./assets/img/bouncy.png", 355px),
+
+  spikyrpn_big: ("./assets/img/spiky.png", 363px),
+  spikyrpr_big: ("./assets/img/spiky.png", 363px),
+  spikyvpr_big: ("./assets/img/spiky.png", 363px),
+  spikyvpn_big: ("./assets/img/spiky.png", 363px),
+
+  shinyvpn_big: ("./assets/img/shiny.png", 361px),
+  shinyvpr_big: ("./assets/img/shiny.png", 361px),
+  shinyrpn_big: ("./assets/img/shiny.png", 361px),
+  shinyrpr_big: ("./assets/img/shiny.png", 361px),
+
+  silkyvpn_big: ("./assets/img/silky.svg", 275px),
+  silkyrpn_big: ("./assets/img/silky.svg", 275px),
+  silkyrpr_big: ("./assets/img/silky.svg", 275px),
+  silkyvpr_big: ("./assets/img/silky.svg", 275px),
+
+  wavyvpn_big: ("./assets/img/wavy.svg", 275px),
+  wavyrpn_big: ("./assets/img/wavy.svg", 275px),
+  wavyrpr_big: ("./assets/img/wavy.svg", 275px),
+  wavyvpr_big: ("./assets/img/wavy.svg", 275px),
+);
+
+@each $name, $cfg in $big-fronts {
+  .#{$name} {
+    @include big-front(nth($cfg, 1), nth($cfg, 2));
+    @extend .big-view;
+  }
+}
+
+$back-big: (
+  shiny: ("./assets/img/shiny_back.png", 362px, 770px, #dddd6b),
+  silky: ("./assets/img/silky_back.png", 276px, 770px, #fff),
+  spiky: ("./assets/img/spiky_back.png", 362px, 764px, #633cce),
+  wavy: ("./assets/img/wavy_back.png", 362px, 770px, #633cce),
+  bouncy:("./assets/img/bouncy_back.png", 355px, 770px, #fff),
+  universal: ("./assets/img/universal_back.png", 299px, 770px, #000)
+);
+
+@each $name, $cfg in $back-big {
+  .#{$name}back {
+    @include back-view(nth($cfg, 1), nth($cfg, 2), nth($cfg, 3));
+    @extend .back-view;
+    @extend .back-big;
+
+    .labelholder {
+      color: nth($cfg, 4);
+    }
+  }
+}
+
+@each $name, $cfg in $back-big {
+  .#{$name}back_small {
+    @include back-view(nth($cfg, 1), nth($cfg, 2), nth($cfg, 3));
+    @extend .back-view;
+    @extend .back-small;
+
+    .labelholder {
+      color: nth($cfg, 4);
+    }
+  }
+}
+
+.shinyback .labelholder {
+  .AssetId {
+    left: -278px;
+    top: 27px;
+  }
+
+  .Env_Tax_Customer {
+    top: 189px;
+  }
+
+  .Total_price {
+    top: 204px;
+  }
+
+  .Max_Refill_Count {
+    top: 221px;
+  }
+}
+
+.universalback .labelholder {
+  top: 475px;
+  left: 192px;
+
+  .AssetId {
+    left: -249px;
+    top: 72px;
+  }
+
+  .Bottle_Price {
+    top: 124px;
+  }
+
+  .Redeem_Good {
+    top: 159px;
+  }
+
+  .Discard_fine {
+    top: 176px;
+  }
+
+  .Env_Tax_Customer {
+    top: 192px;
+  }
+
+  .Total_price {
+    top: 208px;
+  }
+}
+
+.newheader {
+  border-bottom: 0 !important;
+}
+
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+.recycle {
+  background-image: url("./assets/img/recycledplasticbottle.png");
+  width: 8px;
+  height: 8px;
+  position: absolute;
+  left: 8px;
+  top: 16px;
+  background-size: contain;
+}
+
+.refill {
+  background-image: url("./assets/img/refilledbottle.png");
+  width: 8px;
+  height: 8px;
+  position: absolute;
+  left: 18px;
+  top: 16px;
+  background-size: contain;
+}
+
+.label {
+  position: absolute;
+  width: 23px;
+  height: 16px;
+  left: 6px;
+  top: 35px;
+  background-size: cover;
+}
+
+.labelbig {
+  position: absolute;
+  width: 203px;
+  height: 135px;
+  left: 49px;
+  top: 302px;
+  background-size: cover;
+}
+
+#checklight1 {
+  width: 50px;
+  height: 50px;
+  position: absolute;
+  top: 2838px;
+  left: 5309px;
+  transform: rotate(-90deg);
+  background-image: url("./assets/img/red.png");
+  background-size: cover;
+}
+
+#checklight2 {
+  width: 50px;
+  height: 50px;
+  position: absolute;
+  top: 2908px;
+  left: 5309px;
+  transform: rotate(-90deg);
+  background-image: url("./assets/img/green.png");
+  background-size: cover;
+}
+
+.green {
+  width: 213px !important;
+  height: 213px !important;
+  position: absolute;
+  top: 2825px !important;
+  left: 5221px !important;
+  transform: rotate(-90deg);
+  background-image: url("./assets/img/grenglow.png") !important;
+  background-size: cover;
+}
+
+.red {
+  width: 213px !important;
+  height: 213px !important;
+  position: absolute;
+  top: 2755px !important;
+  left: 5221px !important;
+  transform: rotate(-90deg) !important;
+  background-image: url("./assets/img/redglow.png") !important;
+  background-size: cover;
+}
+
+.highlight {
+  animation: glowingred 1s ease-in-out infinite alternate;
+}
+
+@keyframes glowingorange {
+  from {
+    box-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px rgba(236, 175, 43, 0.322),
+      0 0 40px rgb(240, 129, 38), 0 0 50px #ffad15, 0 0 60px #ffad15,
+      0 0 70px #ffad15;
+  }
+
+  to {
+    box-shadow: 0 0 20px #fff, 0 0 30px #f7aa37, 0 0 40px #ffa723,
+      0 0 50px #fc930b, 0 0 60px rgb(255, 187, 0), 0 0 70px rgb(255, 174, 0),
+      0 0 80px rgb(255, 174, 0);
+  }
+}
+
+.refillinstation {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+  background-color: #666666;
+
+  .loadimgrefill {
+    background-image: url("./assets/img/fillingstation.png");
+    width: 1366px;
+    height: 768px;
+    background-repeat: no-repeat;
+    background-size: contain;
+    position: absolute;
+    top: 155px;
+    left: 1px;
+  }
+
+  .shinyfiller,
+  .wavyfiller,
+  .spikyfiller,
+  .silkyfiller,
+  .bouncyfiller {
+    position: absolute;
+    width: 2px;
+    height: 24px;
+    display: none;
+    top: 52px;
+  }
+
+  .shinyfiller {
+    left: 62px;
+    background: #dddd57;
+  }
+
+  .spikyfiller {
+    left: 113px;
+    background: #987edf;
+  }
+
+  .bouncyfiller {
+    left: 164px;
+    background: #a3008c;
+  }
+
+  .wavyfiller {
+    left: 214px;
+    background: #99c29f;
+  }
+
+  .silkyfiller {
+    left: 265px;
+    background: #d84d5d;
+  }
+}
+
+.supermarketstage {
+  position: absolute;
+  width: 100vw;
+  height: 100vh;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+
+  #innerdoor1 {
+    position: absolute;
+    width: 29px;
+    height: 1076px;
+    top: 2998px;
+    left: 5415px;
+    background: #99d8cf;
+  }
+
+  #innerdoor2 {
+    position: absolute;
+    width: 29px;
+    height: 1030px;
+    top: 930px;
+    left: 5415px;
+    background: #99d8cf;
+  }
+
+  #innerdoor3 {
+    position: absolute;
+    width: 29px;
+    height: 1030px;
+    top: 930px;
+    left: 715px;
+    background: #99d8cf;
+  }
+
+  #exit {
+    position: absolute;
+    width: 329px;
+    height: 165px;
+    top: 499px;
+    left: 980px;
+    cursor: pointer;
+  }
+
+  .loadimg {
+    position: absolute;
+    background-image: url("./assets/img/supermarket.png");
+    background-repeat: no-repeat;
+    background-size: cover;
+    width: 12000px;
+    height: 4501px;
+  }
+}
+
+.shiny_label {
+  background-image: url("./assets/img/shiny_label.png");
+}
+
+.silky_label {
+  background-image: url("./assets/img/silky_label.png");
+}
+
+.spiky_label {
+  background-image: url("./assets/img/spiky_label.png");
+}
+
+.bouncy_label {
+  background-image: url("./assets/img/bouncy_label.png");
+}
+
+.wavy_label {
+  background-image: url("./assets/img/wavy_label.png");
+}
+
+.spiky_vpn {
+  background-image: url("./assets/img/spiky.png");
+  width: 30px;
+  height: 84px;
+}
+
+.wavy_vpn {
+  background-image: url("./assets/img/wavy.png");
+  width: 31px;
+  height: 77px;
+}
+
+.silky_vpn {
+  background-image: url("./assets/img/silky.png");
+  width: 31px;
+  height: 77px;
+}
+
+.bouncy_vpn {
+  background-image: url("./assets/img/bouncy.png");
+  width: 35px;
+  height: 77px;
+}
+
+.reportclass {
+  &.modal.show {
+    .modal-dialog {
+      max-width: 68%;
+      width: 68%;
+
+      .modal-content {
+        .modal-header {
+          border-bottom: none !important;
+
+          .closebtn {
+            background-image: url("./assets/img/closebutton.png") !important;
+            width: 15px;
+            height: 15px;
+            background-size: cover;
+            margin: 5px;
+          }
+        }
+      }
+    }
+  }
+}
+
+.cartcontent {
+  &.modal.show {
+    .modal-dialog {
+      width: 820px;
+      max-width: 820px;
+
+      .modal-content {
+        background: rgba(10, 10, 10, 0.7) !important;
+
+        .modal-header,
+        .modal-footer {
+          border: 0px;
+          padding: 5px;
+        }
+
+        .modal-header {
+          .closebtn {
+            background-image: url("./assets/img/closebutton.png") !important;
+            width: 15px;
+            height: 15px;
+            background-size: cover;
+            margin: 5px;
+          }
+        }
+      }
+    }
+  }
+}
+
+.frontpage {
+  &.modal.show {
+    .modal-dialog {
+      width: 60% !important;
+      max-width: 60% !important;
+
+      .modal-header {
+        border: 0px !important;
+      }
+
+      .modal-body {
+        display: flex;
+        justify-content: center;
+      }
+
+      .modal-content {
+        background-image: url("./assets/img/aboutpagebg.png") !important;
+        background-size: cover;
+        width: 100% !important;
+        max-width: 100%;
+      }
+    }
+  }
+}
+
+.play-button {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60px;
+  height: 60px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  font-size: 24px;
+  text-align: center;
+  line-height: 60px;
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 10;
+  /* Ensure button is above video */
+}
+
+.play-button span {
+  display: inline-block;
+  vertical-align: middle;
+  font-size: 52px;
+  margin-left: 9px;
+}
+
+.introvideo {
+  position: relative;
+  width: 896px;
+  left: 449px;
+  top: -391px;
+  display: inline-block;
+
+}
+
+.template {
+  .loadcontent {
+    background-image: url("./assets/img/Pyramidcontent.png");
+    background-size: cover;
+    width: 100%;
+    height: 1732px;
+    background-repeat: no-repeat;
+  }
+
+  .logoclkcls {
+    position: absolute;
+    top: 200px;
+    margin: 0 auto;
+    left: 0;
+    right: 0;
+    width: 600px;
+  }
+}
+
+.innderdiv {
+  width: 90%;
+
+  .loadcontent {
+    background-image: url("./assets/img/whyshorterloop.png");
+    background-size: cover;
+    width: 100%;
+    height: 1732px;
+    background-repeat: no-repeat;
+  }
+
+  .loadcontent1 {
+    background-image: url("./assets/img/aboutshorterloop.png");
+    background-size: cover;
+    width: 100%;
+    height: 2493px;
+    background-repeat: no-repeat;
+  }
+
+  .loadcontent2 {
+    background-image: url("./assets/img/Navigationpage.png");
+    background-size: cover;
+    width: 100%;
+    height: 865px;
+    background-repeat: no-repeat;
+  }
+}
+
+.cityruleLink {
+  cursor: pointer;
+  color: #fff;
+  padding-top: 13px;
+  background: #555;
+  padding: 5px;
+  width: 100px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 5px auto;
+  border-radius: 5px;
+  text-align: center;
+}
+
+.cssalignment {
+  text-align: left;
+}
+
+.displayheader {
+  display: flex !important;
+  justify-content: flex-end !important;
+}
+
+.hamburger {
+  .logocls {
+    width: 20px;
+    height: 20px;
+    background-size: cover;
+    cursor: pointer;
+    margin: 0px 10px;
+  }
+
+  .navigation {
+    background-image: url("./assets/img/navigation.png");
+    @extend .logocls;
+  }
+
+  .information {
+    background-image: url("./assets/img/information.png");
+    @extend .logocls;
+  }
+
+  .hamburger-menu {
+    font-weight: 500;
+    color: #000;
+    font-size: 14px;
+
+    .ham-menuitem {
+      display: flex;
+      padding: 10px;
+      align-items: center;
+      cursor: pointer;
+
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.5);
+        color: #fff;
+      }
+    }
+  }
+}
+
+.topright {
+  position: absolute;
+  width: 75px;
+  left: 77px;
+  top: 10px;
+  height: 30px;
+  display: flex;
+  justify-content: space-between;
+
+  .navigation {
+    background-image: url("./assets/img/navigation.png");
+    width: 30px;
+    height: 30px;
+    background-size: cover;
+    cursor: pointer;
+  }
+
+  .information {
+    background-image: url("./assets/img/information.png");
+    width: 30px;
+    height: 30px;
+    background-size: cover;
+    cursor: pointer;
+  }
+}
+
+.logocontainer {
+  width: 41%;
+  height: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  .iihslogo {
+    background-image: url("./assets/img/iihs.png");
+    width: 45px;
+    height: 40px;
+    position: absolute;
+    left: 54px;
+    top: 10px;
+    background-size: cover;
+  }
+
+  .shorterloopslogo {
+    background-image: url("./assets/img/shorteloopslogo.png");
+    width: 171px;
+    height: 55px;
+    background-size: cover;
+    cursor: pointer;
+  }
+}
+
+$panel-size: 90px;
+$button-size: 25px;
+$align-space: 14px;
+
+.round-panel {
+  position: fixed;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background-color: rgb(143 143 143 / 40%);
+  right: 75px;
+  bottom: 17px;
+}
+
+.button {
+  position: absolute;
+  width: $button-size;
+  height: $button-size;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-size: 100% 100%;
+  cursor: pointer;
+
+  &.topbtn {
+    top: $align-space;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-image: url("./assets/img/up.png");
+  }
+
+  &.left {
+    top: 50%;
+    left: $align-space;
+    transform: translate(-50%, -50%);
+    background-image: url("./assets/img/left.png");
+  }
+
+  &.center {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-image: url("./assets/img/center.png");
+    background-color: transparent;
+    width: 34px;
+    height: 34px;
+  }
+
+  &.right {
+    top: 50%;
+    right: $align-space;
+    transform: translate(50%, -50%);
+    background-image: url("./assets/img/right.png");
+  }
+
+  &.bottom {
+    bottom: $align-space;
+    left: 50%;
+    transform: translate(-50%, 50%);
+    background-image: url("./assets/img/down.png");
+  }
+}
+
+.zoom {
+  background-color: rgb(143 143 143 / 40%);
+  width: 34px;
+  height: 76px;
+  position: absolute;
+  left: 111px;
+  border-radius: 5px;
+  top: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  .zoomIn {
+    background-image: url("./assets/img/zoomin.png");
+    width: 26px;
+    height: 25px;
+    background-size: contain;
+    border-radius: 0;
+    margin: 0px 0px 6px 0px;
+    cursor: pointer;
+  }
+
+  .zoomOut {
+    background-image: url("./assets/img/zoomout.png");
+    width: 26px;
+    height: 25px;
+    background-size: contain;
+    border-radius: 0;
+    cursor: pointer;
+  }
+}
+
+.menu-container {
+  position: absolute !important;
+  left: -62px !important;
+  top: 30px !important;
+}
+
+:host {
+  ::ng-deep {
+    .mdc-text-field--filled:not(.mdc-text-field--disabled) {
+      background-color: none !important;
+    }
+  }
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}
+
+app-bottle-inventory-form {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}

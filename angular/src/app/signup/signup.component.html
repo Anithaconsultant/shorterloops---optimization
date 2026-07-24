@@ -1,0 +1,214 @@
+<div class="container-fluid landingpage">
+  <app-alert-modal #alertModal></app-alert-modal>
+  <div class="row">
+    <div class="logocontainer">
+      <app-hamburger-menu></app-hamburger-menu>
+      <div class="iihslogo"></div>
+    </div>
+  </div>
+  <div class="row no-gutter topalign">
+    <!-- Demo content-->
+    <div class="container signupblock">
+      <div class="row">
+        <div class="col-lg-6 col-xl-3 innerblk">
+          <h3 class="displaytext">Register</h3>
+          <p></p>
+          <form [formGroup]="signupForm">
+            <div class="form-group mb-3">
+              <input
+                id="inputusername"
+                type="username"
+                [(ngModel)]="newuser.Username"
+                formControlName="username"
+                [ngClass]="{ 'is-invalid': submitted }"
+                placeholder="Username"
+                required=""
+                autofocus=""
+                class="form-control rounded-pill border-0 shadow-sm px-4"
+              />
+              <div
+                *ngIf="
+                  signupForm.get('Username')?.invalid &&
+                  signupForm.get('Username')?.touched
+                "
+              >
+                Username is required and must be at least 4 characters
+              </div>
+            </div>
+            <div class="form-group mb-3">
+              <input
+                id="inputemail"
+                type="email"
+                formControlName="email"
+                [(ngModel)]="newuser.email"
+                [ngClass]="{ 'is-invalid': submitted }"
+                placeholder="EmailId"
+                required=""
+                autofocus=""
+                class="form-control rounded-pill border-0 shadow-sm px-4"
+              />
+              <div
+                *ngIf="
+                  signupForm.get('email')?.invalid &&
+                  signupForm.get('email')?.touched
+                "
+              >
+                Valid email is required
+              </div>
+            </div>
+            <div class="form-group mb-3">
+              <input
+                id="inputPassword"
+                type="password"
+                formControlName="password"
+                [(ngModel)]="newuser.password"
+                [ngClass]="{ 'is-invalid': submitted }"
+                placeholder="Password"
+                required=""
+                class="form-control rounded-pill border-0 shadow-sm px-4 text-primary"
+              />
+              <div
+                *ngIf="
+                  signupForm.get('Password')?.invalid &&
+                  signupForm.get('Password')?.touched
+                "
+              >
+                Password must be at least 6 characters
+              </div>
+            </div>
+
+            <div class="form-group mb-3">
+              <input
+                id="inputmobile"
+                type="mobile"
+                formControlName="mobile"
+                [(ngModel)]="newuser.mobile"
+                [ngClass]="{ 'is-invalid': submitted }"
+                placeholder="Mobile number"
+                required=""
+                autofocus=""
+                class="form-control rounded-pill border-0 shadow-sm px-4"
+              />
+            </div>
+            <div class="form-group mb-3 gender">
+              <label class="custom-control-label">Gender :</label>
+              <input
+                type="radio"
+                value="male"
+                name="gender"
+                formControlName="gender"
+                [(ngModel)]="newuser.gender"
+              /><span class="spancls"> Male</span>
+              <input
+                type="radio"
+                value="female"
+                name="gender"
+                formControlName="gender"
+                [(ngModel)]="newuser.gender"
+              />
+              <span class="spancls"> Female</span>
+              <input
+                type="radio"
+                value="other"
+                name="gender"
+                formControlName="gender"
+                [(ngModel)]="newuser.gender"
+              />
+              <span class="spancls"> Other</span>
+            </div>
+
+            <div class="form-group mb-3 btnblk">
+              <button
+                type="submit"
+                class="btn btn-block clickbtn rounded-pill shadow-sm"
+                (click)="signup()"
+                [disabled]="!signupForm.valid"
+              >
+                Sign Up
+              </button>
+
+              <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
+              <div *ngIf="successMessage" class="success">
+                {{ successMessage }}
+              </div>
+            </div>
+            <div class="success">
+              <div class="continue" (click)="navigate()"></div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <!-- End -->
+    <div class="introvideo">
+      <div class="template">
+        <div class="loadcontent">
+          <div *ngIf="showImage == true" class="logoclkcls">
+            <video
+              src="./assets/video/Pyramid_Animation.mp4"
+              width="100%"
+              height="100%"
+              #videoPlayer
+              (ended)="onVideoEnded()"
+              [attr.controls]="false"
+              autoplay
+            ></video>
+          </div>
+          <div *ngIf="showImage == false" class="logoclkcls">
+            <img src="./assets/img/lastframe.png" alt="End Image" width="600" />
+            <div class="play-button" (click)="playVideo()">
+              <span>&#9658;</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-template #whyshorterloop let-modal>
+  <div class="modal-header">
+    <button
+      type="button"
+      class="btn-close"
+      aria-label="Close"
+      (click)="modal.dismiss('Cross click')"
+    ></button>
+  </div>
+  <div class="modal-body">
+    <div class="innderdiv">
+      <div class="loadcontent"></div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #aboutshorterloop let-modal>
+  <div class="modal-header">
+    <button
+      type="button"
+      class="btn-close"
+      aria-label="Close"
+      (click)="modal.dismiss('Cross click')"
+    ></button>
+  </div>
+  <div class="modal-body">
+    <div class="innderdiv">
+      <div class="loadcontent1"></div>
+    </div>
+  </div>
+</ng-template>
+<ng-template #navigation let-modal>
+  <div class="modal-header">
+    <button
+      type="button"
+      class="btn-close"
+      aria-label="Close"
+      (click)="modal.dismiss('Cross click')"
+    ></button>
+  </div>
+  <div class="modal-body">
+    <div class="innderdiv">
+      <div class="loadcontent2"></div>
+    </div>
+  </div>
+</ng-template>

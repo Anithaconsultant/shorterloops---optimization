@@ -1,0 +1,333 @@
+<div class="menu-container hamburger" [ngClass]="{ open: menuOpen }" appClickOutside (clickOutside)="closeMenu()">
+  <div class="hambergerbutton">
+    <div class="hamburger" (click)="toggleMenu()">
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>
+  </div>
+  <nav class="slide-menu">
+    <div class="profilemenu">
+      <div ngbAccordion #accordion="ngbAccordion" *ngIf="currentrole != '' && !currentrole.includes('House')">
+        <div ngbAccordionItem="first">
+          <div ngbAccordionHeader>
+            <button ngbAccordionButton>
+              <div class="displaypic ham-menuitem"></div>
+              <div>{{ currentrole | titlecase }}</div>
+            </button>
+          </div>
+          <div ngbAccordionCollapse>
+            <div ngbAccordionBody>
+  
+              <ng-template>
+                <div class="hamburger-menu">
+
+                  <!-- Case: switchYesOrNo == 2 -->
+                  <div *ngIf="switchYesOrNo == 2">
+                    <div class="ham-menuitem" (click)="onMenuItemClick()">
+                      Switch Role as {{ currentrole }}
+                    </div>
+                  </div>
+
+                  <!-- Case: switchYesOrNo == 0 -->
+                  <div *ngIf="switchYesOrNo == 0">
+                    <div *ngFor="let item of rolesConfig[currentrole]">
+                      <div type="button" class="inneracc ham-menuitem" [class.disabled]="item.disabled"
+                        (click)="!item.disabled && item.action?.(cashBox, legderBook)">
+                        {{ item.label }}
+                      </div>
+                    </div>
+                    <div *ngIf="currentrole !== 'Mayor'">
+                      <div *ngFor="let item of extraMenu">
+                        <div type="button" class="inneracc ham-menuitem" [class.disabled]="item.disabled"
+                          (click)="!item.disabled && item.action?.(cashBox, legderBook)">
+                          {{ item.label }}
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+              </ng-template>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <ul class="hamburger-menu">
+      <div class="ham-menuitem" (click)="toggleMenu(); opennavshorter(navigation)">
+        <div class="navigation"></div>
+        Navigation
+      </div>
+      <div class="ham-menuitem" (click)="toggleMenu(); openaboutshorter(aboutshorterloop)">
+        <div class="information"></div>
+        About
+      </div>
+    </ul>
+  </nav>
+</div>
+<ng-template #whyshorterloop let-modal>
+  <div class="modal-header">
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body">
+    <div class="innderdiv">
+      <div class="loadcontent"></div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #aboutshorterloop let-modal>
+  <div class="modal-header">
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body">
+    <div class="innderdiv">
+      <div class="loadcontent1"></div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #navigation let-modal>
+  <div class="modal-header">
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body">
+    <div class="innderdiv">
+      <div class="loadcontent2"></div>
+    </div>
+  </div>
+</ng-template>
+<ng-template #legderBook let-modal>
+  <div class="modal-header displayheader">
+    <button type="button" class="btn-close closebtn" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body">
+    <div class="cashboxDisplay">
+      <div>
+        <table>
+          <thead>
+            <tr>
+              <th>Transaction ID</th>
+              <th>Amount (&#x20B9; )</th>
+              <th>Credit Facility</th>
+              <th>Debit Facility</th>
+              <th>Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of cashflowdata">
+              <td>{{ item.TransactionId }}</td>
+              <td>{{ item.Amount | number : "1.2-2" }}</td>
+              <td>{{ item.CreditFacility }}</td>
+              <td>{{ item.DebitFacility }}</td>
+              <td>{{ item.Purpose }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</ng-template>
+<ng-template #cashBox let-modal>
+  <div class="modal-header displayheader">
+    <button type="button" class="btn-close closebtn" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body">
+    <div *ngIf="currentrole == 'Mayor'" class="ledgerDisplay">
+      <div class="cashboxHeader" style="margin-bottom: 15px">
+        Municipality Cashbox Status
+      </div>
+      <table class="cashboxTable">
+        <tr>
+          <td class="tbllabel">Current Cash</td>
+          <td class="value">
+            &#x20B9; {{ currentWalletMunis | number : "1.2-2" }}
+          </td>
+        </tr>
+        <tr>
+          <td class="tbllabel">Earning from Taxes</td>
+          <td class="value">
+            &#x20B9; {{ environmentTaxTotal | number : "1.2-2" }}
+          </td>
+        </tr>
+        <tr>
+          <td class="tbllabel">Earning from Fines</td>
+          <td class="value">&#x20B9; {{ fineTotal | number : "1.2-2" }}</td>
+        </tr>
+      </table>
+    </div>
+    <div *ngIf="currentrole == 'Supermarket Owner'" class="ledgerDisplay">
+      <div class="cashboxHeader" style="margin-bottom: 15px">
+        Supermarket Cashbox Status
+      </div>
+      <table class="cashboxTable">
+        <tr>
+          <td class="tbllabel">Current Cash</td>
+          <td class="value">
+            &#x20B9; {{ currentWalletsupermarket | number : "1.2-2" }}
+          </td>
+        </tr>
+        <tr>
+          <td class="tbllabel">Earning from Shampoo Sales</td>
+          <td class="value">
+            &#x20B9; {{ earningFromSales | number : "1.2-2" }}
+          </td>
+        </tr>
+        <tr>
+          <td class="tbllabel">Expenditure of Return Conveyor</td>
+          <td class="value">
+            &#x20B9; {{ DebitsInReturnConveyor | number : "1.2-2" }}
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div *ngIf="currentrole == 'Bottle Reverse Vending Machine Owner'" class="ledgerDisplay">
+      <div class="cashboxHeader" style="margin-bottom: 15px">
+        Bottle Reverse Vending Machine Cashbox Status
+      </div>
+      <table class="cashboxTable">
+        <tr>
+          <td class="tbllabel">Current Cash</td>
+          <td class="value">
+            &#x20B9; {{ currentWalletReverseVending | number : "1.2-2" }}
+          </td>
+        </tr>
+        <tr>
+          <td class="tbllabel">Debit for Returning Bottle</td>
+          <td class="value">
+            &#x20B9; {{ DebitForReturningBottle | number : "1.2-2" }}
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div *ngIf="currentrole == 'Shampoo Refilling Station Owner'" class="ledgerDisplay">
+      <div class="cashboxHeader" style="margin-bottom: 15px">
+        Shampoo Refilling Station Cashbox Status
+      </div>
+      <table class="cashboxTable">
+        <tr>
+          <td class="tbllabel">Current Cash</td>
+          <td class="value">
+            &#x20B9; {{ currentWalletRefilling | number : "1.2-2" }}
+          </td>
+        </tr>
+        <tr>
+          <td class="tbllabel">Credits from Refilling Shampoo</td>
+          <td class="value">
+            &#x20B9; {{ CreditFromRefillShampoo | number : "1.2-2" }}
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div *ngIf="currentrole == 'Universal Bottle Manufacturing Plant owner'" class="ledgerDisplay">
+      <div class="cashboxHeader" style="margin-bottom: 15px">
+        Universal Bottle Manufacturing Plant Cashbox Status
+      </div>
+      <table class="cashboxTable">
+        <tr>
+          <td class="tbllabel">Current Cash</td>
+          <td class="value">
+            &#x20B9; {{ WalletUniversalManufacturing | number : "1.2-2" }}
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div *ngIf="currentrole == 'Plastic Recycling Plant Owner'" class="ledgerDisplay">
+      <div class="cashboxHeader" style="margin-bottom: 15px">
+        Plastic Recycling Plant Cashbox Status
+      </div>
+      <table class="cashboxTable">
+        <tr>
+          <td class="tbllabel">Current Cash</td>
+          <td class="value">
+            &#x20B9; {{ plasticRecyclicCashbox | number : "1.2-2" }}
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div *ngIf="currentrole == 'Universal Bottle Cleaning Plant Owner'" class="ledgerDisplay">
+      <div class="cashboxHeader" style="margin-bottom: 15px">
+        Universal Bottle Cleaning Plant Cashbox Status
+      </div>
+      <table class="cashboxTable">
+        <tr>
+          <td class="tbllabel">Current Cash</td>
+          <td class="value">&#x20B9; {{ ubcpCashbox | number : "1.2-2" }}</td>
+        </tr>
+      </table>
+    </div>
+    <div *ngIf="currentrole == 'B1 Shampoo Producer'" class="ledgerDisplay">
+      <div class="cashboxHeader" style="margin-bottom: 15px">
+        B1 Shampoo Producer Cashbox Status
+      </div>
+      <table class="cashboxTable">
+        <tr>
+          <td class="tbllabel">Current Cash</td>
+          <td class="value">
+            &#x20B9; {{ b1ShampooCashbox | number : "1.2-2" }}
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div *ngIf="currentrole == 'B2 Shampoo Producer'" class="ledgerDisplay">
+      <div class="cashboxHeader" style="margin-bottom: 15px">
+        B2 Shampoo Producer Cashbox Status
+      </div>
+      <table class="cashboxTable">
+        <tr>
+          <td class="tbllabel">Current Cash</td>
+          <td class="value">
+            &#x20B9; {{ b2ShampooCashbox | number : "1.2-2" }}
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div *ngIf="currentrole == 'B3 Shampoo Producer'" class="ledgerDisplay">
+      <div class="cashboxHeader" style="margin-bottom: 15px">
+        B3 Shampoo Producer Cashbox Status
+      </div>
+      <table class="cashboxTable">
+        <tr>
+          <td class="tbllabel">Current Cash</td>
+          <td class="value">
+            &#x20B9; {{ b3ShampooCashbox | number : "1.2-2" }}
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div *ngIf="currentrole == 'B4 Shampoo Producer'" class="ledgerDisplay">
+      <div class="cashboxHeader" style="margin-bottom: 15px">
+        B4 Shampoo Producer Cashbox Status
+      </div>
+      <table class="cashboxTable">
+        <tr>
+          <td class="tbllabel">Current Cash</td>
+          <td class="value">
+            &#x20B9; {{ b4ShampooCashbox | number : "1.2-2" }}
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div *ngIf="currentrole == 'B5 Shampoo Producer'" class="ledgerDisplay">
+      <div class="cashboxHeader" style="margin-bottom: 15px">
+        B5 Shampoo Producer Cashbox Status
+      </div>
+      <table class="cashboxTable">
+        <tr>
+          <td class="tbllabel">Current Cash</td>
+          <td class="value">
+            &#x20B9; {{ b5ShampooCashbox | number : "1.2-2" }}
+          </td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</ng-template>

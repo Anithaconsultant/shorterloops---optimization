@@ -1,0 +1,799 @@
+<div class="container cityRuleContainer">
+  <app-alert-modal #alertModal></app-alert-modal>
+
+  <form
+    [formGroup]="cityRuleForm"
+    *ngIf="this.currentOption == 'cityrule'"
+    (ngSubmit)="onSubmit()"
+    class="p-4 rounded shadow bg-white"
+  >
+    <!-- City ID, Rule Number, Day, Time in Hours -->
+    <div class="row mb-4">
+      <div class="col-md-3">
+        <label for="cityId">City ID</label>
+        <input
+          type="text"
+          id="cityId"
+          formControlName="cityId"
+          class="form-control"
+          placeholder="Enter City ID"
+          readonly
+        />
+      </div>
+      <div class="col-md-3">
+        <label for="rule_number">Rule Number</label>
+        <input
+          type="number"
+          id="rule_number"
+          formControlName="rule_number"
+          class="form-control"
+          placeholder="Rule 1"
+          readonly
+        />
+      </div>
+      <div class="col-md-3">
+        <label for="day_number">Day</label>
+        <input
+          type="number"
+          id="day_number"
+          formControlName="day_number"
+          class="form-control"
+          placeholder="Day Number"
+          readonly
+        />
+      </div>
+      <div class="col-md-3">
+        <label for="time_in_hours">Time in Hours</label>
+        <input
+          type="number"
+          id="time_in_hours"
+          formControlName="time_in_hours"
+          class="form-control"
+          placeholder="Hours"
+          readonly
+        />
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card p-3 cardcsss">
+          <h5 class="card-title">Setting Price for the Raw Materials</h5>
+
+          <div class="row">
+            <div class="form-group">
+              <div class="elementContainer">
+                <label for="virgin_plastic_price"
+                  >Virgin Plastic Price (₹/kg)</label
+                >
+                <input
+                  type="number"
+                  id="virgin_plastic_price"
+                  formControlName="virgin_plastic_price"
+                  class="form-control"
+                  placeholder="Price per kg"
+                />
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="elementContainer">
+                <label for="recycled_plastic_price"
+                  >Recycled Plastic Price (₹/kg)</label
+                >
+                <input
+                  type="number"
+                  id="recycled_plastic_price"
+                  formControlName="recycled_plastic_price"
+                  class="form-control"
+                  placeholder="Price per kg"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card p-3 cardcsss">
+          <h5 class="card-title">Environmental Tax</h5>
+
+          <table class="table table-bordered">
+            <thead>
+              <tr>
+                <th scope="col">Bottle Type</th>
+                <!-- Producer -->
+                <th colspan="2" class="text-center">Producer</th>
+                <!-- Retailer -->
+                <th colspan="2" class="text-center">Retailer</th>
+                <!-- Consumer -->
+                <th colspan="2" class="text-center">Consumer</th>
+              </tr>
+              <tr>
+                <th scope="col"></th>
+                <!-- Producer Subcolumns -->
+                <th>Existing</th>
+                <th>New</th>
+                <!-- Retailer Subcolumns -->
+                <th>Existing</th>
+                <th>New</th>
+                <!-- Consumer Subcolumns -->
+                <th>Existing</th>
+                <th>New</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- BVB Row -->
+              <tr>
+                <th scope="row">
+                  <div class="elementContainer">
+                    BVB
+                    <div
+                      class="infobtn"
+                      (click)="toggleInfo('last_envtx_p_bvb')"
+                    >
+                      <i class="bi bi-info-circle"></i>
+                    </div>
+                    <div
+                      *ngIf="activeInfo === 'last_envtx_p_bvb'"
+                      class="info-callout"
+                    >
+                      Environmental Tax for the Branded Virgin Bottle
+                    </div>
+                  </div>
+                </th>
+                <!-- Producer -->
+                <td>
+                  <input
+                    type="number"
+                    formControlName="last_envtx_p_bvb"
+                    class="form-control disable"
+                    readonly
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    formControlName="envtx_p_bvb"
+                    class="form-control"
+                  />
+                </td>
+                <!-- Retailer -->
+                <td>
+                  <input
+                    type="number"
+                    formControlName="last_envtx_r_bvb"
+                    class="form-control disable"
+                    readonly
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    formControlName="envtx_r_bvb"
+                    class="form-control"
+                  />
+                </td>
+                <!-- Consumer -->
+                <td>
+                  <input
+                    type="number"
+                    formControlName="last_envtx_c_bvb"
+                    class="form-control disable"
+                    readonly
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    formControlName="envtx_c_bvb"
+                    class="form-control"
+                  />
+                </td>
+              </tr>
+
+              <!-- BRCB Row -->
+              <tr>
+                <th scope="row">
+                  <div class="elementContainer">
+                    BRCB
+                    <div
+                      class="infobtn"
+                      (click)="toggleInfo('last_envtx_p_brcb')"
+                    >
+                      <i class="bi bi-info-circle"></i>
+                    </div>
+                    <div
+                      *ngIf="activeInfo === 'last_envtx_p_brcb'"
+                      class="info-callout"
+                    >
+                      Environmental Tax for the Branded Recycled Bottle
+                    </div>
+                  </div>
+                </th>
+                <!-- Producer -->
+                <td>
+                  <input
+                    type="number"
+                    formControlName="last_envtx_p_brcb"
+                    class="form-control disable"
+                    readonly
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    formControlName="envtx_p_brcb"
+                    class="form-control"
+                  />
+                </td>
+                <!-- Retailer -->
+                <td>
+                  <input
+                    type="number"
+                    formControlName="last_envtx_r_brcb"
+                    class="form-control disable"
+                    readonly
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    formControlName="envtx_r_brcb"
+                    class="form-control"
+                  />
+                </td>
+                <!-- Consumer -->
+                <td>
+                  <input
+                    type="number"
+                    formControlName="last_envtx_c_brcb"
+                    class="form-control disable"
+                    readonly
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    formControlName="envtx_c_brcb"
+                    class="form-control"
+                  />
+                </td>
+              </tr>
+
+              <!-- BRFB Row -->
+              <tr>
+                <th scope="row">
+                  <div class="elementContainer">
+                    BRFB
+                    <div
+                      class="infobtn"
+                      (click)="toggleInfo('last_envtx_p_brfb')"
+                    >
+                      <i class="bi bi-info-circle"></i>
+                    </div>
+                    <div
+                      *ngIf="activeInfo === 'last_envtx_p_brfb'"
+                      class="info-callout"
+                    >
+                      Environmental Tax for the Branded Refilled Bottle
+                    </div>
+                  </div>
+                </th>
+                <!-- Producer -->
+                <td>
+                  <input
+                    type="number"
+                    formControlName="last_envtx_p_brfb"
+                    class="form-control disable"
+                    readonly
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    formControlName="envtx_p_brfb"
+                    class="form-control"
+                  />
+                </td>
+                <!-- Retailer -->
+                <td>
+                  <input
+                    type="number"
+                    formControlName="last_envtx_r_brfb"
+                    class="form-control disable"
+                    readonly
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    formControlName="envtx_r_brfb"
+                    class="form-control"
+                  />
+                </td>
+                <!-- Consumer -->
+                <td>
+                  <input
+                    type="number"
+                    formControlName="last_envtx_c_brfb"
+                    class="form-control disable"
+                    readonly
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    formControlName="envtx_c_brfb"
+                    class="form-control"
+                  />
+                </td>
+              </tr>
+
+              <!-- UVB Row -->
+              <tr>
+                <th scope="row">
+                  <div class="elementContainer">
+                    UVB
+                    <div
+                      class="infobtn"
+                      (click)="toggleInfo('last_envtx_p_uvb')"
+                    >
+                      <i class="bi bi-info-circle"></i>
+                    </div>
+                    <div
+                      *ngIf="activeInfo === 'last_envtx_p_uvb'"
+                      class="info-callout"
+                    >
+                      Environmental Tax for the Universal Virgin Bottle
+                    </div>
+                  </div>
+                </th>
+                <!-- Producer -->
+                <td>
+                  <input
+                    type="number"
+                    formControlName="last_envtx_p_uvb"
+                    class="form-control disable"
+                    readonly
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    formControlName="envtx_p_uvb"
+                    class="form-control"
+                  />
+                </td>
+                <!-- Retailer -->
+                <td>
+                  <input
+                    type="number"
+                    formControlName="last_envtx_r_uvb"
+                    class="form-control disable"
+                    readonly
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    formControlName="envtx_r_uvb"
+                    class="form-control"
+                  />
+                </td>
+                <!-- Consumer -->
+                <td>
+                  <input
+                    type="number"
+                    formControlName="last_envtx_c_uvb"
+                    class="form-control disable"
+                    readonly
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    formControlName="envtx_c_uvb"
+                    class="form-control"
+                  />
+                </td>
+              </tr>
+
+              <!-- URCB Row -->
+              <tr>
+                <th scope="row">
+                  <div class="elementContainer">
+                    URCB
+                    <div
+                      class="infobtn"
+                      (click)="toggleInfo('last_envtx_p_urcb')"
+                    >
+                      <i class="bi bi-info-circle"></i>
+                    </div>
+                    <div
+                      *ngIf="activeInfo === 'last_envtx_p_urcb'"
+                      class="info-callout"
+                    >
+                      Environmental Tax for the Universal Recycled Bottle
+                    </div>
+                  </div>
+                </th>
+                <!-- Producer -->
+                <td>
+                  <input
+                    type="number"
+                    formControlName="last_envtx_p_urcb"
+                    class="form-control disable"
+                    readonly
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    formControlName="envtx_p_urcb"
+                    class="form-control"
+                  />
+                </td>
+                <!-- Retailer -->
+                <td>
+                  <input
+                    type="number"
+                    formControlName="last_envtx_r_urcb"
+                    class="form-control disable"
+                    readonly
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    formControlName="envtx_r_urcb"
+                    class="form-control"
+                  />
+                </td>
+                <!-- Consumer -->
+                <td>
+                  <input
+                    type="number"
+                    formControlName="last_envtx_c_urcb"
+                    class="form-control disable"
+                    readonly
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    formControlName="envtx_c_urcb"
+                    class="form-control"
+                  />
+                </td>
+              </tr>
+
+              <!-- URFB Row -->
+              <tr>
+                <th scope="row">
+                  <div class="elementContainer">
+                    URFB
+                    <div
+                      class="infobtn"
+                      (click)="toggleInfo('last_envtx_p_urfb')"
+                    >
+                      <i class="bi bi-info-circle"></i>
+                    </div>
+                    <div
+                      *ngIf="activeInfo === 'last_envtx_p_urfb'"
+                      class="info-callout"
+                    >
+                      Environmental Tax for the Universal Refilled Bottle
+                    </div>
+                  </div>
+                </th>
+                <!-- Producer -->
+                <td>
+                  <input
+                    type="number"
+                    formControlName="last_envtx_p_urfb"
+                    class="form-control disable"
+                    readonly
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    formControlName="envtx_p_urfb"
+                    class="form-control"
+                  />
+                </td>
+                <!-- Retailer -->
+                <td>
+                  <input
+                    type="number"
+                    formControlName="last_envtx_r_urfb"
+                    class="form-control disable"
+                    readonly
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    formControlName="envtx_r_urfb"
+                    class="form-control"
+                  />
+                </td>
+                <!-- Consumer -->
+                <td>
+                  <input
+                    type="number"
+                    formControlName="last_envtx_c_urfb"
+                    class="form-control disable"
+                    readonly
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    formControlName="envtx_c_urfb"
+                    class="form-control"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-12">
+        <div class="card p-3 cardcsss">
+          <h5 class="card-title">Setting Fine Section</h5>
+          <div class="row">
+            <div class="form-group">
+              <div class="elementContainer">
+                <label for="fine_for_throwing_bottle" class="label-container"
+                  ><span class="label-text"
+                    >Fine for Throwing Bottle ( &#8377;)</span
+                  >
+                  <div
+                    class="infobtn"
+                    (click)="toggleInfo('fine_for_throwing_bottle')"
+                  >
+                    <i class="bi bi-info-circle"></i>
+                  </div>
+                </label>
+                <input
+                  type="number"
+                  id="fine_for_throwing_bottle"
+                  formControlName="fine_for_throwing_bottle"
+                  class="form-control"
+                />
+
+                <div
+                  *ngIf="activeInfo === 'fine_for_throwing_bottle'"
+                  class="info-callout"
+                >
+                  Fine for Throwing a Bottle at the Street
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div class="elementContainer">
+                <label for="dustbinning_fine" class="label-container"
+                  ><span class="label-text">Dustbinning Fine ( &#8377;)</span>
+                  <div class="infobtn" (click)="toggleInfo('dustbinning_fine')">
+                    <i class="bi bi-info-circle"></i>
+                  </div>
+                </label>
+                <input
+                  type="number"
+                  id="dustbinning_fine"
+                  formControlName="dustbinning_fine"
+                  class="form-control"
+                />
+
+                <div
+                  *ngIf="activeInfo === 'dustbinning_fine'"
+                  class="info-callout"
+                >
+                  Fine for Throwing a Bottle at the City Dustbin
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-4" style="margin: 0 auto; display: flex">
+        <button type="submit" class="btn btn-primary mt-4">Submit</button>
+        <div (click)="gotocity()" class="btn btn-primary mt-4">
+          Back to City
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <form
+    [formGroup]="notificationForm"
+    *ngIf="this.currentOption == 'notification'"
+    (ngSubmit)="notificationSubmit()"
+    class="p-4 rounded shadow bg-white"
+  >
+    <div class="row">
+      <div class="col-md-12">
+        <div class="form-check">
+          <input
+            type="checkbox"
+            id="display_at_dustbin"
+            formControlName="display_at_dustbin"
+            class="form-check-input"
+            (change)="toggleWarning($event)"
+          />
+          <label for="display_at_dustbin" class="form-check-label"
+            >Display at Dustbin?</label
+          >
+        </div>
+
+        <div class="form-check">
+          <input
+            type="checkbox"
+            id="garbage_truck_announcement"
+            formControlName="garbage_truck_announcement"
+            class="form-check-input"
+            (change)="togglePlayWarning($event)"
+          />
+          <label for="garbage_truck_announcement" class="form-check-label"
+            >Garbage Truck Announcement?</label
+          >
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-4" style="margin: 0 auto; display: flex">
+        <button type="submit" class="btn btn-primary mt-4">Submit</button>
+        <div (click)="gotocity()" class="btn btn-primary mt-4">
+          Back to City
+        </div>
+      </div>
+    </div>
+  </form>
+  <div
+    class="table-responsive rule-management"
+    *ngIf="this.currentOption == 'displayrule'"
+  >
+    <div class="header-section">
+      <div>City Rules Management</div>
+      <button (click)="gotocity()" class="btn btn-outline-primary back-btn">
+        <i class="fas fa-arrow-left"></i> Back to City
+      </button>
+    </div>
+
+    <div class="table-container">
+      <table class="table table-hover table-bordered">
+        <thead class="thead-dark">
+          <tr>
+            <th>Basic Info</th>
+            <th>Pricing (₹)</th>
+            <th>Producer Taxes (%)</th>
+            <th>Retailer Taxes (%)</th>
+            <th>Consumer Taxes (%)</th>
+            <th>Fines (₹)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let rule of cityrules">
+            <!-- Basic Info Column -->
+            <td class="basic-info">
+              <div><strong>ID:</strong> {{ rule.ruleId }}</div>
+              <div><strong>City:</strong> {{ rule.cityId }}</div>
+              <div><strong>Rule #:</strong> {{ rule.rule_number }}</div>
+              <div><strong>Day:</strong> {{ rule.day_number }}</div>
+              <div><strong>Time:</strong> {{ rule.time_in_hours }}h</div>
+            </td>
+
+            <!-- Pricing Column -->
+            <td class="pricing">
+              <div class="price-item">
+                <span class="price-label">Virgin:</span>
+                <span class="price-value">{{
+                  rule.virgin_plastic_price
+                    | currency : "INR" : "symbol" : "1.2-2"
+                }}</span>
+              </div>
+              <div class="price-item">
+                <span class="price-label">Recycled:</span>
+                <span class="price-value">{{
+                  rule.recycled_plastic_price
+                    | currency : "INR" : "symbol" : "1.2-2"
+                }}</span>
+              </div>
+            </td>
+
+            <!-- Plastic Taxes Column -->
+            <td class="taxes">
+              <div class="tax-item" *ngIf="rule.envtx_p_bvb">
+                <span>BVB:</span> {{ rule.envtx_p_bvb | number : "1.2-2" }}%
+              </div>
+              <div class="tax-item" *ngIf="rule.envtx_p_brcb">
+                <span>BRCB:</span> {{ rule.envtx_p_brcb | number : "1.2-2" }}%
+              </div>
+              <div class="tax-item" *ngIf="rule.envtx_p_brfb">
+                <span>BRFB:</span> {{ rule.envtx_p_brfb | number : "1.2-2" }}%
+              </div>
+              <div class="tax-item" *ngIf="rule.envtx_p_uvb">
+                <span>UVB:</span> {{ rule.envtx_p_uvb | number : "1.2-2" }}%
+              </div>
+              <div class="tax-item" *ngIf="rule.envtx_p_urcb">
+                <span>URCB:</span> {{ rule.envtx_p_urcb | number : "1.2-2" }}%
+              </div>
+              <div class="tax-item" *ngIf="rule.envtx_p_urfb">
+                <span>URFB:</span> {{ rule.envtx_p_urfb | number : "1.2-2" }}%
+              </div>
+            </td>
+
+            <!-- Recycled Taxes Column -->
+            <td class="taxes">
+              <div class="tax-item" *ngIf="rule.envtx_r_bvb">
+                <span>BVB:</span> {{ rule.envtx_r_bvb | number : "1.2-2" }}%
+              </div>
+              <div class="tax-item" *ngIf="rule.envtx_r_brcb">
+                <span>BRCB:</span> {{ rule.envtx_r_brcb | number : "1.2-2" }}%
+              </div>
+              <div class="tax-item" *ngIf="rule.envtx_r_brfb">
+                <span>BRFB:</span> {{ rule.envtx_r_brfb | number : "1.2-2" }}%
+              </div>
+              <div class="tax-item" *ngIf="rule.envtx_r_uvb">
+                <span>UVB:</span> {{ rule.envtx_r_uvb | number : "1.2-2" }}%
+              </div>
+              <div class="tax-item" *ngIf="rule.envtx_r_urcb">
+                <span>URCB:</span> {{ rule.envtx_r_urcb | number : "1.2-2" }}%
+              </div>
+              <div class="tax-item" *ngIf="rule.envtx_r_urfb">
+                <span>URFB:</span> {{ rule.envtx_r_urfb | number : "1.2-2" }}%
+              </div>
+            </td>
+
+            <!-- Custom Taxes Column -->
+            <td class="taxes">
+              <div class="tax-item" *ngIf="rule.envtx_c_bvb">
+                <span>BVB:</span> {{ rule.envtx_c_bvb | number : "1.2-2" }}%
+              </div>
+              <div class="tax-item" *ngIf="rule.envtx_c_brcb">
+                <span>BRCB:</span> {{ rule.envtx_c_brcb | number : "1.2-2" }}%
+              </div>
+              <div class="tax-item" *ngIf="rule.envtx_c_brfb">
+                <span>BRFB:</span> {{ rule.envtx_c_brfb | number : "1.2-2" }}%
+              </div>
+              <div class="tax-item" *ngIf="rule.envtx_c_uvb">
+                <span>UVB:</span> {{ rule.envtx_c_uvb | number : "1.2-2" }}%
+              </div>
+              <div class="tax-item" *ngIf="rule.envtx_c_urcb">
+                <span>URCB:</span> {{ rule.envtx_c_urcb | number : "1.2-2" }}%
+              </div>
+              <div class="tax-item" *ngIf="rule.envtx_c_urfb">
+                <span>URFB:</span> {{ rule.envtx_c_urfb | number : "1.2-2" }}%
+              </div>
+            </td>
+
+            <!-- Fines Column -->
+            <td class="fines">
+              <div class="fine-item" *ngIf="rule.fine_for_throwing_bottle">
+                <span>Throwing Bottle:</span>
+                {{
+                  rule.fine_for_throwing_bottle
+                    | currency : "INR" : "symbol" : "1.2-2"
+                }}
+              </div>
+              <div class="fine-item" *ngIf="rule.dustbinning_fine">
+                <span>Dustbin Violation:</span>
+                {{
+                  rule.dustbinning_fine | currency : "INR" : "symbol" : "1.2-2"
+                }}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

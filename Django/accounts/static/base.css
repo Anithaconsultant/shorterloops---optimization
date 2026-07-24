@@ -1,0 +1,15 @@
+.logout{
+    display: flex;
+    justify-content: flex-end;
+}
+.response{
+    position: relative !important;
+    float: right !important;
+    top: -39px !important;
+    right: 73px !important;
+    background: transparent !important;
+}
+ #responseButton1{
+    background: transparent !important;
+    border: none !important;
+} 

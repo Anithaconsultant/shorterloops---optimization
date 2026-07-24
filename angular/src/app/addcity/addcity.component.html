@@ -1,0 +1,85 @@
+<div class="maskholder"><div class="mask">Creating Your City. Please wait...</div></div>
+<div class="container-fluid landingpage">
+    <div class="row">
+        <div class="logocontainer">
+            <app-hamburger-menu></app-hamburger-menu>
+            <div class="iihslogo"></div>
+            <div class="shorterloopslogo" (click)="openwhyshorter(whyshorterloop)"></div>
+        </div>
+
+       
+    </div>
+    <div class="row no-gutter topalign">
+        <!-- Demo content-->
+        
+        <div class="container">
+            <div class="row centeraligned">
+                <div class="col-lg-6 col-xl-4 mx-auto">
+                    <h3 class="display-4">Create a New City</h3>
+                    <p></p>
+                    <form [formGroup]="addcityForm">
+                        <div class="form-group mb-3">
+                            <input id="inputcityname" type="text" [(ngModel)]="city.CityName" formControlName="CityName"
+                                [ngClass]="{ 'is-invalid': submitted  }" placeholder="City name" required=""
+                                autofocus="" class="form-control rounded-pill border-0 shadow-sm px-4">
+                        </div>
+                        <div class="form-group mb-3">
+                            <input id="inputclk" type="text" formControlName="Clocktickrate"
+                                [(ngModel)]="city.Clocktickrate" [ngClass]="{ 'is-invalid': submitted  }"
+                                placeholder="Enter the XX Min Here" required="" autofocus=""
+                                class="form-control rounded-pill border-0 shadow-sm px-4">
+                                <div class="note">1 Day in the Virtual City = XX Min in the Real World *</div>
+                        </div>
+               
+
+                    </form>
+                    <div class="textcs">Click one of the two images below to select your city avatar.</div>
+                </div>
+
+                <div class="centeraligned">
+
+                    <div class="city_1 city" (click)='selectedavatar=1;selectcity(1)'></div>
+                    <div class="city_2 city" (click)='selectedavatar=2;selectcity(2)'></div>
+                </div>
+                <button (click)="addcity()" class="btn mb-2 rounded-pill addcitybtn">CREATE THE CITY</button>
+            </div>
+        </div><!-- End -->
+
+    </div>
+</div>
+
+
+
+<ng-template #whyshorterloop let-modal>
+    <div class="modal-header">
+        <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+    </div>
+    <div class="modal-body">
+        <div class="innderdiv">
+            <div class="loadcontent"></div>
+        </div>
+    </div>
+
+</ng-template>
+
+<ng-template #aboutshorterloop let-modal>
+    <div class="modal-header">
+        <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+    </div>
+    <div class="modal-body">
+        <div class="innderdiv">
+            <div class="loadcontent1"></div>
+        </div>
+    </div>
+
+</ng-template>
+<ng-template #navigation let-modal>
+    <div class="modal-header">
+        <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+    </div>
+    <div class="modal-body">
+        <div class="innderdiv">
+            <div class="loadcontent2"></div>
+        </div>
+    </div>
+</ng-template>

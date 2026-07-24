@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22.78 20.98">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #bc824a;
+      }
+
+      .cls-2 {
+        fill: #fff;
+        font-family: Poppins-SemiBold, Poppins;
+        font-size: 5.1px;
+        font-weight: 600;
+      }
+
+      .cls-3 {
+        fill: #515151;
+      }
+
+      .cls-4 {
+        fill: #f2b588;
+      }
+
+      .cls-5 {
+        fill: #d89660;
+      }
+    </style>
+  </defs>
+  <g id="Objects">
+    <g>
+      <g>
+        <rect class="cls-4" x="10.5" y="8.18" width=".37" height="12.8"/>
+        <rect class="cls-1" x="11.65" y="8.18" width=".63" height="12.8"/>
+        <rect class="cls-5" x="10.87" y="8.18" width=".78" height="12.8"/>
+      </g>
+      <path class="cls-3" d="m21.02,0H1.73C.78,0,0,.61,0,1.36v6.7c0,.76.78,1.37,1.74,1.36l19.32-.06c.96,0,1.73-.62,1.73-1.37l-.03-6.64c0-.75-.78-1.36-1.73-1.36Z"/>
+      <text class="cls-2" transform="translate(1.53 6.21)"><tspan x="0" y="0">CLOSED</tspan></text>
+    </g>
+  </g>
+</svg>

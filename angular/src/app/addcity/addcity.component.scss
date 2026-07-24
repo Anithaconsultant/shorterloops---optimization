@@ -1,0 +1,93 @@
+.cityavatars {
+    width: 411px;
+    height: 240px;
+    margin: 12px;
+    padding: 20px;
+    display: inline-block;
+    border: 4px solid transparent;
+    background-size: cover;
+
+
+
+    &:hover {
+        border: 2px solid gainsboro;
+        cursor: pointer;
+    }
+
+    &:user-select {
+        border: 2px solid gray;
+    }
+}
+.maskholder{
+    display: none;
+}
+.mask{
+    color: #fff;
+    background-color: rgba(0, 0, 0, 0.8);
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 36px;
+}
+.landingpage {
+
+    width: 100%;
+    height: 100vh;
+    background-image: url('./../../assets/img/register.png');
+    background-size: cover;
+    .form-control.is-invalid {
+        background-image: none !important;
+      }
+    .topalign {
+        margin-top: -8%;
+    }
+
+    h3 {
+        font-size: 28px;
+        color: #fff;
+        text-align: center;
+        font-family: 'poppin' !important;
+    }
+
+    .addcitybtn {
+        width: 200px;
+        background: #636569;
+        color: #fff;
+        font-family: 'poppin' !important;
+    }
+
+    .textcs {
+        text-align: center;
+        font-family: 'poppin' !important;
+        font-size:13px;
+    }
+}
+
+.city_1 {
+    @extend .cityavatars;
+    background-image: url('./../../assets/img/cityavatar_1.png');
+}
+
+.city_2 {
+    @extend .cityavatars;
+    background-image: url('./../../assets/img/cityavatar_2.png');
+}
+
+::ng-deep .modal-dialog {
+    max-width: 80%;
+    width: 80%;
+}
+
+.centeraligned {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+.note{
+    color: #f00;
+    text-align: right;
+    font-size: 11px;
+}

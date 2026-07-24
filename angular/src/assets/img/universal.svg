@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 103.71 269.39">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #cfcce5;
+      }
+
+      .cls-2, .cls-3, .cls-4 {
+        fill: #fff;
+      }
+
+      .cls-5 {
+        fill: #e9e7f2;
+      }
+
+      .cls-6 {
+        font-size: 9px;
+      }
+
+      .cls-6, .cls-7, .cls-8, .cls-9 {
+        fill: #c2bfdd;
+      }
+
+      .cls-6, .cls-7, .cls-10 {
+        font-family: OpenSans, 'Open Sans';
+      }
+
+      .cls-7 {
+        font-size: 6.33px;
+      }
+
+      .cls-3 {
+        opacity: .8;
+      }
+
+      .cls-11 {
+        clip-path: url(#clippath-1);
+      }
+
+      .cls-8 {
+        font-family: Broadway, Broadway;
+        font-size: 19px;
+      }
+
+      .cls-12 {
+        clip-path: url(#clippath);
+      }
+
+      .cls-4 {
+        opacity: .2;
+      }
+
+      .cls-10 {
+        fill: #606060;
+        font-size: 7px;
+      }
+    </style>
+    <clipPath id="clippath">
+      <rect class="cls-3" x="16.86" y="84.92" width="70" height="113.33" rx="6" ry="6"/>
+    </clipPath>
+    <clipPath id="clippath-1">
+      <path class="cls-2" d="m85.86,235.78c0,2.93-2.69,5.3-6,5.3H23.86c-3.31,0-6-2.37-6-5.3v-19.89c0-2.93,2.69-5.3,6-5.3h56c3.31,0,6,2.37,6,5.3v19.89Z"/>
+    </clipPath>
+  </defs>
+  <g id="OBJECTS">
+    <g>
+      <path class="cls-2" d="m93.53,37.51s-6.98-21.88-11.4-34.04c-1.32-3.64-7.27-3.3-7.27-3.3L53.48.02v-.02s-1.62.01-1.62.01h-1.62s0,.01,0,.01l-21.38.14s-5.95-.33-7.27,3.3c-4.42,12.16-11.4,34.04-11.4,34.04h83.35Z"/>
+      <path class="cls-5" d="m93.59,38.06c-.74-2.54-30.71-2.84-40.28-2.86h0s-.52,0-1.45,0c-.93,0-1.45,0-1.45,0h0c-9.57.03-39.54.32-40.28,2.86C-5.76,92.66,0,194.06,7.48,264.13c.19,1.73,4.02,3.62,5.73,3.97,8.66,1.73,68.64,1.73,77.29,0,1.71-.34,5.54-2.23,5.73-3.97,7.49-70.07,13.24-171.47-2.64-226.06Z"/>
+      <polygon class="cls-5" points="87.21 18.18 16.5 18.18 17.04 16.58 86.68 16.58 87.21 18.18"/>
+      <path class="cls-1" d="m51.86,6.83c-9.64,0-17.47,4.34-17.56,9.72h35.13c-.1-5.38-7.92-9.72-17.56-9.72Z"/>
+      <path class="cls-5" d="m51.86,26.08c9.7,0,17.57-3.47,17.57-7.74,0-.03,0-.05,0-.08h-35.13s0,.05,0,.08c0,4.28,7.87,7.74,17.57,7.74Z"/>
+      <g>
+        <rect class="cls-3" x="16.86" y="84.92" width="70" height="113.33" rx="6" ry="6"/>
+        <g class="cls-12">
+          <ellipse class="cls-2" cx="100.86" cy="137.92" rx="67.67" ry="92.33"/>
+        </g>
+      </g>
+      <g>
+        <path class="cls-2" d="m85.86,235.78c0,2.93-2.69,5.3-6,5.3H23.86c-3.31,0-6-2.37-6-5.3v-19.89c0-2.93,2.69-5.3,6-5.3h56c3.31,0,6,2.37,6,5.3v19.89Z"/>
+        <g class="cls-11">
+          <ellipse class="cls-4" cx="84.19" cy="230.58" rx="39.67" ry="30.33"/>
+        </g>
+      </g>
+      <text class="cls-8" transform="translate(45.03 125.08)"><tspan x="0" y="0">x</tspan></text>
+      <text class="cls-6" transform="translate(31.74 142.08)"><tspan x="0" y="0">Shampoo</tspan></text>
+      <rect class="cls-9" x="24.98" y="129.33" width="53.75" height="1"/>
+      <text class="cls-10" transform="translate(40.8 229.08)"><tspan x="0" y="0">100 ml</tspan></text>
+      <text class="cls-7" transform="translate(32.37 174.64)"><tspan x="0" y="0">100% natural</tspan></text>
+    </g>
+  </g>
+</svg>

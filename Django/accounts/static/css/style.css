@@ -1,0 +1,98 @@
+.container {
+    width: 100%;
+    height: 100%;
+}
+
+.cityname {
+    color: #fff;
+    font-size: 22px;
+    background: #4472c4;
+    text-align: center;
+    height: 38px;
+    font-weight: bold;
+}
+
+#day_container {
+    position: absolute;
+    width: 48px;
+    height: 24px;
+    top: 76px;
+    left: 4px;
+    display: flex;
+    justify-content: center;
+    background: #fff;
+}
+
+#text,
+#counttext {
+    font-size: 12px;
+    font-weight: bold;
+    display: flex;
+}
+
+.rolecontainer {
+    position: absolute;
+    left: 645px;
+    top: 151px;
+    color: #e74c3c;
+    font-size: 11px;
+    font-weight: bold;
+}
+.leavecity{
+    position:absolute !important;
+    bottom:0px !important;
+    right:0px !important;
+}
+
+#clockContainer {
+    position: absolute;
+    height: 60px;
+    width: 60px;
+    left: 490px;
+    top: 268px;
+    background: url('./../images/clock.jpg') no-repeat;
+    background-size: 100%;
+    border-radius: 50%;
+}
+
+.cityImage {
+    background: url('./../images/cityimg.png') no-repeat;
+    background-size: 100%;
+    height: 648px;
+    width: 100%;
+    position: relative;
+    border: 1px solid #a1a0a0;
+}
+
+#hour,
+#minute,
+#second {
+    position: absolute;
+    background: black;
+    border-radius: 10px;
+    transform-origin: bottom;
+}
+
+#hour {
+    width: 1.8%;
+    height: 25%;
+    top: 25%;
+    left: 48.85%;
+    opacity: 0.8;
+}
+
+#minute {
+    width: 1.6%;
+    height: 30%;
+    top: 19%;
+    left: 48.9%;
+    opacity: 0.8;
+}
+
+#second {
+    width: 1%;
+    height: 40%;
+    top: 9%;
+    left: 49.25%;
+    opacity: 0.8;
+}

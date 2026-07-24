@@ -1,0 +1,69 @@
+.landingpage {
+    width: 100%;
+    height: 100%;
+    background-image: url('./../../assets/img/landingpage.png');
+    background-size: cover;
+    font-family: 'poppin';
+    overflow-x:hidden;
+    overflow-y:auto;
+
+    .form-control.is-invalid {
+        background-image: none !important;
+    }
+
+
+ 
+
+    .loginblock {
+        margin-top: 1%;
+    }
+
+    .commonclas {
+        color: #fff;
+        text-align: center;
+        font-family: 'poppin' !important;
+    }
+
+    .displaytext {
+        @extend .commonclas;
+        font-size: 34px;
+
+    }
+
+    .leftblock {
+        margin-left: 8%;
+    }
+
+    .displaytext1 {
+        @extend .commonclas;
+        font-size: 20px;
+    }
+
+    .loginbtn {
+        margin: 0 auto;
+        background-color: #636569;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        width: 100px;
+        justify-content: center;
+        height: 30px;
+        font-size: 14px;
+        font-family: 'poppin' !important;
+    }
+
+    .signuptxt {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        a {
+            color: #636569;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            font-family: 'poppin' !important;
+        }
+    }
+}

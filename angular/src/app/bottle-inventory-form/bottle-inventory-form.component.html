@@ -1,0 +1,189 @@
+<div class="form-container">
+  <app-alert-modal #alertModal></app-alert-modal>
+  <form [formGroup]="inventoryForm" (ngSubmit)="onSubmit()" class="inventory-form">
+    <div class="form-header">
+      <h2>Bottle Inventory Management</h2>
+    </div>
+
+    <div class="form-section">
+      <h3 class="section-title">Basic Information</h3>
+      <div class="form-grid">
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Producer Code</mat-label>
+
+          <mat-select formControlName="producer_code" [disabled]="currentRole !== 'Supermarket Owner'">
+
+            <mat-option *ngFor="let option of producerOptions" [value]="option.value">
+              {{ option.label }}
+            </mat-option>
+
+          </mat-select>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Bottle Type</mat-label>
+          <mat-select formControlName="bottle_type" required (selectionChange)="getDataFromServer($event.value)">
+            <mat-option *ngFor="let type of bottleTypes" [value]="type.value">
+              {{ type.label }}
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="hasError('bottle_type', 'required')">
+            Bottle type is required
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Cycle Number (N)</mat-label>
+          <input matInput type="number" formControlName="cycle_number" readonly />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>City Id</mat-label>
+          <input matInput type="number" formControlName="Bottle_CityId" readonly />
+        </mat-form-field>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3 class="section-title">Stock Information</h3>
+      <div class="form-grid">
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Cycle Number (N)</mat-label>
+          <input matInput type="number" formControlName="previous_cycle_number" readonly />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Current Total Stock at Plant</mat-label>
+          <input matInput type="number" formControlName="current_total_stock" required readonly />
+
+          <mat-error *ngIf="hasError('current_total_stock', 'required')">
+            This field is required
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Bottles Sold to Supermarket (Previous Cycle)</mat-label>
+          <input matInput type="number" formControlName="bottles_sold_to_supermarket_prev_cycle" required readonly />
+        </mat-form-field>
+
+
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3 class="section-title">Retailer Information</h3>
+      <div class="form-grid">
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Bottles Bought by Consumers</mat-label>
+          <input matInput type="number" formControlName="bottles_bought_by_consumers" required readonly />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Bottles Returned (Good Condition)</mat-label>
+          <input matInput type="number" formControlName="bottles_returned_good" required readonly />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Bottles Returned (Damaged)</mat-label>
+          <input matInput type="number" formControlName="bottles_returned_damaged" required readonly />
+        </mat-form-field>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3 class="section-title">Pricing Information</h3>
+      <div class="form-grid">
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Manufacturing Day</mat-label>
+          <input matInput type="number" formControlName="manufacturing_day" readonly />
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Content Price (per ml)</mat-label>
+          <input matInput type="number" step="0.01" formControlName="content_price_per_ml"
+            [readonly]="currentRole==='Supermarket Owner'" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Bottle Price</mat-label>
+          <input matInput type="number" step="0.01" formControlName="bottle_price"
+            [readonly]="currentRole==='Supermarket Owner'" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Total MRP</mat-label>
+          <input matInput type="number" step="0.01" formControlName="total_mrp" readonly />
+        </mat-form-field>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3 class="section-title">Bottle Specifications</h3>
+      <div class="form-grid">
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Max Refill Count</mat-label>
+          <input matInput type="number" formControlName="max_refill_count" required
+            [readonly]="currentRole==='Supermarket Owner'" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Redeem Value (Good Condition)</mat-label>
+          <input matInput type="number" step="0.01" formControlName="redeem_value_good"
+            [readonly]="currentRole==='Supermarket Owner'" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Redeem Value (Damaged)</mat-label>
+          <input matInput type="number" step="0.01" formControlName="redeem_value_damaged"
+            [readonly]="currentRole==='Supermarket Owner'" />
+        </mat-form-field>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3 class="section-title">Commission and Discounts</h3>
+      <div class="form-grid">
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Supermarket Commission (%)</mat-label>
+          <input matInput type="number" step="0.01" formControlName="supermarket_commission_percent"
+            [readonly]="currentRole==='Supermarket Owner'" />
+
+          <mat-error *ngIf="hasError('supermarket_commission_percent', 'required')">
+            supermarket_commission_percent is required
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Consumer Discount (%)</mat-label>
+          <input matInput type="number" step="0.01" formControlName="consumer_discount_percent"
+            [readonly]="currentRole==='Supermarket Owner'" />
+        </mat-form-field>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3 class="section-title">Production Planning</h3>
+      <div class="form-grid">
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label *ngIf="currentRole!=='Supermarket Owner'">Bottles to Produce (Day N*30+1)</mat-label>
+          <mat-label *ngIf="currentRole=='Supermarket Owner'">Bottles available at Plant</mat-label>
+          <input matInput type="number" formControlName="bottles_to_produce" required
+            [readonly]="currentRole==='Supermarket Owner'" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Bottles to Sell to Supermarket (Day N*30+2)</mat-label>
+          <input matInput type="number" formControlName="bottles_to_sell_to_supermarket" required
+            [readonly]="currentRole!=='Supermarket Owner'" />
+        </mat-form-field>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button mat-raised-button color="warn" type="button" (click)="gotocity()">Back to City</button>
+      <button mat-raised-button color="primary" type="submit" [disabled]="!inventoryForm.valid || isSubmitting">
+
+        {{ isSubmitting ? 'Processing...' : 'Submit' }}
+      </button>
+
+
+    </div>
+  </form>
+</div>

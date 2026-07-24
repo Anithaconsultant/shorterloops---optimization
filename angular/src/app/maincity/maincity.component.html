@@ -1,0 +1,972 @@
+<div class="maincity_container" preventDoubleClick>
+  <app-alert-modal #alertModal></app-alert-modal>
+  <audio #welcomemarket preload="auto">
+    <source src="assets/audio/welcomesupermarket.mp3" type="audio/mp3" />
+  </audio>
+  <audio #anouncement preload="auto">
+    <source src="assets/audio/announcement.mp3" type="audio/mp3" />
+  </audio>
+  <audio #trucksound preload="auto">
+    <source src="assets/audio/truck_horn.mp3" type="audio/mp3" />
+  </audio>
+  <audio #doneshopping preload="auto">
+    <source src="assets/audio/Donewithyourshopping.mp3" type="audio/mp3" />
+  </audio>
+  <audio #pleasecheck preload="auto">
+    <source src="assets/audio/Pleasecheck.mp3" type="audio/mp3" />
+  </audio>
+  <audio #paymentreceived preload="auto">
+    <source src="assets/audio/PaymentReceived.mp3" type="audio/mp3" />
+  </audio>
+  <audio #transactioncomplete preload="auto">
+    <source src="assets/audio/TransactionComplete.mp3" type="audio/mp3" />
+  </audio>
+  <audio #thankyousuper preload="auto">
+    <source src="assets/audio/Thankyousupermarket.mp3" type="audio/mp3" />
+  </audio>
+  <audio #cityrail preload="auto">
+    <source src="assets/audio/cityrail.mp3" type="audio/mp3" />
+  </audio>
+  <audio #welcome preload="auto">
+    <source src="assets/audio/welcome.mp3" type="audio/mp3" />
+  </audio>
+  <audio #placebottle preload="auto">
+    <source src="assets/audio/placebottle.mp3" type="audio/mp3" />
+  </audio>
+  <audio #bottledroppeded preload="auto">
+    <source src="assets/audio/bottledropped.mp3" type="audio/mp3" />
+  </audio>
+  <audio #selectbrand preload="auto">
+    <source src="assets/audio/selectbrand.mp3" type="audio/mp3" />
+  </audio>
+  <audio #bottledifferent preload="auto">
+    <source src="assets/audio/bottledifferent.mp3" type="audio/mp3" />
+  </audio>
+  <audio #checkprice preload="auto">
+    <source src="assets/audio/checkprice.mp3" type="audio/mp3" />
+  </audio>
+  <audio #useplusminus preload="auto">
+    <source src="assets/audio/useplusminuskey.mp3" type="audio/mp3" />
+  </audio>
+  <audio #collectbottle preload="auto">
+    <source src="assets/audio/collectyourbottle.mp3" type="audio/mp3" />
+  </audio>
+  <audio #thankyou preload="auto">
+    <source src="assets/audio/thankyou.mp3" type="audio/mp3" />
+  </audio>
+  <audio #cartdisplay preload="auto">
+    <source src="assets/audio/cartdisplay.mp3" type="audio/mp3" />
+  </audio>
+  <audio #StopEntry preload="auto">
+    <source src="assets/audio/StopEntry.mp3" type="audio/mp3" />
+  </audio>
+  <audio #Supermarket_Return preload="auto">
+    <source src="assets/audio/Supermarket_Return.mp3" type="audio/mp3" />
+  </audio>
+  <audio #Thanksreturning preload="auto">
+    <source src="assets/audio/Thanksreturning.mp3" type="audio/mp3" />
+  </audio>
+  <audio #Fine preload="auto">
+    <source src="assets/audio/Fine.mp3" type="audio/mp3" />
+  </audio>
+  <div class="maincity" #maincity id="maincity" [hidden]="opensuperflag != 0">
+    <div class="truck side">
+      <div class="holder">
+        <div cdkDropList #truckList="cdkDropList" [cdkDropListConnectedTo]="[
+            houseshelfList,
+            customercartBottomList,
+            customercartList
+          ]" [cdkDropListData]="throwntoTruckList" (cdkDropListDropped)="boughtdrop($event)" class="truckContList">
+          <div *ngFor="let item of throwntoTruckList" id="{{ item }}" class="bottle {{ item.split('at')[1] }} "></div>
+        </div>
+      </div>
+    </div>
+    <div class="bottletruck garbageside">
+      <div class="bottleWrapper">
+        <div *ngFor="let item of bottletoClean" id="{{ item }}" class="bottle {{ item.split('at')[1] }} "></div>
+      </div>
+    </div>
+    <div class="UbottleCleaning"></div>
+    <div class="cart">
+      <div class="cartavatar" (click)="opensuperflag = 1; opensupermarket()"
+        (touchend)="opensuperflag = 1; opensupermarket()"></div>
+      <div class="cartid" (click)="
+          opencart(cartcontent, $event); calculatenetfine(); showcashflow()
+        "></div>
+      <div class="loadinglogo">Loading...</div>
+      <div class="topbasketholder">
+        <div cdkDropList #customercartList="cdkDropList"
+          [cdkDropListConnectedTo]="[houseshelfList, DustbinList, truckList]" [cdkDropListData]="currentUserPurhcased"
+          (cdkDropListDropped)="boughtdrop($event)" [cdkDropListEnterPredicate]="checksBottleStatus"
+          class="newbottle_list">
+          <div *ngFor="let item of currentUserPurhcased; trackBy: trackByItem" id="{{ item }}" class="bottle {{ item.split('at')[1] }} "
+            cdkDrag (dragstart)="onDragStart($event)" longPressDrag [cdkDragStartDelay]="250" [cdkDragData]="item"
+            (click)="openbottelstages(cartcontent, $event)">
+            <ng-template cdkDragPreview>
+              <div class="bottle {{ item.split('at')[1] }}"></div>
+            </ng-template>
+          </div>
+        </div>
+      </div>
+      <div class="bottombasketholder">
+        <div cdkDropList #customercartBottomList="cdkDropList" [cdkDropListConnectedTo]="[
+            houseshelfList,
+            DustbinList,
+            truckList,
+            reverseVendingList
+          ]" [cdkDropListData]="refillbottles" (cdkDropListDropped)="boughtdrop($event)"
+          [cdkDropListEnterPredicate]="checksBottleempty" class="cart_bottle_list">
+          <div *ngFor="let item of refillbottles; trackBy: trackByItem" id="{{ item }}" class="bottle {{ item.split('at')[1] }} " cdkDrag
+            (dragstart)="onDragStart($event)" longPressDrag [cdkDragStartDelay]="250"
+            (click)="openbottelstages(cartcontent, $event)"></div>
+        </div>
+      </div>
+    </div>
+    <!-- <div class="housedisplay">{{currentusername | titlecase}}</div> -->
+    <div class="boardholder">
+      <div class="Supermarket_Owner commoncls">CLOSED</div>
+      <div class="Plastic_Recycling_Plant_Owner commoncls">CLOSED</div>
+      <div class="Universal_Bottle_Cleaning_Plant_Owner commoncls">CLOSED</div>
+      <div class="Universal_Bottle_Manufacturing_Plant_owner commoncls">
+        CLOSED
+      </div>
+      <div class="Shampoo_Refilling_Station_Owner commoncls">CLOSE</div>
+    </div>
+    <div class="mayorflag"></div>
+
+    <div id="clock">Time {{ citytiming["CurrentTime"] }}</div>
+    <div id="day">Day :{{ citytiming["CurrentDay"] }}</div>
+    <div class="mayorofzboard">{{ cityname | uppercase }} MUNICIPAL OFFICE</div>
+    <div class="leftcolony">{{ cityname | uppercase }} HOUSING COLONY</div>
+    <div class="rightcolony">{{ cityname | uppercase }} HOUSING COLONY</div>
+
+    <div class="HouseWrapper">
+      <div *ngFor="let key of objkey(positionObject); let i = index" class="house {{ formatKey(key) }}">
+        <div class="logInLight houselite"></div>
+        <div class="roleDisplay displaypanel"></div>
+
+        <div class="namedisplay housedisplay"></div>
+      </div>
+      <div class="bottleStore {{ formatKey(currentUserRole) }}">
+        <div cdkDropList #houseshelfList="cdkDropList" [cdkDropListConnectedTo]="[
+            customercartList,
+            customercartBottomList,
+            truckList
+          ]" [cdkDropListData]="BottleInHouseList" (cdkDropListDropped)="boughtdrop($event)"
+          class="Inhouseshelf_bottles">
+          <div *ngFor="let item of BottleInHouseList; trackBy: trackByItem" class="bottle {{ item.split('at')[1] }}" id="{{ item }}" cdkDrag
+            (dragstart)="onDragStart($event)"  [cdkDragData]="item" longPressDrag [cdkDragStartDelay]="250"
+            (click)="openbottelstages(cartcontent, $event)"></div>
+        </div>
+      </div>
+    </div>
+    <div class="CityDustBin">
+      <div cdkDropList #DustbinList="cdkDropList" [cdkDropListConnectedTo]="[customercartList, customercartBottomList]"
+        [cdkDropListData]="dustbinbottles" (cdkDropListDropped)="boughtdrop($event)" class="dustbin_bottles">
+        <div *ngFor="let item of dustbinbottles" class="bottle {{ item.split('at')[1] }}" id="{{ item }}" cdkDrag
+          (dragstart)="onDragStart($event)" longPressDrag [cdkDragStartDelay]="250"
+          (click)="openbottelstages(cartcontent, $event)"></div>
+      </div>
+      <div class="warning" *ngIf="showwarning == true"></div>
+    </div>
+    <div class="reverseVending">
+      <div class="reverseDropper">
+        <div cdkDropList #reverseVendingList="cdkDropList" [cdkDropListConnectedTo]="[customercartBottomList]"
+          [cdkDropListData]="reversedBottles" (cdkDropListDropped)="returnreverse($event)" class="vending_list">
+          <div *ngFor="let item of reversedBottles" class="bottle {{ item.split('at')[1] }} reversed" id="{{ item }}">
+          </div>
+        </div>
+      </div>
+      <div class="reverseBoard">Place your Bottle on the Placeholder</div>
+    </div>
+
+    <div class="supermarketentry" (click)="rungarbagetruck()"></div>
+  </div>
+  <div class="supermarketstage" [hidden]="opensuperflag != 1">
+    <div class="loadimg" #supermarket>
+      <div class="displaynetamount">
+        &#x20B9; {{ netamount | number : "1.2-2" }}
+      </div>
+      <div class="displaymoniter"></div>
+
+      <div class="scanneranimation">
+        <div class="scanner"></div>
+        <div class="beam"></div>
+      </div>
+      <div id="innerdoor1"></div>
+      <div id="innerdoor2"></div>
+      <div id="innerdoor3"></div>
+      <div id="exit" (click)="closesupermarket()"></div>
+      <div id="checklight1"></div>
+      <div id="checklight2"></div>
+      <div class="displayconveyor">Return used bottles here</div>
+      <div class="conveyorbottledropper">
+        <div cdkDropList #droppedList="cdkDropList" [cdkDropListConnectedTo]="[bottleList]"
+          [cdkDropListData]="bottledropped" (cdkDropListDropped)="returndrop($event)" class="bottle_list">
+          <div *ngFor="let item of bottledropped" cdkDrag (cdkDragStarted)="dragStarted(item)"
+            class="bottle {{ item.split('at')[1] }} " id="{{ item }}"></div>
+        </div>
+      </div>
+
+      <div class="scanner_cont">
+        <div class="scanner1"></div>
+        <div class="scanner2"></div>
+        <div class="scanner3"></div>
+        <div class="scanner4"></div>
+        <div class="scanner5"></div>
+        <div class="scanner6"></div>
+        <div class="scanner7"></div>
+      </div>
+      <div class="cart supermarketcart">
+        <div class="cartavatar"></div>
+        <div class="displaycallout"></div>
+        <div class="cartid" (click)="opencart(cartcontent, $event)"></div>
+        <div class="bottleholder">
+          <div cdkDropList #bottleList="cdkDropList" [cdkDropListConnectedTo]="[droppedList]"
+            [cdkDropListData]="refillbottles" class="cart_bottle_list" [cdkDropListEnterPredicate]="checkamountdetect">
+            <div *ngFor="let item of refillbottles; trackBy: trackByFn" id="{{ item }}"
+              class="bottle {{ item.split('at')[1] }} " cdkDrag (dragstart)="onDragStart($event)" longPressDrag
+              [cdkDragStartDelay]="250" (cdkDragEnded)="onDragEnded($event)"></div>
+          </div>
+        </div>
+
+        <div class="newbottleholder">
+          <div cdkDropList #bottlesshopped="cdkDropList" id="cartDropList" class="newbottle_list"
+            [cdkDropListData]="bottletaken" [cdkDropListConnectedTo]="shelfDropLists"
+            (cdkDropListDropped)="drop($event)">
+
+
+            <div *ngFor="let item of bottletaken; trackBy: trackByBottleId" cdkDrag
+              [cdkDragData]="{ id: item, className: item.split('at')[1] }" [id]="item"
+              class="bottle {{ item.split('at')[1] }}">
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+
+      <div class="newrak">
+        <div *ngFor="let shelf of shelfConfig" class="dropper" [ngClass]="shelf.class + '_shelf'">
+
+
+          <div cdkDropList [cdkDropListData]="getShelfArray(shelf.key)" [cdkDropListConnectedTo]="[bottlesshopped]"
+            (cdkDropListDropped)="drop($event)" [cdkDropListEnterPredicate]="genericShelfPredicate(shelf.key)"
+            [ngClass]="shelf.class + '_list'">
+            <div *ngFor="let item of getShelfArray(shelf.key)" cdkDrag
+              [cdkDragData]="{ id: item, className: shelf.key }" [id]="item" class="bottle {{ shelf.class }}"
+              longPressDrag [cdkDragStartDelay]="250" (click)="opensticker(bottlesticker, $event)">
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+
+  </div>
+  <div class="refillinstation" [hidden]="opensuperflag != 2">
+    <div class="loadimgrefill" #refillingstation>
+      <div id="refillcart">
+        <div class="cartavatar"></div>
+        <div class="cartid"></div>
+        <div class="refilledholder">
+          <div cdkDropList #bottlerefilled="cdkDropList" [cdkDropListConnectedTo]="[refillingMachine]"
+            [cdkDropListData]="refilledbottles" (cdkDropListDropped)="refilldrop($event, bottlerefilled)"
+            class="refilled_list" [cdkDropListEnterPredicate]="checkrefilledcondition">
+            <div *ngFor="let item of refilledbottles" id="{{ item }}" class=" {{ item.split('at')[1] }} refillbtl "
+              (dragstart)="onDragStart($event)" cdkdrag longPressDrag [cdkDragStartDelay]="250"></div>
+          </div>
+        </div>
+        <div class="refillbottleholder">
+          <div cdkDropList #bottlestoberefilled="cdkDropList" [cdkDropListConnectedTo]="[refillingMachine]"
+            [cdkDropListData]="refillbottles" (cdkDropListDropped)="refilldrop($event, bottlestoberefilled)"
+            class="refill_list" [cdkDropListEnterPredicate]="checkrefillcondition">
+            <div *ngFor="let item of refillbottles" id="{{ item }}" class="{{ item }} {{
+                item.split('at')[1]
+              }} refillbtl toberefilled" cdkDrag longPressDrag [cdkDragStartDelay]="250"></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="displaylight on"></div>
+        <div class="displayboard">
+          Welcome to the shampoo self refilling station!. Please place your
+          empty bottle on the conveyor.
+        </div>
+        <div class="brandsection">
+          <div class="shiny" (click)="
+              droppedbottle == false
+                ? $event.stopPropagation()
+                : checkrefillselect('B1.Shiny')
+            " (touchend)="
+              droppedbottle == false
+                ? $event.stopPropagation()
+                : checkrefillselect('B1.Shiny')
+            "></div>
+          <div class="bouncy" (click)="
+              droppedbottle == false
+                ? $event.stopPropagation()
+                : checkrefillselect('B3.Bouncy')
+            " (touchend)="
+              droppedbottle == false
+                ? $event.stopPropagation()
+                : checkrefillselect('B3.Bouncy')
+            "></div>
+          <div class="spiky" (click)="
+              droppedbottle == false
+                ? $event.stopPropagation()
+                : checkrefillselect('B2.Spiky')
+            " (touchend)="
+              droppedbottle == false
+                ? $event.stopPropagation()
+                : checkrefillselect('B2.Spiky')
+            "></div>
+          <div class="silky" (click)="
+              droppedbottle == false
+                ? $event.stopPropagation()
+                : checkrefillselect('B5.Silky')
+            " (touchend)="
+              droppedbottle == false
+                ? $event.stopPropagation()
+                : checkrefillselect('B5.Silky')
+            "></div>
+          <div class="wavy" (click)="
+              droppedbottle == false
+                ? $event.stopPropagation()
+                : checkrefillselect('B4.Wavy')
+            " (touchend)="
+              droppedbottle == false
+                ? $event.stopPropagation()
+                : checkrefillselect('B4.Wavy')
+            "></div>
+        </div>
+        <div class="adjustment">
+          <div class="up" (click)="
+              brandselected == false ? $event.stopPropagation() : increament()
+            " (touchend)="
+              brandselected == false ? $event.stopPropagation() : increament()
+            "></div>
+          <div class="down" (click)="
+              brandselected == false ? $event.stopPropagation() : decrement()
+            " (touchend)="
+              brandselected == false ? $event.stopPropagation() : decrement()
+            "></div>
+        </div>
+        <div class="start" (click)="
+            quantityselected == false
+              ? $event.stopPropagation()
+              : startrefillinganimation()
+          " (touchend)="
+            quantityselected == false
+              ? $event.stopPropagation()
+              : startrefillinganimation()
+          "></div>
+        <div class="cancel" (click)="
+            quantityselected == false ? $event.stopPropagation() : increament()
+          " (touchend)="
+            quantityselected == false ? $event.stopPropagation() : increament()
+          "></div>
+        <div class="continue" (click)="
+            resetanimation == false
+              ? resetrefilling()
+              : $event.stopPropagation()
+          " (touchend)="
+            resetanimation == false
+              ? resetrefilling()
+              : $event.stopPropagation()
+          "></div>
+      </div>
+      <div class="animationpanel">
+        <div class="capremover">
+          <div id="pressor"></div>
+          <div class="middlepart"></div>
+        </div>
+        <div class="capadder">
+          <div id="cappressor"></div>
+          <div class="capmiddlepart"></div>
+        </div>
+        <div class="shinyfiller"></div>
+        <div class="wavyfiller"></div>
+        <div class="silkyfiller"></div>
+        <div class="bouncyfiller"></div>
+        <div class="spikyfiller"></div>
+        <div class="gearbox">
+          <div class="gear_0 gear"></div>
+          <div class="gear_1 gear"></div>
+          <div class="gear_2 gear"></div>
+          <div class="gear_3 gear"></div>
+        </div>
+      </div>
+      <div class="bdropper">
+        <div class="refilldropper">
+          <div cdkDropList #refillingMachine="cdkDropList"
+            [cdkDropListConnectedTo]="[bottlestoberefilled, bottlerefilled]" [cdkDropListData]="atRefillingMchn"
+            (cdkDropListDropped)="refilldrop($event, refillingMachine)" class="refilllist"
+            [cdkDropListEnterPredicate]="checkrefilledbottle">
+            <div *ngFor="let item of atRefillingMchn" class="{{ item.split('at')[1] }} refillbtl" id="{{ item }}"
+              (dragstart)="onDragStart($event)" cdkdrag longPressDrag [cdkDragStartDelay]="250"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="round-panel">
+    <div>
+      <div (click)="moveup($event)" (mousedown)="moveUpbtn($event)" (touchstart)="moveUpbtn($event)"
+        (touchend)="clearMovement()" class="button topbtn"></div>
+    </div>
+    <div>
+      <div (click)="moveleft($event)" (mousedown)="moveLeftbtn($event)" (touchstart)="moveLeftbtn($event)"
+        (touchend)="clearMovement()" class="button left"></div>
+      <div (click)="moveright($event)" (mousedown)="moveRightbtn($event)" (touchstart)="moveRightbtn($event)"
+        (touchend)="clearMovement()" class="button right"></div>
+    </div>
+    <div>
+      <div (click)="movedown($event)" (mousedown)="moveDownbtn($event)" (touchstart)="moveDownbtn($event)"
+        (touchend)="clearMovement()" class="button bottom"></div>
+      <button (click)="recente = 0; recenter()" (touchend)="recente = 0; recenter()" class="button center"
+        [disabled]="this.opensuperflag == 2"></button>
+    </div>
+
+    <div class="zoom">
+      <div (mousedown)="zoomIn($event)" (touchend)="zoomIn($event)" class="zoomIn"></div>
+      <div (mousedown)="zoomOut($event)" (touchend)="zoomOut($event)" class="zoomOut"></div>
+    </div>
+  </div>
+  <div class="topbar">
+    <app-hamburger-menu></app-hamburger-menu>
+    <div class="iihslogo"></div>
+    <button (click)="toggleAudio()" class="muteBtn">
+      {{ isMuted ? "🔇" : "🔊" }}
+    </button>
+
+    <div ngbDropdown class="picholder">
+      <div type="button" class="displaypic" id="dropdown" ngbDropdownToggle></div>
+      <div ngbDropdownMenu aria-labelledby="dropdown">
+        <div ngbDropdown class="d-inline-block">
+          <div type="button" class="btn" id="dropdownBasic1" ngbDropdownToggle>
+            Exit
+          </div>
+          <div ngbDropdownMenu aria-labelledby="dropdownBasic1" class="innerdrop">
+            <button ngbDropdownItem (click)="leavecity()">Leave a City</button>
+            <button ngbDropdownItem (click)="logout()">Logout</button>
+            <button ngbDropdownItem (click)="exit()">
+              Exit without Logout
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<ng-template #content let-modal>
+  <div class="modal-header">
+    <h4 class="modal-title" id="modal-basic-title">Select Your Avatar</h4>
+
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body">
+    <button type="button" class="btn btn-primary savebtn" (click)="modal.close('Save click'); saveavatar()">
+      Save
+    </button>
+    <div class="profilepic_cont">
+      <div *ngFor="let in of newmale" class="pics pic_{{ in }}" (click)="selectphoto(in)"></div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-primary" (click)="modal.close('Save click'); saveavatar()">
+      Save
+    </button>
+  </div>
+</ng-template>
+
+<!-- Modal -->
+<ng-template #bottlesticker let-modal>
+  <div class="modal-header newheader">
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body">
+    <div class="bottlelable">
+      <div class="frontpart {{ frontclass }}">
+        <div *ngIf="leblfound" class="labelbig {{ frontlabel }}"></div>
+      </div>
+      <div class="backside {{ bottleclass | lowercase }}back">
+        <div class="labelholder">
+          <div class="DOM">{{ assetdata[0].DOM }}</div>
+          <div class="Quantity">
+            {{ assetdata[0].Quantity }} {{ assetdata[0].Units }}
+          </div>
+          <div class="Current_PlantRefill_Count">
+            {{ assetdata[0].Current_PlantRefill_Count }}
+          </div>
+
+          <div class="Latest_Refill_Date">
+            {{ assetdata[0].Latest_Refill_Date }}
+          </div>
+          <div class="Shampoo_Price">&#8377;{{ shapooprice }}</div>
+          <div class="Content_Price">
+            &#8377; {{ assetdata[0].Content_Price }}
+          </div>
+          <div class="Bottle_Price">
+            &#8377; {{ assetdata[0].Bottle_Price }}
+          </div>
+          <div class="Discount_RefillB">
+            &#8377; {{ assetdata[0].Discount_RefillB }}
+          </div>
+          <div class="Redeem_Good">&#8377; {{ assetdata[0].Redeem_Good }}</div>
+          <div class="Discard_fine">
+            &#8377; {{ assetdata[0].Discard_fine }}
+          </div>
+          <div class="Env_Tax_Customer">
+            &#8377; {{ assetdata[0].Env_Tax_Customer }}
+          </div>
+          <div class="Total_price">&#8377; {{ totalamount }}</div>
+          <div class="AssetId">{{ assetdata[0].AssetId }}</div>
+          <div class="Max_Refill_Count">
+            Maximum Refill Count :{{ assetdata[0].Max_Refill_Count }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<!-- Modal -->
+<ng-template #cartcontent let-modal>
+  <div class="modal-header headpart">
+    <div class="topbar">
+      <div class="welcome">Welcome {{ currentusername }}</div>
+      <div class="role">Role: {{ currentUserRole }}</div>
+      <div class="cartId">Cart ID: {{ currentUserCartId }}</div>
+    </div>
+    <button type="button" class="btn-close closebtn" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body billcss">
+    <div class="overall">
+      <div *ngIf="altertab == 0">
+        <div class="aligntable">
+          <div style="margin-bottom: 15px">
+            Your Wallet Status (from the day you joined this city till date)
+          </div>
+          <table>
+            <tr>
+              <td>Net Balance</td>
+              <td>&#x20B9; {{ currentwallet | number : "1.2-2" }}</td>
+            </tr>
+            <tr>
+              <td>Monthly Allowance</td>
+              <td>&#x20B9; 2000</td>
+            </tr>
+            <tr>
+              <td>Purchases</td>
+              <td>&#x20B9; {{ netpurchase | number : "1.2-2" }}</td>
+            </tr>
+            <tr>
+              <td>Earning from Returns</td>
+              <td>&#x20B9; {{ netrefund | number : "1.2-2" }}</td>
+            </tr>
+            <tr>
+              <td>Taxes</td>
+              <td>&#x20B9; {{ taxpaid | number : "1.2-2" }}</td>
+            </tr>
+            <tr>
+              <td>Fines</td>
+              <td>&#x20B9; {{ netfine | number : "1.2-2" }}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      <div *ngIf="altertab == 1 && opensuperflag == 0" class="ledgerpart">
+        <div class="content">
+          <div>
+            <table>
+              <thead>
+                <tr>
+                  <th>AssetId</th>
+                  <th>Transaction ID</th>
+                  <th>Asset Moved From</th>
+                  <th>Asset Moved To</th>
+                  <th>Content Code</th>
+                  <th>Bottle Status</th>
+                  <th>Remaining Quantity</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of currentusertransaction">
+                  <td>{{ item.AssetId }}</td>
+                  <td>{{ item.Transaction_Id }}</td>
+                  <td>{{ item.Fromfacility }}</td>
+                  <td>{{ item.Bottle_loc }}</td>
+                  <td>{{ item.Content_Code }}</td>
+                  <td>{{ item.Bottle_Status }}</td>
+                  <td>{{ item.remQuantity }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div *ngIf="altertab == 1 && opensuperflag == 1">
+        <div class="tablecontent" *ngIf="bottletaken.length > 0">
+          <div class="daytime">
+            Day : {{ citycurrentday }} Time: {{ cityCurrentTime }}
+          </div>
+          <div class="net">
+            Net Amount :&#x20B9; {{ netamount | number : "1.2-2" }}
+            <span class="tick">&#x2714;</span>
+          </div>
+          <div class="account">
+            Amount in Wallet :&#x20B9; {{ currentwallet | number : "1.2-2" }}
+          </div>
+          <div class="content">
+            <div>
+              <table>
+                <thead>
+                  <tr>
+                    <th>AssetId</th>
+                    <th>Bottle Type</th>
+                    <th>Bottle content</th>
+                    <th>Refill Count</th>
+                    <th>Content Price (&#x20B9;)</th>
+                    <th>Original Bottle Price(&#x20B9;)</th>
+                    <th>Discount on Refill bottle(%)</th>
+                    <th>Env Tax(%)</th>
+                    <th>Redeem Value for returned Bottle(%)</th>
+                    <th>Transaction Type</th>
+                    <th>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let item of boughtbottledata">
+                    <td>{{ item.AssetId }}</td>
+                    <td>{{ item.Bottle_Code }}</td>
+                    <td>{{ item.Content_Code }}</td>
+                    <td>{{ item.Current_PlantRefill_Count }}</td>
+                    <td>{{ item.Content_Price }}</td>
+                    <td>{{ item.Bottle_Price }}</td>
+                    <td>{{ item.Discount_RefillB }}</td>
+                    <td>{{ item.Env_Tax_Customer | number : "1.2-2" }}</td>
+                    <td>{{ item.Redeem_Good }}</td>
+                    <td>Purchase</td>
+                    <td>{{ item.Totalvalue }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="emptycontent" *ngIf="bottletaken.length == 0">
+          There is no item added to cart
+        </div>
+      </div>
+      <div *ngIf="altertab == 2 && opensuperflag == 0">
+        <div class="loading">Loading Bottle...</div>
+        <div class="currentbottleshow" *ngIf="selectedBottleatStage != ''">
+          <div id="{{ selectedBottleatStage.split('at')[0].split('City')[1] }}" class="{{ selectedBottleatStage.split('at')[1] }}_{{
+              bottleStatus_Display['Bottle_Status']
+            }} imgclass">
+            <div class="shampoolevel"></div>
+          </div>
+          <div class="bottlecontent" *ngIf="selectedBottleatStage != ''">
+            <div>
+              "Bottle Status :" {{ bottleStatus_Display["Bottle_Status"] }}
+            </div>
+            <div>
+              "Shampoo Quantity :" {{ bottleStatus_Display["currentQuantity"] }}
+            </div>
+            <div>"Bottle ID:" {{ bottleStatus_Display["currentbottle"] }}</div>
+            <div>
+              "Bottle Location:" {{ bottleStatus_Display["Bottle_loc"] }}
+            </div>
+          </div>
+          <div class="backside">
+            <div class="variableholder">
+              <div class="topic">Bottle Data:</div>
+              <!-- Check if sldBottleData exists and has at least one element -->
+              <div *ngIf="sldBottleData && sldBottleData.length > 0">
+                <div *ngIf="sldBottleData[0]?.DOM">
+                  <div class="DOM">
+                    Date of Manufacture: {{ sldBottleData[0].DOM }}
+                  </div>
+                </div>
+
+                <div *ngIf="sldBottleData[0]?.Quantity && sldBottleData[0]?.Units">
+                  <div class="Quantity">
+                    Quantity: {{ sldBottleData[0].Quantity }}
+                    {{ sldBottleData[0].Units }}
+                  </div>
+                </div>
+                <div>
+                  <div class="MaxCount">
+                    Maximum Refill Count:
+                    {{ sldBottleData[0].Max_Refill_Count }}
+                  </div>
+                </div>
+                <div>
+                  <div class="Current_PlantRefill_Count">
+                    Current Plant Refill Count:
+                    {{ sldBottleData[0].Current_PlantRefill_Count }}
+                  </div>
+                </div>
+
+                <div>
+                  <div class="Current_SelfRefill_Count">
+                    Current Self Refill Count:
+                    {{ sldBottleData[0].Current_SelfRefill_Count }}
+                  </div>
+                </div>
+
+                <div *ngIf="sldBottleData[0]?.Latest_Refill_Date">
+                  <div class="Latest_Refill_Date">
+                    Latest Refill Date:
+                    {{ sldBottleData[0].Latest_Refill_Date }}
+                  </div>
+                </div>
+
+                <div *ngIf="shapooprice !== undefined">
+                  <div class="Shampoo_Price">
+                    Shampoo Price: &#8377;{{ shapooprice }}
+                  </div>
+                </div>
+
+                <div *ngIf="sldBottleData[0]?.Content_Price !== undefined">
+                  <div class="Content_Price">
+                    Content Price: &#8377; {{ sldBottleData[0].Content_Price }}
+                  </div>
+                </div>
+
+                <div *ngIf="sldBottleData[0]?.Bottle_Price !== undefined">
+                  <div class="Bottle_Price">
+                    Bottle Price: &#8377; {{ sldBottleData[0].Bottle_Price }}
+                  </div>
+                </div>
+
+                <div *ngIf="sldBottleData[0]?.Discount_RefillB !== undefined">
+                  <div class="Discount_RefillB">
+                    Discount For Refill Bottle: &#8377;
+                    {{ sldBottleData[0].Discount_RefillB }}
+                  </div>
+                </div>
+
+                <div *ngIf="sldBottleData[0]?.Redeem_Good !== undefined">
+                  <div class="Redeem_Good">
+                    Discount for Redeem Good: &#8377;
+                    {{ sldBottleData[0].Redeem_Good }}
+                  </div>
+                </div>
+
+                <div *ngIf="sldBottleData[0]?.Discard_fine !== undefined">
+                  <div class="Discard_fine">
+                    Discard Fine: &#8377; {{ sldBottleData[0].Discard_fine }}
+                  </div>
+                </div>
+
+                <div *ngIf="sldBottleData[0]?.Env_Tax_Customer !== undefined">
+                  <div class="Env_Tax_Customer">
+                    Environmental Tax: &#8377;
+                    {{ sldBottleData[0].Env_Tax_Customer }}
+                  </div>
+                </div>
+
+                <div *ngIf="totalamount !== undefined">
+                  <div class="Total_price">
+                    Net Price: &#8377; {{ totalamount }}
+                  </div>
+                </div>
+
+                <div *ngIf="sldBottleData[0]?.AssetId">
+                  <div class="AssetId">
+                    Asset Id: {{ sldBottleData[0].AssetId }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="btncont">
+            <div class="use" (click)="reduceCapacity()" [ngClass]="{ disabled: isDisabled }">
+              Use
+            </div>
+            <div class="dent" (click)="makeitDamaged()" [ngClass]="{ disabled: isDamaged }">
+              Dent
+            </div>
+            <div class="empty" (click)="makeitEmpty()" [ngClass]="{ disabled: isDisabled }">
+              Empty
+            </div>
+            <div class="throw" (click)="makeitThrown()" [ngClass]="{ disabled: isThrown }">
+              Throw
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="selectedBottleatStage == ''">
+          Please Select any bottle in your Cart
+        </div>
+      </div>
+
+      <div *ngIf="altertab == 3">
+        <div class="quotientimg">
+          <div class="textin">(Dummy Data)</div>
+        </div>
+      </div>
+      <div *ngIf="altertab == 4">
+        <div class="cashflow">
+          <div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Transaction ID</th>
+                  <th>Amount</th>
+                  <th>Debit Facility</th>
+                  <th>Credit Facility</th>
+                  <th>Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of cashflowdata">
+                  <td>{{ item.TransactionId }}</td>
+                  <td>{{ item.Amount | number : "1.2-2" }}</td>
+                  <td>{{ item.DebitFacility }}</td>
+                  <td>{{ item.CreditFacility }}</td>
+                  <td>{{ item.Purpose }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <div class="icon_container">
+      <div class="icncon" [ngClass]="{ highlighttab: altertab == 4 }">
+        <div class="ledger" (click)="altertab = 4; showcashflow()"></div>
+      </div>
+      <div class="icncon" [ngClass]="{ highlighttab: altertab == 0 }">
+        <div class="wallet" (click)="altertab = 0; calculatenetfine()"></div>
+      </div>
+      <div class="icncon" [ngClass]="{ highlighttab: altertab == 1 }">
+        <div class="basket" (click)="altertab = 1; loadledgerdata()"></div>
+      </div>
+      <div class="icncon" [ngClass]="{ highlighttab: altertab == 2 }">
+        <div class="bottle" (click)="altertab = 2; checkthebottlestatusfordisplay()"></div>
+      </div>
+      <div class="icncon" [ngClass]="{ highlighttab: altertab == 3 }">
+        <div class="recyclebtn" (click)="altertab = 3"></div>
+      </div>
+      <div class="btn btn-outline-dark pay" [ngClass]="{ disabled: billpaid }" (click)="payamount()">
+        Pay
+      </div>
+      <div class="btn btn-outline-dark cancel" (click)="modal.close('Save click')">
+        Close
+      </div>
+    </div>
+  </div>
+</ng-template>
+<ng-template #whyshorterloop let-modal>
+  <div class="modal-header">
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body">
+    <div class="innderdiv">
+      <div class="loadcontent"></div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #aboutshorterloop let-modal>
+  <div class="modal-header">
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body">
+    <div class="innderdiv">
+      <div class="loadcontent1"></div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #navigation let-modal>
+  <div class="modal-header">
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body">
+    <div class="innderdiv">
+      <div class="loadcontent2"></div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #Auditing_Plastic let-modal>
+  <div class="modal-header">
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body">
+    <div class="innderdivvidoe">
+      <div class="loadvideo">
+        <video src="./assets/video/Plastic_Recycle_Plant.mp4" width="100%" height="100%" controls></video>
+      </div>
+    </div>
+  </div>
+</ng-template>
+<ng-template #Auditing_BottleCleaning let-modal>
+  <div class="modal-header">
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body">
+    <div class="innderdivvidoe">
+      <div class="loadvideo">
+        <video src="./assets/video/Cleaning_Station_Animation.mp4" width="100%" height="100%" controls></video>
+      </div>
+    </div>
+  </div>
+</ng-template>
+<ng-template #Auditing_BottleMaking let-modal>
+  <div class="modal-header">
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body">
+    <div class="innderdivvidoe">
+      <div class="loadvideo">
+        <video src="./assets/video/Bottling_Plant_Animation.mp4" width="100%" height="100%" controls></video>
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #reloadBottle let-modal>
+  <div class="modal-header">
+    <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+  </div>
+  <div class="modal-body">
+    <div class="reloadDisplay">
+      <div class="tableheading">Bottles at the Plants Details</div>
+      <div>
+        <table>
+          <thead>
+            <tr>
+              <th>Bottle Type</th>
+              <th>No of Bottles</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of reloadBottles | keyvalue">
+              <td>{{ item.key.toString() | titlecase }}</td>
+              <td>{{ item.value }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <button class="reloadSuperMarket" (click)="reloadBottlesToSuperMarket()">
+          Reload to SuperMarket
+        </button>
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<!-- Modal -->

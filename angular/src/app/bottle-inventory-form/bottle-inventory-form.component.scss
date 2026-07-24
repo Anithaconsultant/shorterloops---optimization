@@ -1,0 +1,82 @@
+@import "@angular/material/theming";
+
+.form-container {
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  background-color: white;
+}
+
+.form-header {
+  margin-bottom: 2rem;
+  text-align: center;
+
+  h2 {
+    color: mat-color($mat-indigo, 800);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+
+  p {
+    color: mat-color($mat-gray, 600);
+  }
+}
+
+.form-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  border-radius: 8px;
+  background-color: mat-color($mat-gray, 50);
+
+  .section-title {
+    color: mat-color($mat-indigo, 700);
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    font-size: 1.2rem;
+    font-weight: 500;
+  }
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.form-field {
+  width: 100%;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+
+  button {
+    min-width: 120px;
+  }
+}
+
+@media (max-width: 768px) {
+  .form-container {
+    padding: 1rem;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+input.ng-invalid.ng-touched,
+mat-select.ng-invalid.ng-touched {
+  border: 2px solid #e53935 !important; /* red border for invalid inputs */
+  background-color: #ffecec;
+}
+
+input.ng-valid.ng-touched,
+mat-select.ng-valid.ng-touched {
+  border: 2px solid #43a047 !important; /* green border for valid inputs */
+}

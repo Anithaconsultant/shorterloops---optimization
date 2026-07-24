@@ -1,0 +1,19 @@
+anitha.saravanan@IIHSBLRL-ANITHASARAVANAN MINGW64 /d/shorterloops - angular (dev)
+$ git diff
+
+anitha.saravanan@IIHSBLRL-ANITHASARAVANAN MINGW64 /d/shorterloops - angular (dev)
+$ git status
+On branch dev
+nothing to commit, working tree clean
+
+anitha.saravanan@IIHSBLRL-ANITHASARAVANAN MINGW64 /d/shorterloops - angular (dev)
+$ git add .
+
+anitha.saravanan@IIHSBLRL-ANITHASARAVANAN MINGW64 /d/shorterloops - angular (dev)
+$ git commit -m "comment"
+On branch dev
+nothing to commit, working tree clean
+
+anitha.saravanan@IIHSBLRL-ANITHASARAVANAN MINGW64 /d/shorterloops - angular (dev)
+$ git push origin dev
+Everything up-to-date

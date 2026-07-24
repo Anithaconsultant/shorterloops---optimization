@@ -1,0 +1,151 @@
+<div class="container-fluid landingpage">
+  <app-alert-modal #alertModal></app-alert-modal>
+  <div class="row">
+    <div class="logocontainer">
+      <app-hamburger-menu></app-hamburger-menu>
+      <div class="iihslogo"></div>
+      <div
+        class="shorterloopslogo"
+        (click)="openwhyshorter(whyshorterloop)"
+      ></div>
+    </div>
+  </div>
+  <div class="row topalign">
+    <h3>Welcome to Shorter Loops, {{ setusername | titlecase }}</h3>
+    <div class="container centeralign" *ngIf="selectrole == false">
+      <a class="btn btn-primary create" routerLink="/addcity" role="button"
+        >CREATE A NEW CITY</a
+      >
+      <button class="btn btn-primary join" (click)="selectrole = true">
+        JOIN EXISTING CITY
+      </button>
+      <button class="btn btn-primary join" (click)="assignGovernorRole()">
+        JOIN AS A GOVERNOR
+      </button>
+    </div>
+
+    <div *ngIf="selectrole == true" class="selectrolecontent">
+      <div class="mb-3 col-xl-4 col-md-4 col-lg-6 mx-auto">
+        <label for="City" class="form-label">Select your City</label>
+        <select
+          name="Cityname"
+          class="form-control"
+          id="City"
+          [(ngModel)]="selectedCity"
+          (change)="choosefacility()"
+        >
+          <option selected disabled="true">--Select your City--</option>
+          <option *ngFor="let item of setList" [value]="item[0]">
+            {{ item[0] }}
+          </option>
+        </select>
+      </div>
+      <div class="mb-3 col-xl-4 col-md-4 col-lg-6 mx-auto">
+        <label for="facilityname" class="form-label">Select your Role</label>
+        <select
+          name="facilityname"
+          class="form-control"
+          id="role"
+          [(ngModel)]="selectedfacility"
+          (change)="checkindata()"
+        >
+          <option selected disabled="true">--Select your Role--</option>
+          <option value="Supermarket Owner">Supermarket Owner</option>
+          <option value="B1 Shampoo Producer">B1 Shampoo Producer</option>
+          <option value="B2 Shampoo Producer">B2 Shampoo Producer</option>
+          <option value="B3 Shampoo Producer">B3 Shampoo Producer</option>
+          <option value="B4 Shampoo Producer">B4 Shampoo Producer</option>
+          <option value="B5 Shampoo Producer">B5 Shampoo Producer</option>
+          <option value="Universal Bottle Manufacturing Plant owner">
+            Universal Bottle Manufacturing Plant owner
+          </option>
+          <option value="Bottle Reverse Vending Machine Owner">
+            Bottle Reverse Vending Machine Owner
+          </option>
+          <option value="Universal Bottle Cleaning Plant Owner">
+            Universal Bottle Cleaning Plant Owner
+          </option>
+          <option value="Plastic Recycling Plant Owner">
+            Plastic Recycling plant Owner
+          </option>
+          <option value="Shampoo Refilling Station Owner">
+            Shampoo Refilling Station Owner
+          </option>
+          <option value="Rag picker" disabled>Rag picker</option>
+          <option value="House1 Owner">House1 Owner</option>
+          <option value="House2 Owner">House2 Owner</option>
+          <option value="House3 Owner">House3 Owner</option>
+          <option value="House4 Owner">House4 Owner</option>
+          <option value="House5 Owner">House5 Owner</option>
+          <option value="House6 Owner">House6 Owner</option>
+          <option value="House7 Owner">House7 Owner</option>
+          <option value="House8 Owner">House8 Owner</option>
+          <option value="House9 Owner">House9 Owner</option>
+          <option value="House10 Owner">House10 Owner</option>
+        </select>
+      </div>
+
+      <div class="mb-3 col-xl-4 col-md-4 col-lg-6 alingbtnscenter mx-auto">
+        <button
+          type="submit"
+          class="save btn btn-primary facilitysave"
+          (click)="dochanges()"
+        >
+          Save
+        </button>
+        <button
+          class="save btn btn-primary facilitysave"
+          (click)="selectrole = false"
+        >
+          Back
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<ng-template #whyshorterloop let-modal>
+  <div class="modal-header">
+    <button
+      type="button"
+      class="btn-close"
+      aria-label="Close"
+      (click)="modal.dismiss('Cross click')"
+    ></button>
+  </div>
+  <div class="modal-body">
+    <div class="innderdiv">
+      <div class="loadcontent"></div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #aboutshorterloop let-modal>
+  <div class="modal-header">
+    <button
+      type="button"
+      class="btn-close"
+      aria-label="Close"
+      (click)="modal.dismiss('Cross click')"
+    ></button>
+  </div>
+  <div class="modal-body">
+    <div class="innderdiv">
+      <div class="loadcontent1"></div>
+    </div>
+  </div>
+</ng-template>
+<ng-template #navigation let-modal>
+  <div class="modal-header">
+    <button
+      type="button"
+      class="btn-close"
+      aria-label="Close"
+      (click)="modal.dismiss('Cross click')"
+    ></button>
+  </div>
+  <div class="modal-body">
+    <div class="innderdiv">
+      <div class="loadcontent2"></div>
+    </div>
+  </div>
+</ng-template>

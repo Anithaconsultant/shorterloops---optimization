@@ -1,0 +1,8 @@
+<div class="modal-overlay" *ngIf="isVisible">
+  <div class="modal-container">
+    <button class="btn-close" (click)="closeModal()">&#x2715;</button>
+    <div class="modal-content">
+    <div [innerHTML]="content"></div>
+    <div *ngIf="showbutton==true" (click)="executeCallback()" class="cityruleLink">Click Here</div></div>
+  </div>
+</div>

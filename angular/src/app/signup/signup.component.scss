@@ -1,0 +1,81 @@
+.landingpage {
+    width: 100%;
+    height: 100%;
+    background-image: url('./../../assets/img/landingpage.png');
+    background-size: cover;
+    font-family: 'poppin';
+    overflow-x:hidden;
+    overflow-y:auto;
+
+    .form-control.is-invalid {
+        background-image: none !important;
+    }
+
+    .topalign {
+        margin-top: -5%;
+    }
+
+    .signupblock {
+        margin-top: -5%;
+    }
+
+    .innerblk {
+        margin-left: 8%;
+    }
+
+    .displaytext {
+        font-size: 26px;
+        color: #fff;
+        text-align: center;
+        font-family: 'poppin' !important;
+    }
+
+    .clickbtn {
+        background-color: #636569;
+        color: #fff;
+        font-size: 12px;
+        font-family: 'poppin' !important;
+    }
+
+    .gender {
+        width: 81%;
+        margin: 0 auto;
+        font-size: 12px;
+
+        input {
+            margin-left: 5px;
+            margin-top: 5px;
+        }
+    }
+
+    .btnblk {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+
+    }
+
+    .success {
+        background-image: url('./../../assets/img/registersuccess.png');
+        width: 291px;
+        height: 192px;
+        position: absolute;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-size: cover;
+        top: 406px;
+        left: 133px;
+        display: none;
+
+        .continue {
+            width: 107px;
+            height: 29px;
+            position: absolute;
+            bottom: 14px;
+            cursor: pointer;
+            left: 93px;
+        }
+    }
+}
