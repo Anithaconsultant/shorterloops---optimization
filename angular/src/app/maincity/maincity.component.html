@@ -117,7 +117,7 @@
           ]" [cdkDropListData]="refillbottles" (cdkDropListDropped)="boughtdrop($event)"
           [cdkDropListEnterPredicate]="checksBottleempty" class="cart_bottle_list">
           <div *ngFor="let item of refillbottles; trackBy: trackByItem" id="{{ item }}" class="bottle {{ item.split('at')[1] }} " cdkDrag
-            (dragstart)="onDragStart($event)" longPressDrag [cdkDragStartDelay]="250"
+            (dragstart)="onDragStart($event)" [cdkDragData]="item" [cdkDragStartDelay]="250"
             (click)="openbottelstages(cartcontent, $event)"></div>
         </div>
       </div>
@@ -238,7 +238,7 @@
 
             <div *ngFor="let item of bottletaken; trackBy: trackByBottleId" cdkDrag
               [cdkDragData]="{ id: item, className: item.split('at')[1] }" [id]="item"
-              class="bottle {{ item.split('at')[1] }}">
+              class="bottle {{ item.split('at')[1] }}">{{ getBottleNumber(item) }}
             </div>
 
           </div>
@@ -251,12 +251,12 @@
         <div *ngFor="let shelf of shelfConfig" class="dropper" [ngClass]="shelf.class + '_shelf'">
 
 
-          <div cdkDropList [cdkDropListData]="getShelfArray(shelf.key)" [cdkDropListConnectedTo]="[bottlesshopped]"
+          <div cdkDropList #shelfDropLists="cdkDropList" [cdkDropListData]="getShelfArray(shelf.key)" [cdkDropListConnectedTo]="[bottlesshopped]"
             (cdkDropListDropped)="drop($event)" [cdkDropListEnterPredicate]="genericShelfPredicate(shelf.key)"
             [ngClass]="shelf.class + '_list'">
-            <div *ngFor="let item of getShelfArray(shelf.key)" cdkDrag
+            <div *ngFor="let item of getShelfArray(shelf.key); trackBy: trackByBottleId" cdkDrag
               [cdkDragData]="{ id: item, className: shelf.key }" [id]="item" class="bottle {{ shelf.class }}"
-              longPressDrag [cdkDragStartDelay]="250" (click)="opensticker(bottlesticker, $event)">
+              longPressDrag [cdkDragStartDelay]="250" (click)="opensticker(bottlesticker, $event)">{{item}}
             </div>
 
           </div>
@@ -650,8 +650,8 @@
                     <td>{{ item.Current_PlantRefill_Count }}</td>
                     <td>{{ item.Content_Price }}</td>
                     <td>{{ item.Bottle_Price }}</td>
-                    <td>{{ item.Discount_RefillB }}</td>
-                    <td>{{ item.Env_Tax_Customer | number : "1.2-2" }}</td>
+                    <td>{{ item.Discount }}</td>
+                    <td>{{ item.Env_Tax | number : "1.2-2" }}</td>
                     <td>{{ item.Redeem_Good }}</td>
                     <td>Purchase</td>
                     <td>{{ item.Totalvalue }}</td>

@@ -29,6 +29,7 @@ data1 = list()
 from collections import Counter
 from .services.inventory import create_initial_inventory_for_city
 from .services.purchase_service import PurchaseService
+from .services.return_service import ReturnService
 currentuser = ''
 cartcount = 100
 
@@ -41,33 +42,48 @@ def generate_short_id(length=8):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class SignUpView(APIView):
+    # authentication_classes = []  # Disable all authentication
+    # permission_classes = []     # Disable all permissions
+
+    # def post(self, request):
+    #     serializer = CustomUserSerializer(data=request.data)
+    #     if serializer.is_valid():
+    #         user = serializer.save()
+    #         user.is_active = True
+    #         user.save()
+
+    #         # Create token
+    #         refresh = RefreshToken.for_user(user)
+    #         token = str(refresh.access_token)
+
+    #         # Verification link
+    #         verify_url = f"http://localhost:8000/api/verify-email/?token={token}"
+
+    #         send_mail(
+    #             subject="Verify your email",
+    #             message=f"Click to verify: {verify_url}",
+    #             from_email=settings.EMAIL_HOST_USER,
+    #             recipient_list=[user.email],
+    #         )
+
+    #         return Response({"message": "User created. Check email to verify."})
+
+    #     return Response(serializer.errors, status=400)
     authentication_classes = []  # Disable all authentication
     permission_classes = []     # Disable all permissions
 
     def post(self, request):
+        print(request.data)
         serializer = CustomUserSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            user.is_active = True
-            user.save()
-
-            # Create token
             refresh = RefreshToken.for_user(user)
-            token = str(refresh.access_token)
-
-            # Verification link
-            verify_url = f"http://localhost:8000/api/verify-email/?token={token}"
-
-            send_mail(
-                subject="Verify your email",
-                message=f"Click to verify: {verify_url}",
-                from_email=settings.EMAIL_HOST_USER,
-                recipient_list=[user.email],
-            )
-
-            return Response({"message": "User created. Check email to verify."})
-
-        return Response(serializer.errors, status=400)
+            return Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+                'user': CustomUserSerializer(user).data
+            }, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LoginView(APIView):
@@ -1020,7 +1036,10 @@ def reserve_bottle(request, itemid):
     ])
 
     return Response({
-        "success": True
+        "success": True,
+        "asset_id": asset.AssetId,
+        "dragged": asset.dragged,
+        "bottle_loc": asset.Bottle_loc,
     })
 
 
@@ -1029,4 +1048,18 @@ def reserve_bottle(request, itemid):
 @api_view(['POST'])
 def purchase(request):
     result = PurchaseService.purchase(request.data)
+    return Response(result)
+
+@api_view(['POST'])
+def return_bottle(request):
+
+    result = ReturnService.return_bottle(request.data)
+
+    return Response(result)
+
+@api_view(["POST"])
+def calculatepurchase(request):
+
+    result = PurchaseService.calculate_purchase(request.data)
+
     return Response(result)

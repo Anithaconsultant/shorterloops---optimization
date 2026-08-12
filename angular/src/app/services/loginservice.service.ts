@@ -456,7 +456,12 @@ export class LoginserviceService {
       );;
   }
 
-
+calculatePurchase(data: any) {
+  return this.http.post<any>(
+      this.baseurl + "calculatepurchase/",
+      data
+  );
+}
   sendUserDetails(userDetails: any): Observable<any> {
     // const headers = new getAuthHeaders()()
     //   .set('Content-Type', 'application/json')
@@ -551,6 +556,11 @@ export class LoginserviceService {
   purchase(data: any): Observable<any> {
 
     return this.http.post(this.baseurl + 'purchase/',data,{headers: this.getAuthHeaders()}).pipe(catchError(this.handleError));
+
+  }
+  returnBottle(data: any): Observable<any> {
+
+    return this.http.post(this.baseurl + 'returnbottle/',data,{headers: this.getAuthHeaders()}).pipe(catchError(this.handleError));
 
   }
 }

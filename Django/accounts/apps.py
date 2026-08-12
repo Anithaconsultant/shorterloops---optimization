@@ -9,10 +9,10 @@ class AccountsConfig(AppConfig):
         import accounts.signals  # keep your signals
 
         # Only run this in the "main" process (avoid duplicate threads on runserver reload)
-        if os.environ.get("RUN_MAIN") == "true":
-            from accounts.models import City
-            from accounts.signals import start_timer_for_city, timers
+       # if os.environ.get("RUN_MAIN") == "true":
+        from accounts.models import City
+        from accounts.signals import start_timer_for_city, timers
 
-            for city in City.objects.all():
-                if city.CityId not in timers:
-                    start_timer_for_city(city)
+        for city in City.objects.all():
+            if city.CityId not in timers:
+                start_timer_for_city(city)

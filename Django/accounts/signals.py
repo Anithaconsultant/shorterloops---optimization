@@ -3,13 +3,22 @@ from django.dispatch import receiver, Signal
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 import threading
-from .models import Asset, Auditlog, City, Cityrule, CustomUser, BottleInventory
+from .models import Asset, Auditlog, City, Cityrule, CustomUser
 from time import sleep
 import time
 from django.db.models import F
 from django.db import transaction
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from collections import Counter
+from django.utils import timezone
+from django.db.models.signals import post_save
+from .models import Asset, City
+import asyncio
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from django.db.models import F
+
 
 user_data_received = Signal()
 
@@ -139,174 +148,63 @@ User = get_user_model()
 
 
 
-from collections import Counter
-from django.utils import timezone
-from django.db import transaction
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from django.db import transaction
-from django.utils import timezone
-from collections import Counter
-from .models import Asset, BottleInventory, City
-
-#@receiver(post_save, sender=Asset)
-# def create_initial_bottle_inventory(sender, instance, created, **kwargs):
-#     """
-#     Create BottleInventory ONCE per city when initial asset batch is ready.
-#     SAFE against duplicate signals and race conditions.
-#     """
-#     if not created:
-#         return
-
-#     city_id = instance.Asset_CityId_id
-
-#     with transaction.atomic():
-
-#         # 🔒 Lock inventory table rows for this city
-#         existing_inventory = (
-#             BottleInventory.objects
-#             .select_for_update()
-#             .filter(Bottle_CityId_id=city_id)
-#         )
-
-#         if existing_inventory.exists():
-#             return  # already created safely
-
-#         assets_qs = Asset.objects.filter(Asset_CityId=city_id)
-#         total_assets = assets_qs.count()
-
-#         # ⚠️ adjust if your expected asset count changes
-#         if total_assets < 90:
-#             return
-
-#         from collections import Counter
-#         category_counts = Counter()
-#         sample_asset_for_category = {}
-
-#         for asset in assets_qs:
-#             bottle_type = get_bottle_type(asset)
-#             if not bottle_type:
-#                 continue
-
-#             producer_code = None
-#             if asset.Content_Code:
-#                 parts = asset.Content_Code.split(".")
-#                 producer_code = parts[1] if len(parts) > 1 else None
-
-#             if bottle_type in ["UVB", "URCB", "URFB"]:
-#                 producer_code = "Universal"
-
-#             key = (bottle_type, producer_code)
-#             category_counts[key] += 1
-#             sample_asset_for_category.setdefault(key, asset)
-
-#         # ✅ SAFE creation
-#         for (bottle_type, producer_code), count in category_counts.items():
-#             asset = sample_asset_for_category[(bottle_type, producer_code)]
-
-#             bottle_price = float(asset.Bottle_Price or 0)
-#             content_price = float(asset.Content_Price or 0)
-#             env_tax = float(asset.Env_Tax_Customer or 0)
-#             max_refill = int(asset.Max_Refill_Count or 0)
-#             redeem_good = float(asset.Redeem_Good or 0)
-#             redeem_damaged = float(asset.Redeem_Damaged or 0)
-#             discount = float(asset.Discount_RefillB or 0)
-
-#             shampoo_price_per_ml = (
-#                 content_price / float(asset.Quantity)
-#                 if asset.Quantity else 0
-#             )
-
-#             total_mrp = bottle_price + content_price + env_tax
-
-#             BottleInventory.objects.get_or_create(
-#                 producer_code=producer_code,
-#                 bottle_type=bottle_type,
-#                 Bottle_CityId_id=city_id,
-#                 cycle_number=0,
-#                 defaults={
-#                     "current_total_stock": 0,
-#                     "bottles_sold_to_supermarket_prev_cycle": count,
-#                     "bottles_bought_by_consumers": 0,
-#                     "bottles_returned_good": 0,
-#                     "bottles_returned_damaged": 0,
-#                     "manufacturing_day": asset.DOM,
-#                     "content_price_per_ml": shampoo_price_per_ml,
-#                     "bottle_price": bottle_price,
-#                     "total_mrp": total_mrp,
-#                     "max_refill_count": max_refill,
-#                     "redeem_value_good": redeem_good,
-#                     "redeem_value_damaged": redeem_damaged,
-#                     "supermarket_commission_percent": 0,
-#                     "consumer_discount_percent": discount,
-#                     "bottles_to_produce": 0,
-#                     "bottles_to_sell_to_supermarket": 0,
-#                     "stock_updated_day": "0",
-#                     "last_updated": timezone.now(),
-#                 }
-#             )
-
-#         print(f"✅ BottleInventory created safely for city {city_id}")
 
 
-class CityTimer(threading.Thread):
-    def __init__(self, city_id, clocktickrate):
-        super().__init__()
-        self.city_id = city_id
-        self.clocktickrate = clocktickrate
-        self.intervalcalculation = 86400 / (self.clocktickrate * 60)
-        self.running = True
-        self.paused = False
-        self.last_update_day = None
+# class CityTimer(threading.Thread):
+#     def __init__(self, city_id, clocktickrate):
+#         super().__init__()
+#         self.city_id = city_id
+#         self.clocktickrate = clocktickrate
+#         self.intervalcalculation = 86400 / (self.clocktickrate * 60)
+#         self.running = True
+#         self.paused = False
+#         self.last_update_day = None
 
-    def run(self):
+#     def run(self):
 
-        while self.running:
+#         while self.running:
 
-            time.sleep(1)
-            with transaction.atomic():
-                city = City.objects.select_for_update().get(pk=self.city_id)
-                city.refresh_from_db()  # Refresh the instance from the database
-                # Check if the timer is paused
-                if city.timer_paused:
-                    self.paused = True
-                    continue  # Skip the rest of the loop if paused
-                else:
-                    self.paused = False
-                # Only update time if not paused
-                if not self.paused:
-                    # Debugging
-                    city.CurrentTime += self.intervalcalculation
+#             time.sleep(1)
+#             with transaction.atomic():
+#                 city = City.objects.select_for_update().get(pk=self.city_id)
+#                 city.refresh_from_db()  # Refresh the instance from the database
+#                 # Check if the timer is paused
+#                 if city.timer_paused:
+#                     self.paused = True
+#                     continue  # Skip the rest of the loop if paused
+#                 else:
+#                     self.paused = False
+#                 # Only update time if not paused
+#                 if not self.paused:
+#                     # Debugging
+#                     city.CurrentTime += self.intervalcalculation
                                        
-                    if city.CurrentTime >= 86400:  # 24 hours
-                        city.CurrentTime = 0
-                        city.CurrentDay += 1
+#                     if city.CurrentTime >= 86400:  # 24 hours
+#                         city.CurrentTime = 0
+#                         city.CurrentDay += 1
 
-                    # Check if 30 days have passed and update wallets if needed
-                    if city.CurrentDay != 0 and city.CurrentDay % 30 == 0 and city.CurrentDay != self.last_update_day:
-                        self.update_wallets(city.CityId)
-                        self.last_update_day = city.CurrentDay
+#                     # Check if 30 days have passed and update wallets if needed
+#                     if city.CurrentDay != 0 and city.CurrentDay % 30 == 0 and city.CurrentDay != self.last_update_day:
+#                         self.update_wallets(city.CityId)
+#                         self.last_update_day = city.CurrentDay
 
-                    city.save()
+#                     city.save()
 
-    def update_wallets(self, city_id):
-        CustomUser.objects.filter(User_cityid=city_id).update(
-            wallet=F("wallet") + 2000)
-        CustomUser.objects.filter(User_cityid=city_id).update(
-            update_count=F("update_count") + 1)
-        print(f"Successfully updated wallets for users in city ID: {city_id}")
+#     def update_wallets(self, city_id):
+#         CustomUser.objects.filter(User_cityid=city_id).update(
+#             wallet=F("wallet") + 2000)
+#         CustomUser.objects.filter(User_cityid=city_id).update(
+#             update_count=F("update_count") + 1)
+#         print(f"Successfully updated wallets for users in city ID: {city_id}")
 
-    def stop(self):
-        self.running = False
+#     def stop(self):
+#         self.running = False
 
-    def pause(self):
-        self.paused = True
+#     def pause(self):
+#         self.paused = True
 
-    def resume(self):
-        self.paused = False
+#     def resume(self):
+#         self.paused = False
 
 
 def start_timer_for_city(city):
@@ -339,3 +237,168 @@ def start_timer_on_create(sender, instance, created, **kwargs):
     if created:
         start_timer_for_city(instance)
 
+
+class CityTimer(threading.Thread):
+
+    def __init__(self, city_id, clocktickrate):
+        super().__init__()
+
+        self.city_id = city_id
+        self.clocktickrate = clocktickrate
+
+        # KEEP YOUR EXISTING TIMER CALCULATION
+        self.intervalcalculation = 86400 / (self.clocktickrate * 60)
+
+        self.running = True
+        self.paused = False
+        self.last_update_day = None
+
+        # WebSocket / Redis channel layer
+        self.channel_layer = get_channel_layer()
+
+    def run(self):
+
+        while self.running:
+
+            time.sleep(1)
+
+            with transaction.atomic():
+
+                city = City.objects.select_for_update().get(
+                    pk=self.city_id
+                )
+
+                city.refresh_from_db()
+
+                # -------------------------------------------------
+                # PAUSE CHECK
+                # -------------------------------------------------
+
+                if city.timer_paused:
+
+                    self.paused = True
+                    continue
+
+                else:
+
+                    self.paused = False
+
+                # -------------------------------------------------
+                # EXISTING TIMER LOGIC
+                # -------------------------------------------------
+
+                if not self.paused:
+
+                    city.CurrentTime += self.intervalcalculation
+
+                    if city.CurrentTime >= 86400:
+
+                        city.CurrentTime = 0
+                        city.CurrentDay += 1
+
+                    # -------------------------------------------------
+                    # EXISTING WALLET UPDATE
+                    # -------------------------------------------------
+
+                    if (
+                        city.CurrentDay != 0
+                        and city.CurrentDay % 30 == 0
+                        and city.CurrentDay != self.last_update_day
+                    ):
+
+                        self.update_wallets(city.CityId)
+
+                        self.last_update_day = city.CurrentDay
+
+                    # -------------------------------------------------
+                    # SAVE CITY
+                    # -------------------------------------------------
+
+                    city.save()
+                    print(
+                        f"WEBSOCKET TIMER UPDATE: "
+                        f"city={city.CityId}, "
+                        f"time={city.CurrentTime}, "
+                        f"day={city.CurrentDay}"
+                    )
+
+                    channel_layer = get_channel_layer()
+
+                    async_to_sync(channel_layer.group_send)(
+                        f"city_{city.CityId}",
+                        {
+                            "type": "city_update",
+                            "data": {
+                                "CurrentTime": city.CurrentTime,
+                                "CurrentDay": city.CurrentDay,
+                            }
+                        }
+                    )
+
+                    # -------------------------------------------------
+                    # WEBSOCKET UPDATE
+                    # -------------------------------------------------
+
+    
+    def update_wallets(self, city_id):
+
+        CustomUser.objects.filter(
+            User_cityid=city_id
+        ).update(
+            wallet=F("wallet") + 2000
+        )
+
+        CustomUser.objects.filter(
+            User_cityid=city_id
+        ).update(
+            update_count=F("update_count") + 1
+        )
+
+        print(
+            f"Successfully updated wallets "
+            f"for users in city ID: {city_id}"
+        )
+
+    def stop(self):
+
+        self.running = False
+
+    def pause(self):
+
+        self.paused = True
+
+    def resume(self):
+
+        self.paused = False
+
+
+
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+
+
+def broadcast_asset_update(asset):
+    channel_layer = get_channel_layer()
+
+    async_to_sync(channel_layer.group_send)(
+        f"city_{asset.Asset_CityId}",
+        {
+            "type": "asset_update",
+            "data": {
+                "AssetId": asset.AssetId,
+                "dragged": asset.dragged,
+                "purchased": asset.purchased,
+                "Bottle_loc": asset.Bottle_loc,
+                "Bottle_Status": asset.Bottle_Status,
+                "remQuantity": asset.remQuantity,
+                "Content_Code": asset.Content_Code,
+                "Bottle_Code": asset.Bottle_Code,
+                "Current_PlantRefill_Count": asset.Current_PlantRefill_Count,
+            },
+        }
+    )
+
+    print(
+        f"WEBSOCKET ASSET UPDATE: "
+        f"city={asset.Asset_CityId}, asset={asset.AssetId}"
+    )

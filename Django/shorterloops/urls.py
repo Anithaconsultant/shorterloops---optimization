@@ -54,6 +54,10 @@ urlpatterns = [
          name='get_last_city_rule'),
     path("api/reservebottle/<str:itemid>/",views.reserve_bottle,),
     path('api/purchase/', views.purchase, name='purchase'),
+    path('api/calculatepurchase/', views.calculatepurchase, name='calculatepurchase'),
+    
+    path('api/returnbottle/',views.return_bottle,name='return_bottle'),
+    path('silk/', include('silk.urls', namespace='silk')),
     
    # path('api/get_last_serial/', views.get_last_serial, name='get_last_serial'),
 
