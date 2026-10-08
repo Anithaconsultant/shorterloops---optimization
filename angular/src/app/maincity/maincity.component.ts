@@ -88,6 +88,8 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
   @ViewChild("reloadBottle", { static: false })
   private reloadBottle!: ElementRef;
   @ViewChild("supermarket", { static: false }) private supermarket!: ElementRef;
+  @ViewChild("supermarketViewport", { static: false })
+  private supermarketViewport!: ElementRef;
   @ViewChild("cartdisplay", { static: false }) private cartdisplay!: ElementRef;
   @ViewChild("StopEntry", { static: false }) private StopEntry!: ElementRef;
   @ViewChild("Supermarket_Return", { static: false })
@@ -100,6 +102,16 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
   @ViewChild("allAudio", { static: true }) allAudio!: ElementRef<
     HTMLAudioElement[]
   >;
+
+  private audioQueue: Array<{
+    audio: HTMLAudioElement;
+    volume: number;
+    resolve: () => void;
+    reject: (error: any) => void;
+  }> = [];
+
+  private isAudioPlaying = false;
+
   netamount = 0;
   boughtbottledata: any[] = [];
   getcurrentplacedbrand = "";
@@ -420,7 +432,7 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
   currentUserPurhcased: any[] = [];
   showModal = false;
   modalSubscription!: Subscription;
-  runGarbagetruck!: Subscription;
+  runBottleCollectionTruckSubscription!: Subscription;
   loadPlantBottlesSubscription!: Subscription;
   //houseshelfList: string | CdkDropList<any> ='';
   constructor(
@@ -457,18 +469,29 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
     // Check if user has selected a city
     if (this.logser.currentuser.Username && this.logser.currentuser.CityId) {
       this.initializeCityData();
-
     } else {
       this.router.navigate(["/login"]);
     }
   }
 
   shelfDropLists: CdkDropList[] = [];
+  facilityList: any[] = [];
   private initializeCityData(): void {
     // Prevent multiple initializations
     if (this.cityInitialized) return;
     this.cityInitialized = true;
+    this.logser.getallfacility(this.logser.currentuser.CityId).subscribe({
+      next: (response: any) => {
+        console.log(response);
+        this.facilityList = response;
 
+        console.log("FACILITY LIST:", this.facilityList);
+      },
+
+      error: (error) => {
+        console.error("Error loading facility information:", error);
+      },
+    });
     // Set user details
     this.userDetails = {
       currentuser: this.logser.currentuser.Username,
@@ -485,8 +508,8 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
       // Get city names
       this.logser.getcitynames().subscribe((cityData) => {
         this.processCityData(cityData);
-              this.setupCityWebSocket();
-      this.setupIntervals();
+        this.setupCityWebSocket();
+        this.setupIntervals();
       });
     });
 
@@ -496,7 +519,43 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
       this.shampooPrice = data;
     });
   }
+  isFacilityAvailable(facilityName: string): boolean {
+    const facility = this.facilityList.find(
+      (item: any) => item.Facilityname === facilityName
+    );
 
+    // Facility itself not found
+    if (!facility) {
+      this.alertModal.openModal(
+        `${facilityName} is currently unavailable.`,
+        false
+      );
+
+      return false;
+    }
+
+    // Owner not assigned
+    if (!facility.Owner_id || facility.Owner_id.trim() === "") {
+      this.alertModal.openModal(
+        `${facilityName} is currently unavailable because an owner has not been assigned.`,
+        false
+      );
+
+      return false;
+    }
+
+    // Owner assigned but inactive
+    if (facility.Owner_status.trim().toLowerCase() !== "active") {
+      this.alertModal.openModal(
+        `${facilityName} is currently unavailable because the owner is inactive.`,
+        false
+      );
+
+      return false;
+    }
+
+    return true;
+  }
   private processUserData(): void {
     $(".houselite").hide();
     for (const user of this.user) {
@@ -576,18 +635,23 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
     }, 500);
   }
 
+  // private setupIntervals(): void {
+  //   // Set up asset interval with error handling
+  //   if (!this.assetInterval) {
+  //     this.assetInterval = setInterval(async () => {
+  //       try {
+  //         await this.loadAvailableAsset();
+  //         //this.loadAvailableAsset();
+  //       } catch (error) {
+  //         console.error("Error loading assets:", error);
+  //       }
+  //     }, 9500);
+  //   }
+  // }
+
   private setupIntervals(): void {
-    // Set up asset interval with error handling
-    if (!this.assetInterval) {
-      this.assetInterval = setInterval(async () => {
-        try {
-          await this.loadAvailableAsset();
-          //this.loadAvailableAsset();
-        } catch (error) {
-          console.error("Error loading assets:", error);
-        }
-      }, 9500);
-    }
+    console.log("ASSET POLLING DISABLED");
+    this.loadAvailableAsset();
   }
   cityRuleReminderDay: number = 0;
   setTrue() {
@@ -821,36 +885,150 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
   silkyclean: any[] = [];
   damagedclean: any[] = [];
   universalclean: any[] = [];
-  loadReverseVendingBottles() {
-    for (let i = 0; i < this.assetdataset.length; i++) {
-      if (
-        this.assetdataset[i]["Bottle_loc"] == "Bottle Reverse Vending Machine"
-      ) {
-        this.array_BottleFromConveyor.push(this.assetdataset[i]);
-        this.updateonlyloc["currentbottle"] = this.assetdataset[i]["AssetId"];
-        this.updateonlyloc["Bottleloc"] = "PlantReturnTruck";
-        this.logser.updatelocation(this.updateonlyloc).subscribe(() => {
-          console.log(`Bottle location updated to ${location}`);
-        });
-      }
-    }
-  }
+  // loadReverseVendingBottles() {
+  //   console.log(
+  //     "RVM ASSETS:",
+  //     this.assetdataset.filter(
+  //       (asset: any) => asset.Bottle_loc === "Bottle Reverse Vending Machine"
+  //     )
+  //   );
 
+  //   for (let i = 0; i < this.assetdataset.length; i++) {
+  //     if (
+  //       this.assetdataset[i]["Bottle_loc"] === "Bottle Reverse Vending Machine"
+  //     ) {
+  //       console.log("COLLECTING RVM BOTTLE:", this.assetdataset[i]["AssetId"]);
+
+  //       this.array_BottleFromConveyor.push(this.assetdataset[i]);
+  //       console.log("AFTER RVM COLLECTION:", this.array_BottleFromConveyor);
+
+  //       this.updateonlyloc["currentbottle"] = this.assetdataset[i]["AssetId"];
+
+  //       this.updateonlyloc["Bottleloc"] = "PlantReturnTruck";
+
+  //       this.logser.updatelocation(this.updateonlyloc).subscribe(() => {
+  //         console.log("RVM bottle moved to PlantReturnTruck");
+  //       });
+  //     }
+  //   }
+  // }
   formatKey(key: string): string {
     return key.replace(/\s+/g, "_").replace(/([a-z])([A-Z])/g, "$1_$2");
   }
+  // collectbottlefromreturnconveyor() {
+  //   console.log(
+  //     "RETURN CONVEYOR ASSETS:",
+  //     this.assetdataset.filter(
+  //       (asset: any) => asset.Bottle_loc === "Return Conveyor"
+  //     )
+  //   );
 
-  collectbottlefromreturnconveyor() {
-    for (let i = 0; i < this.assetdataset.length; i++) {
-      if (this.assetdataset[i]["Bottle_loc"] == "Return Conveyor") {
-        this.array_BottleFromConveyor.push(this.assetdataset[i]);
-        this.updateonlyloc["currentbottle"] = this.assetdataset[i]["AssetId"];
-        this.updateonlyloc["Bottleloc"] = "PlantReturnTruck";
-        this.logser.updatelocation(this.updateonlyloc).subscribe(() => {
-          //console.log(`Bottle location updated to PlantReturnTruck`);
-        });
-      }
+  //   for (let i = 0; i < this.assetdataset.length; i++) {
+  //     if (this.assetdataset[i]["Bottle_loc"] === "Return Conveyor") {
+  //       console.log(
+  //         "COLLECTING RETURN CONVEYOR BOTTLE:",
+  //         this.assetdataset[i]["AssetId"]
+  //       );
+
+  //       this.array_BottleFromConveyor.push(this.assetdataset[i]);
+  //       console.log(
+  //         "AFTER RETURN CONVEYOR COLLECTION:",
+  //         this.array_BottleFromConveyor
+  //       );
+
+  //       this.updateonlyloc["currentbottle"] = this.assetdataset[i]["AssetId"];
+
+  //       this.updateonlyloc["Bottleloc"] = "PlantReturnTruck";
+
+  //       this.logser.updatelocation(this.updateonlyloc).subscribe(() => {
+  //         console.log("Bottle moved to PlantReturnTruck");
+  //       });
+  //     }
+  //   }
+  // }
+
+  loadReverseVendingBottles() {
+    const bottles = this.assetdataset.filter(
+      (asset: any) => asset.Bottle_loc === "Bottle Reverse Vending Machine"
+    );
+
+    // console.log("RVM ASSETS:", bottles);
+
+    if (bottles.length === 0) {
+      return;
     }
+
+    this.addBottlesToTruck(bottles);
+
+    const bottleIds = bottles.map((bottle: any) => bottle.AssetId);
+
+    const moveData = {
+      bottle_ids: bottleIds,
+      location: "PlantReturnTruck",
+    };
+
+    // console.log("BULK MOVE RVM:", moveData);
+
+    this.logser.bulkMoveBottles(moveData).subscribe({
+      next: (response: any) => {
+        //  console.log("RVM BULK MOVE SUCCESS:", response);
+
+        bottles.forEach((bottle: any) => {
+          bottle.Bottle_loc = "PlantReturnTruck";
+        });
+      },
+
+      error: (error: any) => {
+        console.error("RVM BULK MOVE FAILED:", error);
+      },
+    });
+  }
+  collectbottlefromreturnconveyor() {
+    const bottles = this.assetdataset.filter(
+      (asset: any) => asset.Bottle_loc === "Return Conveyor"
+    );
+
+    //  console.log("RETURN CONVEYOR ASSETS:", bottles);
+
+    if (bottles.length === 0) {
+      return;
+    }
+
+    this.addBottlesToTruck(bottles);
+
+    const bottleIds = bottles.map((bottle: any) => bottle.AssetId);
+
+    const moveData = {
+      bottle_ids: bottleIds,
+      location: "PlantReturnTruck",
+    };
+
+    //  console.log("BULK MOVE RETURN CONVEYOR:", moveData);
+
+    this.logser.bulkMoveBottles(moveData).subscribe({
+      next: (response: any) => {
+        console.log("RETURN CONVEYOR BULK MOVE SUCCESS:", response);
+
+        bottles.forEach((bottle: any) => {
+          bottle.Bottle_loc = "PlantReturnTruck";
+        });
+      },
+
+      error: (error: any) => {
+        console.error("RETURN CONVEYOR BULK MOVE FAILED:", error);
+      },
+    });
+  }
+  private addBottlesToTruck(bottles: any[]) {
+    bottles.forEach((bottle: any) => {
+      const alreadyExists = this.array_BottleFromConveyor.some(
+        (item: any) => item.AssetId === bottle.AssetId
+      );
+
+      if (!alreadyExists) {
+        this.array_BottleFromConveyor.push(bottle);
+      }
+    });
   }
   clearDamagedBottles() {
     // Create a temporary array to hold damaged bottles
@@ -937,59 +1115,64 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
     location: string,
     cleanArray: any[]
   ) {
-    // Create a temporary array to hold the bottles that need to be cleaned
     const bottlesToClean: any[] = [];
 
-    // Collect all bottles that match the criteria
+    // ------------------------------------------
+    // Find matching bottles
+    // ------------------------------------------
+
     this.array_BottleFromConveyor.forEach((bottle) => {
       if (
         bottle["Bottle_Code"].includes(code) &&
         bottle["Bottle_Status"].includes(status)
       ) {
-        // Add the bottle to the clean array
-        cleanArray.push(bottle);
-        // Add the bottle to the temporary array to process later
         bottlesToClean.push(bottle);
       }
     });
 
-    // Prepare an array of promises to handle all the updates asynchronously
-    const updateRequests: any[] = [];
+    if (bottlesToClean.length === 0) {
+      console.log("No bottles found for cleaning:", code);
 
-    // Iterate over the collected bottles and add the update operations
-    bottlesToClean.forEach((bottle) => {
-      // Choose the correct update method based on the code
-      const updateContent =
-        code !== "U"
-          ? this.logser.updateBrandedContent(bottle["AssetId"])
-          : this.logser.updateUBContent(bottle["AssetId"]);
+      return;
+    }
 
-      // Add the update request to the array
-      updateRequests.push(
-        updateContent.subscribe(() => {
-          // After the database update, update the bottle location
-          this.updateBottleLocation(bottle["AssetId"], location);
-        })
-      );
-    });
+    const bottleIds = bottlesToClean.map((bottle) => bottle["AssetId"]);
 
-    // Execute all the update requests in parallel and refresh the bottles list after all updates
-    Promise.all(updateRequests)
-      .then(() => {
-        // Remove the cleaned bottles from the original array after all updates
+    const cleaningData = {
+      bottle_ids: bottleIds,
+
+      location: location,
+
+      bottle_type: code,
+    };
+
+    console.log("BULK CLEAN REQUEST:", cleaningData);
+
+    this.logser.bulkCleanBottles(cleaningData).subscribe({
+      next: (response: any) => {
+        console.log("BULK CLEAN RESPONSE:", response);
+
+        // ------------------------------------------
+        // Update local clean-array only after
+        // Django confirms success
+        // ------------------------------------------
+
+        cleanArray.push(...bottlesToClean);
+
+        // Remove cleaned bottles from conveyor
         this.array_BottleFromConveyor = this.array_BottleFromConveyor.filter(
           (bottle) => !bottlesToClean.includes(bottle)
         );
 
-        // Once all updates are done, refresh the garbage bottles
+        // Rebuild displayed garbage bottles
         this.loadGarbageBottles();
-      })
-      .catch((error) => {
-        //console.error('Error updating bottles:', error);
-        // Handle error (e.g., show a message to the user)
-      });
-  }
+      },
 
+      error: (error: any) => {
+        console.error("Bulk bottle cleaning failed:", error);
+      },
+    });
+  }
   updateBottleLocation(assetId: string, location: string) {
     this.updateonlyloc["currentbottle"] = assetId;
     this.updateonlyloc["Bottleloc"] = location;
@@ -1019,34 +1202,43 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
       });
   }
 
-  // Load garbage bottles method
-
   loadGarbageBottles() {
     this.bottletoClean = [];
-    for (let y = 0; y < this.array_BottleFromConveyor.length; y++) {
-      const data = this.array_BottleFromConveyor;
-      const bottleContent = data[y]["Content_Code"].split(".")[0];
-      const assetId = data[y]["AssetId"];
 
-      if (
-        data[y]["Bottle_Code"] === "UB.V" &&
-        data[y]["Content_Code"] === "B1.Shiny"
-      ) {
-        this.bottletoClean.push(`${assetId}atU${bottleContent}`);
-      } else if (
-        data[y]["Bottle_Code"] === "UB.R" &&
-        data[y]["Content_Code"] === "B3.Bouncy"
-      ) {
-        this.bottletoClean.push(`${assetId}atU${bottleContent}`);
-      } else if (
-        data[y]["Bottle_Code"] === "UB.R" &&
-        data[y]["Content_Code"] === "B4.Wavy"
-      ) {
-        this.bottletoClean.push(`${assetId}atU1${bottleContent}`);
-      } else {
-        this.bottletoClean.push(`${assetId}at${bottleContent}`);
+    console.log("BOTTLES INSIDE TRUCK:", this.array_BottleFromConveyor);
+
+    for (let y = 0; y < this.array_BottleFromConveyor.length; y++) {
+      const bottle = this.array_BottleFromConveyor[y];
+
+      const assetId = bottle["AssetId"];
+
+      const contentCode =
+        bottle["Content_Code"] || bottle["Current_Content_Code"] || "";
+
+      const bottleCode = bottle["Bottle_Code"] || "";
+
+      const refillCount = bottle["Current_PlantRefill_Count"] || 0;
+
+      const arrayName = this.getBottleArrayName(
+        contentCode,
+        bottleCode,
+        refillCount
+      );
+
+      if (!arrayName) {
+        console.warn("Unable to create bottle class:", assetId, bottle);
+
+        continue;
       }
+
+      const bottleKey = `${assetId}at${arrayName}`;
+
+      this.bottletoClean.push(bottleKey);
+
+      console.log("TRUCK BOTTLE:", bottleKey);
     }
+
+    console.log("FINAL TRUCK BOTTLES:", this.bottletoClean);
   }
   bottletoClean: any[] = [];
 
@@ -1068,224 +1260,213 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
 
   currentlystarted = 0;
 
-  async rungarbagetruck() {
+  async runBottleCollectionTruck() {
     if (this.currentlystarted == 0) {
       this.currentlystarted = 1;
       this.playAudioElement(this.trucksound.nativeElement, 0.8);
-      this.collectbottlefromreturnconveyor();
-      this.loadGarbageBottles();
 
-      const animateElement = (
-        element: any,
-        properties: any,
-        duration: number,
-        callback: () => void
-      ) => {
-        $(element).animate(properties, duration, callback);
-      };
+      // Get the latest Asset table once before starting the garbage truck
+      this.logser.getAllAssets().subscribe({
+        next: (data: any[]) => {
+          this.assetdataset = data;
 
-      const rotateElement = (
-        element: any,
-        angle: any,
-        duration: number,
-        callback: () => void
-      ) => {
-        $(element).animate(
-          { deg: angle },
-          {
-            duration: duration,
-            step: function (now: number) {
-              $(this).css({ transform: `rotate(${-now}deg)` });
-            },
-            complete: callback,
-          }
-        );
-      };
+          console.log("LATEST ASSETS BEFORE GARBAGE TRUCK:", this.assetdataset);
+          console.log(
+            "LATEST RETURN CONVEYOR BOTTLES:",
+            this.assetdataset.filter(
+              (asset: any) => asset.Bottle_loc === "Return Conveyor"
+            )
+          );
 
-      animateElement(".bottletruck", { left: "1490px" }, 800, () => {
-        $(".bottletruck").addClass("garbagetop").removeClass("garbageside");
-        rotateElement(".bottletruck", 90, 800, () => {
-          animateElement(".bottletruck", { top: "3052px" }, 1800, () => {
-            $(".bottletruck")
-              .css({ transform: "rotate(0deg) scaleX(-1)" })
-              .addClass("garbageside")
-              .removeClass("garbagetop");
-            animateElement(".bottletruck", { left: "5223px" }, 4000, () => {
-              $(".bottletruck")
-                .css({ transform: "rotate(90deg)" })
-                .addClass("garbagetop")
-                .removeClass("garbageside");
-              animateElement(".bottletruck", { top: "2282px" }, 2200, () => {
-                this.delay(2000).then(() => {
-                  this.loadReverseVendingBottles();
-                  this.loadGarbageBottles();
+          // Now collect from the fresh asset data
+          this.collectbottlefromreturnconveyor();
+          this.loadGarbageBottles();
+
+          const animateElement = (
+            element: any,
+            properties: any,
+            duration: number,
+            callback: () => void
+          ) => {
+            $(element).animate(properties, duration, callback);
+          };
+
+          const rotateElement = (
+            element: any,
+            angle: any,
+            duration: number,
+            callback: () => void
+          ) => {
+            $(element).animate(
+              { deg: angle },
+              {
+                duration: duration,
+                step: function (now: number) {
+                  $(this).css({ transform: `rotate(${-now}deg)` });
+                },
+                complete: callback,
+              }
+            );
+          };
+
+          animateElement(".bottletruck", { left: "1490px" }, 800, () => {
+            $(".bottletruck").addClass("garbagetop").removeClass("garbageside");
+            rotateElement(".bottletruck", 90, 800, () => {
+              animateElement(".bottletruck", { top: "3052px" }, 1800, () => {
+                $(".bottletruck")
+                  .css({ transform: "rotate(0deg) scaleX(-1)" })
+                  .addClass("garbageside")
+                  .removeClass("garbagetop");
+                animateElement(".bottletruck", { left: "5223px" }, 4000, () => {
+                  $(".bottletruck")
+                    .css({ transform: "rotate(90deg)" })
+                    .addClass("garbagetop")
+                    .removeClass("garbageside");
                   animateElement(
                     ".bottletruck",
-                    { top: "1879px" },
+                    { top: "2282px" },
                     2200,
                     () => {
-                      $(".bottletruck")
-                        .css({ transform: "rotate(0deg) scaleX(1)" })
-                        .addClass("garbageside")
-                        .removeClass("garbagetop");
-                      animateElement(
-                        ".bottletruck",
-                        { left: "2699px" },
-                        4800,
-                        () => {
-                          $(".bottletruck")
-                            .css({ transform: "rotate(90deg)" })
-                            .addClass("garbagetop")
-                            .removeClass("garbageside");
-                          animateElement(
-                            ".bottletruck",
-                            { top: "950px" },
-                            1300,
-                            () => {
-                              $(".bottletruck")
-                                .css({ transform: "rotate(0deg) scaleX(1)" })
-                                .addClass("garbageside")
-                                .removeClass("garbagetop");
-                              animateElement(
-                                ".bottletruck",
-                                { left: "1857px" },
-                                3300,
-                                () => {
-                                  this.delay(100).then(() => {
-                                    this.clearDamagedBottles();
+                      this.delay(2000).then(() => {
+                        this.loadReverseVendingBottles();
+                        this.loadGarbageBottles();
+                        animateElement(
+                          ".bottletruck",
+                          { top: "1879px" },
+                          2200,
+                          () => {
+                            $(".bottletruck")
+                              .css({ transform: "rotate(0deg) scaleX(1)" })
+                              .addClass("garbageside")
+                              .removeClass("garbagetop");
+                            animateElement(
+                              ".bottletruck",
+                              { left: "2699px" },
+                              4800,
+                              () => {
+                                $(".bottletruck")
+                                  .css({ transform: "rotate(90deg)" })
+                                  .addClass("garbagetop")
+                                  .removeClass("garbageside");
+                                animateElement(
+                                  ".bottletruck",
+                                  { top: "950px" },
+                                  1300,
+                                  () => {
+                                    $(".bottletruck")
+                                      .css({
+                                        transform: "rotate(0deg) scaleX(1)",
+                                      })
+                                      .addClass("garbageside")
+                                      .removeClass("garbagetop");
+                                    animateElement(
+                                      ".bottletruck",
+                                      { left: "1857px" },
+                                      3300,
+                                      () => {
+                                        this.delay(100).then(() => {
+                                          this.clearDamagedBottles();
 
-                                    this.delay(100).then(() => {
-                                      $(".bottletruck")
-                                        .css({
-                                          transform: "rotate(0deg) scaleX(1)",
-                                        })
-                                        .addClass("garbageside")
-                                        .removeClass("garbagetop");
-                                      animateElement(
-                                        ".bottletruck",
-                                        { left: "2657px" },
-                                        3300,
-                                        () => {
-                                          $(".bottletruck")
-                                            .css({ transform: "rotate(90deg)" })
-                                            .addClass("garbagetop")
-                                            .removeClass("garbageside");
-                                          animateElement(
-                                            ".bottletruck",
-                                            { top: "482px" },
-                                            1300,
-                                            () => {
-                                              $(".bottletruck")
-                                                .css({
-                                                  transform:
-                                                    "rotate(0deg) scaleX(1)",
-                                                })
-                                                .addClass("garbageside")
-                                                .removeClass("garbagetop");
-                                              animateElement(
-                                                ".bottletruck",
-                                                { left: "1897px" },
-                                                2800,
-                                                () => {
-                                                  this.delay(300).then(() => {
-                                                    this.clearBounceBottles();
-                                                    this.delay(300).then(() => {
-                                                      animateElement(
-                                                        ".bottletruck",
-                                                        { left: "1390px" },
-                                                        2800,
-                                                        () => {
-                                                          this.delay(300).then(
-                                                            () => {
-                                                              this.clearSpikeBottles();
-                                                              this.delay(
-                                                                300
-                                                              ).then(() => {
-                                                                animateElement(
-                                                                  ".bottletruck",
-                                                                  {
-                                                                    left: "411px",
-                                                                  },
-                                                                  2800,
-                                                                  () => {
+                                          this.delay(100).then(() => {
+                                            $(".bottletruck")
+                                              .css({
+                                                transform:
+                                                  "rotate(0deg) scaleX(1)",
+                                              })
+                                              .addClass("garbageside")
+                                              .removeClass("garbagetop");
+                                            animateElement(
+                                              ".bottletruck",
+                                              { left: "2657px" },
+                                              3300,
+                                              () => {
+                                                $(".bottletruck")
+                                                  .css({
+                                                    transform: "rotate(90deg)",
+                                                  })
+                                                  .addClass("garbagetop")
+                                                  .removeClass("garbageside");
+                                                animateElement(
+                                                  ".bottletruck",
+                                                  { top: "482px" },
+                                                  1300,
+                                                  () => {
+                                                    $(".bottletruck")
+                                                      .css({
+                                                        transform:
+                                                          "rotate(0deg) scaleX(1)",
+                                                      })
+                                                      .addClass("garbageside")
+                                                      .removeClass(
+                                                        "garbagetop"
+                                                      );
+                                                    animateElement(
+                                                      ".bottletruck",
+                                                      { left: "1897px" },
+                                                      2800,
+                                                      () => {
+                                                        this.delay(300).then(
+                                                          () => {
+                                                            this.clearBounceBottles();
+                                                            this.delay(
+                                                              300
+                                                            ).then(() => {
+                                                              animateElement(
+                                                                ".bottletruck",
+                                                                {
+                                                                  left: "1390px",
+                                                                },
+                                                                2800,
+                                                                () => {
+                                                                  this.delay(
+                                                                    300
+                                                                  ).then(() => {
+                                                                    this.clearSpikeBottles();
                                                                     this.delay(
                                                                       300
                                                                     ).then(
                                                                       () => {
-                                                                        this.clearShinyBottles();
-                                                                        this.delay(
-                                                                          300
-                                                                        ).then(
+                                                                        animateElement(
+                                                                          ".bottletruck",
+                                                                          {
+                                                                            left: "411px",
+                                                                          },
+                                                                          2800,
                                                                           () => {
-                                                                            animateElement(
-                                                                              ".bottletruck",
-                                                                              {
-                                                                                left: "350px",
-                                                                              },
-                                                                              1300,
+                                                                            this.delay(
+                                                                              300
+                                                                            ).then(
                                                                               () => {
+                                                                                this.clearShinyBottles();
                                                                                 this.delay(
-                                                                                  100
+                                                                                  300
                                                                                 ).then(
                                                                                   () => {
-                                                                                    $(
-                                                                                      ".bottletruck"
-                                                                                    ).css(
-                                                                                      {
-                                                                                        transform:
-                                                                                          "scaleX(-1)",
-                                                                                      }
-                                                                                    );
                                                                                     animateElement(
                                                                                       ".bottletruck",
                                                                                       {
-                                                                                        left: "2657px",
+                                                                                        left: "350px",
                                                                                       },
-                                                                                      3700,
+                                                                                      1300,
                                                                                       () => {
-                                                                                        $(
-                                                                                          ".bottletruck"
-                                                                                        )
-                                                                                          .css(
-                                                                                            {
-                                                                                              transform:
-                                                                                                "rotate(-90deg)",
-                                                                                            }
-                                                                                          )
-                                                                                          .addClass(
-                                                                                            "garbagetop"
-                                                                                          )
-                                                                                          .removeClass(
-                                                                                            "garbageside"
-                                                                                          );
-                                                                                        animateElement(
-                                                                                          ".bottletruck",
-                                                                                          {
-                                                                                            top: "959px",
-                                                                                          },
-                                                                                          2800,
+                                                                                        this.delay(
+                                                                                          100
+                                                                                        ).then(
                                                                                           () => {
                                                                                             $(
                                                                                               ".bottletruck"
-                                                                                            )
-                                                                                              .css(
-                                                                                                {
-                                                                                                  transform:
-                                                                                                    "scaleX(-1)",
-                                                                                                }
-                                                                                              )
-                                                                                              .addClass(
-                                                                                                "garbageside"
-                                                                                              )
-                                                                                              .removeClass(
-                                                                                                "garbagetop"
-                                                                                              );
+                                                                                            ).css(
+                                                                                              {
+                                                                                                transform:
+                                                                                                  "scaleX(-1)",
+                                                                                              }
+                                                                                            );
                                                                                             animateElement(
                                                                                               ".bottletruck",
                                                                                               {
-                                                                                                left: "5150px",
+                                                                                                left: "2657px",
                                                                                               },
-                                                                                              3300,
+                                                                                              3700,
                                                                                               () => {
                                                                                                 $(
                                                                                                   ".bottletruck"
@@ -1293,7 +1474,7 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
                                                                                                   .css(
                                                                                                     {
                                                                                                       transform:
-                                                                                                        "rotate(90deg)",
+                                                                                                        "rotate(-90deg)",
                                                                                                     }
                                                                                                   )
                                                                                                   .addClass(
@@ -1305,7 +1486,7 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
                                                                                                 animateElement(
                                                                                                   ".bottletruck",
                                                                                                   {
-                                                                                                    top: "501px",
+                                                                                                    top: "959px",
                                                                                                   },
                                                                                                   2800,
                                                                                                   () => {
@@ -1315,7 +1496,7 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
                                                                                                       .css(
                                                                                                         {
                                                                                                           transform:
-                                                                                                            "rotate(0deg) scaleX(-1)",
+                                                                                                            "scaleX(-1)",
                                                                                                         }
                                                                                                       )
                                                                                                       .addClass(
@@ -1327,292 +1508,326 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
                                                                                                     animateElement(
                                                                                                       ".bottletruck",
                                                                                                       {
-                                                                                                        left: "6367px",
+                                                                                                        left: "5150px",
                                                                                                       },
-                                                                                                      2800,
+                                                                                                      3300,
                                                                                                       () => {
+                                                                                                        $(
+                                                                                                          ".bottletruck"
+                                                                                                        )
+                                                                                                          .css(
+                                                                                                            {
+                                                                                                              transform:
+                                                                                                                "rotate(90deg)",
+                                                                                                            }
+                                                                                                          )
+                                                                                                          .addClass(
+                                                                                                            "garbagetop"
+                                                                                                          )
+                                                                                                          .removeClass(
+                                                                                                            "garbageside"
+                                                                                                          );
                                                                                                         animateElement(
                                                                                                           ".bottletruck",
                                                                                                           {
-                                                                                                            left: "7292px",
+                                                                                                            top: "501px",
                                                                                                           },
                                                                                                           2800,
                                                                                                           () => {
-                                                                                                            this.delay(
-                                                                                                              200
-                                                                                                            ).then(
+                                                                                                            $(
+                                                                                                              ".bottletruck"
+                                                                                                            )
+                                                                                                              .css(
+                                                                                                                {
+                                                                                                                  transform:
+                                                                                                                    "rotate(0deg) scaleX(-1)",
+                                                                                                                }
+                                                                                                              )
+                                                                                                              .addClass(
+                                                                                                                "garbageside"
+                                                                                                              )
+                                                                                                              .removeClass(
+                                                                                                                "garbagetop"
+                                                                                                              );
+                                                                                                            animateElement(
+                                                                                                              ".bottletruck",
+                                                                                                              {
+                                                                                                                left: "6367px",
+                                                                                                              },
+                                                                                                              2800,
                                                                                                               () => {
-                                                                                                                this.clearSilkyBottles();
-                                                                                                                this.delay(
-                                                                                                                  200
-                                                                                                                ).then(
+                                                                                                                animateElement(
+                                                                                                                  ".bottletruck",
+                                                                                                                  {
+                                                                                                                    left: "7292px",
+                                                                                                                  },
+                                                                                                                  2800,
                                                                                                                   () => {
-                                                                                                                    $(
-                                                                                                                      ".bottletruck"
-                                                                                                                    ).css(
-                                                                                                                      {
-                                                                                                                        transform:
-                                                                                                                          "scaleX(1)",
-                                                                                                                      }
-                                                                                                                    );
-                                                                                                                    animateElement(
-                                                                                                                      ".bottletruck",
-                                                                                                                      {
-                                                                                                                        left: "5150px",
-                                                                                                                      },
-                                                                                                                      2800,
+                                                                                                                    this.delay(
+                                                                                                                      200
+                                                                                                                    ).then(
                                                                                                                       () => {
-                                                                                                                        const hasUBBottles =
-                                                                                                                          this.bottletoClean.some(
-                                                                                                                            (
-                                                                                                                              bottle
-                                                                                                                            ) =>
-                                                                                                                              bottle.includes(
-                                                                                                                                "atU"
-                                                                                                                              )
-                                                                                                                          );
-
-                                                                                                                        if (
-                                                                                                                          hasUBBottles
-                                                                                                                        ) {
-                                                                                                                          $(
-                                                                                                                            ".bottletruck"
-                                                                                                                          )
-                                                                                                                            .css(
+                                                                                                                        this.clearSilkyBottles();
+                                                                                                                        this.delay(
+                                                                                                                          200
+                                                                                                                        ).then(
+                                                                                                                          () => {
+                                                                                                                            $(
+                                                                                                                              ".bottletruck"
+                                                                                                                            ).css(
                                                                                                                               {
                                                                                                                                 transform:
-                                                                                                                                  "rotate(-90deg)",
+                                                                                                                                  "scaleX(1)",
                                                                                                                               }
-                                                                                                                            )
-                                                                                                                            .addClass(
-                                                                                                                              "garbagetop"
-                                                                                                                            )
-                                                                                                                            .removeClass(
-                                                                                                                              "garbageside"
                                                                                                                             );
-                                                                                                                          animateElement(
-                                                                                                                            ".bottletruck",
-                                                                                                                            {
-                                                                                                                              top: "1556px",
-                                                                                                                            },
-                                                                                                                            2800,
-                                                                                                                            () => {
-                                                                                                                              $(
-                                                                                                                                ".bottletruck"
-                                                                                                                              )
-                                                                                                                                .css(
-                                                                                                                                  {
-                                                                                                                                    transform:
-                                                                                                                                      "rotate(0deg) scaleX(1)",
-                                                                                                                                  }
-                                                                                                                                )
-                                                                                                                                .addClass(
-                                                                                                                                  "garbageside"
-                                                                                                                                )
-                                                                                                                                .removeClass(
-                                                                                                                                  "garbagetop"
-                                                                                                                                );
-                                                                                                                              animateElement(
-                                                                                                                                ".bottletruck",
-                                                                                                                                {
-                                                                                                                                  left: "4020px",
-                                                                                                                                },
-                                                                                                                                2200,
-                                                                                                                                () => {
-                                                                                                                                  this.delay(
-                                                                                                                                    300
-                                                                                                                                  ).then(
-                                                                                                                                    () => {
-                                                                                                                                      this.loadGarbageBottles();
+                                                                                                                            animateElement(
+                                                                                                                              ".bottletruck",
+                                                                                                                              {
+                                                                                                                                left: "5150px",
+                                                                                                                              },
+                                                                                                                              2800,
+                                                                                                                              () => {
+                                                                                                                                const hasUBBottles =
+                                                                                                                                  this.bottletoClean.some(
+                                                                                                                                    (
+                                                                                                                                      bottle: string
+                                                                                                                                    ) =>
+                                                                                                                                      this.isUniversalTruckBottle(
+                                                                                                                                        bottle
+                                                                                                                                      )
+                                                                                                                                  );
 
+                                                                                                                                console.log(
+                                                                                                                                  "HAS UNIVERSAL BOTTLES:",
+                                                                                                                                  hasUBBottles
+                                                                                                                                );
+
+                                                                                                                                if (
+                                                                                                                                  hasUBBottles
+                                                                                                                                ) {
+                                                                                                                                  $(
+                                                                                                                                    ".bottletruck"
+                                                                                                                                  )
+                                                                                                                                    .css(
+                                                                                                                                      {
+                                                                                                                                        transform:
+                                                                                                                                          "rotate(-90deg)",
+                                                                                                                                      }
+                                                                                                                                    )
+                                                                                                                                    .addClass(
+                                                                                                                                      "garbagetop"
+                                                                                                                                    )
+                                                                                                                                    .removeClass(
+                                                                                                                                      "garbageside"
+                                                                                                                                    );
+                                                                                                                                  animateElement(
+                                                                                                                                    ".bottletruck",
+                                                                                                                                    {
+                                                                                                                                      top: "1556px",
+                                                                                                                                    },
+                                                                                                                                    2800,
+                                                                                                                                    () => {
+                                                                                                                                      $(
+                                                                                                                                        ".bottletruck"
+                                                                                                                                      )
+                                                                                                                                        .css(
+                                                                                                                                          {
+                                                                                                                                            transform:
+                                                                                                                                              "rotate(0deg) scaleX(1)",
+                                                                                                                                          }
+                                                                                                                                        )
+                                                                                                                                        .addClass(
+                                                                                                                                          "garbageside"
+                                                                                                                                        )
+                                                                                                                                        .removeClass(
+                                                                                                                                          "garbagetop"
+                                                                                                                                        );
                                                                                                                                       animateElement(
-                                                                                                                                        ".bottleWrapper",
+                                                                                                                                        ".bottletruck",
                                                                                                                                         {
-                                                                                                                                          width:
-                                                                                                                                            "100%",
+                                                                                                                                          left: "4020px",
                                                                                                                                         },
-                                                                                                                                        1300,
+                                                                                                                                        2200,
                                                                                                                                         () => {
                                                                                                                                           this.delay(
-                                                                                                                                            100
+                                                                                                                                            300
                                                                                                                                           ).then(
                                                                                                                                             () => {
+                                                                                                                                              this.loadGarbageBottles();
+
                                                                                                                                               animateElement(
                                                                                                                                                 ".bottleWrapper",
                                                                                                                                                 {
-                                                                                                                                                  left: "-5px",
-                                                                                                                                                  top: "-202px",
+                                                                                                                                                  width:
+                                                                                                                                                    "100%",
                                                                                                                                                 },
-                                                                                                                                                6000,
+                                                                                                                                                1300,
                                                                                                                                                 () => {
-                                                                                                                                                  animateElement(
-                                                                                                                                                    ".bottleWrapper",
-                                                                                                                                                    {
-                                                                                                                                                      left: "-135px",
-                                                                                                                                                      opacity:
-                                                                                                                                                        "0",
-                                                                                                                                                    },
-                                                                                                                                                    2800,
+                                                                                                                                                  this.delay(
+                                                                                                                                                    100
+                                                                                                                                                  ).then(
                                                                                                                                                     () => {
-                                                                                                                                                      for (let bottle of this
-                                                                                                                                                        .bottletoClean) {
-                                                                                                                                                        if (
-                                                                                                                                                          bottle.includes(
-                                                                                                                                                            "U"
-                                                                                                                                                          )
-                                                                                                                                                        ) {
-                                                                                                                                                          $(
-                                                                                                                                                            `#${bottle}`
-                                                                                                                                                          )
-                                                                                                                                                            .removeClass()
-                                                                                                                                                            .addClass(
-                                                                                                                                                              "universalbottleimg bottle"
-                                                                                                                                                            );
-                                                                                                                                                          this.logser
-                                                                                                                                                            .updateUBContent(
-                                                                                                                                                              bottle.split(
-                                                                                                                                                                "at"
-                                                                                                                                                              )[0]
-                                                                                                                                                            )
-                                                                                                                                                            .subscribe();
-                                                                                                                                                        }
-                                                                                                                                                      }
-
                                                                                                                                                       animateElement(
                                                                                                                                                         ".bottleWrapper",
                                                                                                                                                         {
-                                                                                                                                                          left: "-498px",
-                                                                                                                                                          opacity:
-                                                                                                                                                            "1",
+                                                                                                                                                          left: "-5px",
+                                                                                                                                                          top: "-202px",
                                                                                                                                                         },
-                                                                                                                                                        2800,
+                                                                                                                                                        6000,
                                                                                                                                                         () => {
                                                                                                                                                           animateElement(
                                                                                                                                                             ".bottleWrapper",
                                                                                                                                                             {
-                                                                                                                                                              left: "80px",
-                                                                                                                                                              top: "-23px",
+                                                                                                                                                              left: "-135px",
+                                                                                                                                                              opacity:
+                                                                                                                                                                "0",
                                                                                                                                                             },
                                                                                                                                                             2800,
                                                                                                                                                             () => {
+                                                                                                                                                              for (let bottle of this
+                                                                                                                                                                .bottletoClean) {
+                                                                                                                                                                if (
+                                                                                                                                                                  this.isUniversalTruckBottle(
+                                                                                                                                                                    bottle
+                                                                                                                                                                  )
+                                                                                                                                                                ) {
+                                                                                                                                                                  console.log(
+                                                                                                                                                                    "CLEANING UNIVERSAL BOTTLE:",
+                                                                                                                                                                    bottle
+                                                                                                                                                                  );
+
+                                                                                                                                                                  $(
+                                                                                                                                                                    `#${bottle}`
+                                                                                                                                                                  )
+                                                                                                                                                                    .removeClass()
+                                                                                                                                                                    .addClass(
+                                                                                                                                                                      "universalbottleimg bottle"
+                                                                                                                                                                    );
+
+                                                                                                                                                                  this.logser
+                                                                                                                                                                    .updateUBContent(
+                                                                                                                                                                      bottle.split(
+                                                                                                                                                                        "at"
+                                                                                                                                                                      )[0]
+                                                                                                                                                                    )
+                                                                                                                                                                    .subscribe(
+                                                                                                                                                                      {
+                                                                                                                                                                        next: () => {
+                                                                                                                                                                          console.log(
+                                                                                                                                                                            "UNIVERSAL BOTTLE CLEANED:",
+                                                                                                                                                                            bottle
+                                                                                                                                                                          );
+                                                                                                                                                                        },
+                                                                                                                                                                        error:
+                                                                                                                                                                          (
+                                                                                                                                                                            error: any
+                                                                                                                                                                          ) => {
+                                                                                                                                                                            console.error(
+                                                                                                                                                                              "UNIVERSAL BOTTLE CLEAN ERROR:",
+                                                                                                                                                                              bottle,
+                                                                                                                                                                              error
+                                                                                                                                                                            );
+                                                                                                                                                                          },
+                                                                                                                                                                      }
+                                                                                                                                                                    );
+                                                                                                                                                                }
+                                                                                                                                                              }
+
                                                                                                                                                               animateElement(
                                                                                                                                                                 ".bottleWrapper",
                                                                                                                                                                 {
-                                                                                                                                                                  width:
-                                                                                                                                                                    "65%",
+                                                                                                                                                                  left: "-498px",
+                                                                                                                                                                  opacity:
+                                                                                                                                                                    "1",
                                                                                                                                                                 },
-                                                                                                                                                                1300,
+                                                                                                                                                                2800,
                                                                                                                                                                 () => {
-                                                                                                                                                                  this.delay(
-                                                                                                                                                                    100
-                                                                                                                                                                  ).then(
+                                                                                                                                                                  animateElement(
+                                                                                                                                                                    ".bottleWrapper",
+                                                                                                                                                                    {
+                                                                                                                                                                      left: "80px",
+                                                                                                                                                                      top: "-23px",
+                                                                                                                                                                    },
+                                                                                                                                                                    2800,
                                                                                                                                                                     () => {
-                                                                                                                                                                      this.applyTransform(
-                                                                                                                                                                        ".bottletruck",
-                                                                                                                                                                        "scaleX(-1)"
-                                                                                                                                                                      );
                                                                                                                                                                       animateElement(
-                                                                                                                                                                        ".bottletruck",
+                                                                                                                                                                        ".bottleWrapper",
                                                                                                                                                                         {
-                                                                                                                                                                          left: "5150px",
+                                                                                                                                                                          width:
+                                                                                                                                                                            "65%",
                                                                                                                                                                         },
-                                                                                                                                                                        3300,
+                                                                                                                                                                        1300,
                                                                                                                                                                         () => {
-                                                                                                                                                                          this.applyTransform(
-                                                                                                                                                                            ".bottletruck",
-                                                                                                                                                                            "rotate(90deg)"
-                                                                                                                                                                          );
-                                                                                                                                                                          $(
-                                                                                                                                                                            ".bottletruck"
-                                                                                                                                                                          )
-                                                                                                                                                                            .addClass(
-                                                                                                                                                                              "garbagetop"
-                                                                                                                                                                            )
-                                                                                                                                                                            .removeClass(
-                                                                                                                                                                              "garbageside"
-                                                                                                                                                                            );
-                                                                                                                                                                          animateElement(
-                                                                                                                                                                            ".bottletruck",
-                                                                                                                                                                            {
-                                                                                                                                                                              top: "501px",
-                                                                                                                                                                            },
-                                                                                                                                                                            4000,
+                                                                                                                                                                          this.delay(
+                                                                                                                                                                            100
+                                                                                                                                                                          ).then(
                                                                                                                                                                             () => {
                                                                                                                                                                               this.applyTransform(
                                                                                                                                                                                 ".bottletruck",
-                                                                                                                                                                                "rotate(0deg) scaleX(-1)"
+                                                                                                                                                                                "scaleX(-1)"
                                                                                                                                                                               );
-                                                                                                                                                                              $(
-                                                                                                                                                                                ".bottletruck"
-                                                                                                                                                                              )
-                                                                                                                                                                                .addClass(
-                                                                                                                                                                                  "garbageside"
-                                                                                                                                                                                )
-                                                                                                                                                                                .removeClass(
-                                                                                                                                                                                  "garbagetop"
-                                                                                                                                                                                );
                                                                                                                                                                               animateElement(
                                                                                                                                                                                 ".bottletruck",
                                                                                                                                                                                 {
-                                                                                                                                                                                  left: "5683px",
+                                                                                                                                                                                  left: "5150px",
                                                                                                                                                                                 },
-                                                                                                                                                                                1000,
+                                                                                                                                                                                3300,
                                                                                                                                                                                 () => {
-                                                                                                                                                                                  this.clearUniversalBottles();
-                                                                                                                                                                                  this.delay(
-                                                                                                                                                                                    200
-                                                                                                                                                                                  ).then(
+                                                                                                                                                                                  this.applyTransform(
+                                                                                                                                                                                    ".bottletruck",
+                                                                                                                                                                                    "rotate(90deg)"
+                                                                                                                                                                                  );
+                                                                                                                                                                                  $(
+                                                                                                                                                                                    ".bottletruck"
+                                                                                                                                                                                  )
+                                                                                                                                                                                    .addClass(
+                                                                                                                                                                                      "garbagetop"
+                                                                                                                                                                                    )
+                                                                                                                                                                                    .removeClass(
+                                                                                                                                                                                      "garbageside"
+                                                                                                                                                                                    );
+                                                                                                                                                                                  animateElement(
+                                                                                                                                                                                    ".bottletruck",
+                                                                                                                                                                                    {
+                                                                                                                                                                                      top: "501px",
+                                                                                                                                                                                    },
+                                                                                                                                                                                    4000,
                                                                                                                                                                                     () => {
                                                                                                                                                                                       this.applyTransform(
                                                                                                                                                                                         ".bottletruck",
-                                                                                                                                                                                        "scaleX(1)"
+                                                                                                                                                                                        "rotate(0deg) scaleX(-1)"
                                                                                                                                                                                       );
+                                                                                                                                                                                      $(
+                                                                                                                                                                                        ".bottletruck"
+                                                                                                                                                                                      )
+                                                                                                                                                                                        .addClass(
+                                                                                                                                                                                          "garbageside"
+                                                                                                                                                                                        )
+                                                                                                                                                                                        .removeClass(
+                                                                                                                                                                                          "garbagetop"
+                                                                                                                                                                                        );
                                                                                                                                                                                       animateElement(
                                                                                                                                                                                         ".bottletruck",
                                                                                                                                                                                         {
-                                                                                                                                                                                          left: "5152px",
+                                                                                                                                                                                          left: "5683px",
                                                                                                                                                                                         },
-                                                                                                                                                                                        3300,
+                                                                                                                                                                                        1000,
                                                                                                                                                                                         () => {
-                                                                                                                                                                                          this.applyTransform(
-                                                                                                                                                                                            ".bottletruck",
-                                                                                                                                                                                            "rotate(-90deg)"
-                                                                                                                                                                                          );
-                                                                                                                                                                                          $(
-                                                                                                                                                                                            ".bottletruck"
-                                                                                                                                                                                          )
-                                                                                                                                                                                            .addClass(
-                                                                                                                                                                                              "garbagetop"
-                                                                                                                                                                                            )
-                                                                                                                                                                                            .removeClass(
-                                                                                                                                                                                              "garbageside"
-                                                                                                                                                                                            );
-                                                                                                                                                                                          animateElement(
-                                                                                                                                                                                            ".bottletruck",
-                                                                                                                                                                                            {
-                                                                                                                                                                                              top: "935px",
-                                                                                                                                                                                            },
-                                                                                                                                                                                            1300,
+                                                                                                                                                                                          this.clearUniversalBottles();
+                                                                                                                                                                                          this.delay(
+                                                                                                                                                                                            200
+                                                                                                                                                                                          ).then(
                                                                                                                                                                                             () => {
                                                                                                                                                                                               this.applyTransform(
                                                                                                                                                                                                 ".bottletruck",
-                                                                                                                                                                                                "rotate(0deg)"
+                                                                                                                                                                                                "scaleX(1)"
                                                                                                                                                                                               );
-                                                                                                                                                                                              $(
-                                                                                                                                                                                                ".bottletruck"
-                                                                                                                                                                                              )
-                                                                                                                                                                                                .addClass(
-                                                                                                                                                                                                  "garbageside"
-                                                                                                                                                                                                )
-                                                                                                                                                                                                .removeClass(
-                                                                                                                                                                                                  "garbagetop"
-                                                                                                                                                                                                );
                                                                                                                                                                                               animateElement(
                                                                                                                                                                                                 ".bottletruck",
                                                                                                                                                                                                 {
-                                                                                                                                                                                                  left: "2635px",
+                                                                                                                                                                                                  left: "5152px",
                                                                                                                                                                                                 },
-                                                                                                                                                                                                3000,
+                                                                                                                                                                                                3300,
                                                                                                                                                                                                 () => {
                                                                                                                                                                                                   this.applyTransform(
                                                                                                                                                                                                     ".bottletruck",
@@ -1630,9 +1845,9 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
                                                                                                                                                                                                   animateElement(
                                                                                                                                                                                                     ".bottletruck",
                                                                                                                                                                                                     {
-                                                                                                                                                                                                      top: "3031px",
+                                                                                                                                                                                                      top: "935px",
                                                                                                                                                                                                     },
-                                                                                                                                                                                                    3000,
+                                                                                                                                                                                                    1300,
                                                                                                                                                                                                     () => {
                                                                                                                                                                                                       this.applyTransform(
                                                                                                                                                                                                         ".bottletruck",
@@ -1650,13 +1865,13 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
                                                                                                                                                                                                       animateElement(
                                                                                                                                                                                                         ".bottletruck",
                                                                                                                                                                                                         {
-                                                                                                                                                                                                          left: "1462px",
+                                                                                                                                                                                                          left: "2635px",
                                                                                                                                                                                                         },
-                                                                                                                                                                                                        6000,
+                                                                                                                                                                                                        3000,
                                                                                                                                                                                                         () => {
                                                                                                                                                                                                           this.applyTransform(
                                                                                                                                                                                                             ".bottletruck",
-                                                                                                                                                                                                            "rotate(90deg)"
+                                                                                                                                                                                                            "rotate(-90deg)"
                                                                                                                                                                                                           );
                                                                                                                                                                                                           $(
                                                                                                                                                                                                             ".bottletruck"
@@ -1670,9 +1885,9 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
                                                                                                                                                                                                           animateElement(
                                                                                                                                                                                                             ".bottletruck",
                                                                                                                                                                                                             {
-                                                                                                                                                                                                              top: "2768px",
+                                                                                                                                                                                                              top: "3031px",
                                                                                                                                                                                                             },
-                                                                                                                                                                                                            2000,
+                                                                                                                                                                                                            3000,
                                                                                                                                                                                                             () => {
                                                                                                                                                                                                               this.applyTransform(
                                                                                                                                                                                                                 ".bottletruck",
@@ -1690,11 +1905,55 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
                                                                                                                                                                                                               animateElement(
                                                                                                                                                                                                                 ".bottletruck",
                                                                                                                                                                                                                 {
-                                                                                                                                                                                                                  left: "1934px",
+                                                                                                                                                                                                                  left: "1462px",
                                                                                                                                                                                                                 },
-                                                                                                                                                                                                                2000,
+                                                                                                                                                                                                                6000,
                                                                                                                                                                                                                 () => {
-                                                                                                                                                                                                                  this.currentlystarted = 0;
+                                                                                                                                                                                                                  this.applyTransform(
+                                                                                                                                                                                                                    ".bottletruck",
+                                                                                                                                                                                                                    "rotate(90deg)"
+                                                                                                                                                                                                                  );
+                                                                                                                                                                                                                  $(
+                                                                                                                                                                                                                    ".bottletruck"
+                                                                                                                                                                                                                  )
+                                                                                                                                                                                                                    .addClass(
+                                                                                                                                                                                                                      "garbagetop"
+                                                                                                                                                                                                                    )
+                                                                                                                                                                                                                    .removeClass(
+                                                                                                                                                                                                                      "garbageside"
+                                                                                                                                                                                                                    );
+                                                                                                                                                                                                                  animateElement(
+                                                                                                                                                                                                                    ".bottletruck",
+                                                                                                                                                                                                                    {
+                                                                                                                                                                                                                      top: "2768px",
+                                                                                                                                                                                                                    },
+                                                                                                                                                                                                                    2000,
+                                                                                                                                                                                                                    () => {
+                                                                                                                                                                                                                      this.applyTransform(
+                                                                                                                                                                                                                        ".bottletruck",
+                                                                                                                                                                                                                        "rotate(0deg)"
+                                                                                                                                                                                                                      );
+                                                                                                                                                                                                                      $(
+                                                                                                                                                                                                                        ".bottletruck"
+                                                                                                                                                                                                                      )
+                                                                                                                                                                                                                        .addClass(
+                                                                                                                                                                                                                          "garbageside"
+                                                                                                                                                                                                                        )
+                                                                                                                                                                                                                        .removeClass(
+                                                                                                                                                                                                                          "garbagetop"
+                                                                                                                                                                                                                        );
+                                                                                                                                                                                                                      animateElement(
+                                                                                                                                                                                                                        ".bottletruck",
+                                                                                                                                                                                                                        {
+                                                                                                                                                                                                                          left: "1934px",
+                                                                                                                                                                                                                        },
+                                                                                                                                                                                                                        2000,
+                                                                                                                                                                                                                        () => {
+                                                                                                                                                                                                                          this.currentlystarted = 0;
+                                                                                                                                                                                                                        }
+                                                                                                                                                                                                                      );
+                                                                                                                                                                                                                    }
+                                                                                                                                                                                                                  );
                                                                                                                                                                                                                 }
                                                                                                                                                                                                               );
                                                                                                                                                                                                             }
@@ -1735,51 +1994,7 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
                                                                                                                                       );
                                                                                                                                     }
                                                                                                                                   );
-                                                                                                                                }
-                                                                                                                              );
-                                                                                                                            }
-                                                                                                                          );
-                                                                                                                        } else {
-                                                                                                                          this.applyTransform(
-                                                                                                                            ".bottletruck",
-                                                                                                                            "rotate(-90deg)"
-                                                                                                                          );
-                                                                                                                          $(
-                                                                                                                            ".bottletruck"
-                                                                                                                          )
-                                                                                                                            .addClass(
-                                                                                                                              "garbagetop"
-                                                                                                                            )
-                                                                                                                            .removeClass(
-                                                                                                                              "garbageside"
-                                                                                                                            );
-                                                                                                                          animateElement(
-                                                                                                                            ".bottletruck",
-                                                                                                                            {
-                                                                                                                              top: "935px",
-                                                                                                                            },
-                                                                                                                            1300,
-                                                                                                                            () => {
-                                                                                                                              this.applyTransform(
-                                                                                                                                ".bottletruck",
-                                                                                                                                "rotate(0deg)"
-                                                                                                                              );
-                                                                                                                              $(
-                                                                                                                                ".bottletruck"
-                                                                                                                              )
-                                                                                                                                .addClass(
-                                                                                                                                  "garbageside"
-                                                                                                                                )
-                                                                                                                                .removeClass(
-                                                                                                                                  "garbagetop"
-                                                                                                                                );
-                                                                                                                              animateElement(
-                                                                                                                                ".bottletruck",
-                                                                                                                                {
-                                                                                                                                  left: "2635px",
-                                                                                                                                },
-                                                                                                                                3000,
-                                                                                                                                () => {
+                                                                                                                                } else {
                                                                                                                                   this.applyTransform(
                                                                                                                                     ".bottletruck",
                                                                                                                                     "rotate(-90deg)"
@@ -1796,9 +2011,9 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
                                                                                                                                   animateElement(
                                                                                                                                     ".bottletruck",
                                                                                                                                     {
-                                                                                                                                      top: "3031px",
+                                                                                                                                      top: "935px",
                                                                                                                                     },
-                                                                                                                                    3000,
+                                                                                                                                    1300,
                                                                                                                                     () => {
                                                                                                                                       this.applyTransform(
                                                                                                                                         ".bottletruck",
@@ -1816,13 +2031,13 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
                                                                                                                                       animateElement(
                                                                                                                                         ".bottletruck",
                                                                                                                                         {
-                                                                                                                                          left: "1462px",
+                                                                                                                                          left: "2635px",
                                                                                                                                         },
-                                                                                                                                        6000,
+                                                                                                                                        3000,
                                                                                                                                         () => {
                                                                                                                                           this.applyTransform(
                                                                                                                                             ".bottletruck",
-                                                                                                                                            "rotate(90deg)"
+                                                                                                                                            "rotate(-90deg)"
                                                                                                                                           );
                                                                                                                                           $(
                                                                                                                                             ".bottletruck"
@@ -1836,9 +2051,9 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
                                                                                                                                           animateElement(
                                                                                                                                             ".bottletruck",
                                                                                                                                             {
-                                                                                                                                              top: "2768px",
+                                                                                                                                              top: "3031px",
                                                                                                                                             },
-                                                                                                                                            2000,
+                                                                                                                                            3000,
                                                                                                                                             () => {
                                                                                                                                               this.applyTransform(
                                                                                                                                                 ".bottletruck",
@@ -1856,11 +2071,55 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
                                                                                                                                               animateElement(
                                                                                                                                                 ".bottletruck",
                                                                                                                                                 {
-                                                                                                                                                  left: "1934px",
+                                                                                                                                                  left: "1462px",
                                                                                                                                                 },
-                                                                                                                                                2000,
+                                                                                                                                                6000,
                                                                                                                                                 () => {
-                                                                                                                                                  this.currentlystarted = 0;
+                                                                                                                                                  this.applyTransform(
+                                                                                                                                                    ".bottletruck",
+                                                                                                                                                    "rotate(90deg)"
+                                                                                                                                                  );
+                                                                                                                                                  $(
+                                                                                                                                                    ".bottletruck"
+                                                                                                                                                  )
+                                                                                                                                                    .addClass(
+                                                                                                                                                      "garbagetop"
+                                                                                                                                                    )
+                                                                                                                                                    .removeClass(
+                                                                                                                                                      "garbageside"
+                                                                                                                                                    );
+                                                                                                                                                  animateElement(
+                                                                                                                                                    ".bottletruck",
+                                                                                                                                                    {
+                                                                                                                                                      top: "2768px",
+                                                                                                                                                    },
+                                                                                                                                                    2000,
+                                                                                                                                                    () => {
+                                                                                                                                                      this.applyTransform(
+                                                                                                                                                        ".bottletruck",
+                                                                                                                                                        "rotate(0deg)"
+                                                                                                                                                      );
+                                                                                                                                                      $(
+                                                                                                                                                        ".bottletruck"
+                                                                                                                                                      )
+                                                                                                                                                        .addClass(
+                                                                                                                                                          "garbageside"
+                                                                                                                                                        )
+                                                                                                                                                        .removeClass(
+                                                                                                                                                          "garbagetop"
+                                                                                                                                                        );
+                                                                                                                                                      animateElement(
+                                                                                                                                                        ".bottletruck",
+                                                                                                                                                        {
+                                                                                                                                                          left: "1934px",
+                                                                                                                                                        },
+                                                                                                                                                        2000,
+                                                                                                                                                        () => {
+                                                                                                                                                          this.currentlystarted = 0;
+                                                                                                                                                        }
+                                                                                                                                                      );
+                                                                                                                                                    }
+                                                                                                                                                  );
                                                                                                                                                 }
                                                                                                                                               );
                                                                                                                                             }
@@ -1870,10 +2129,10 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
                                                                                                                                     }
                                                                                                                                   );
                                                                                                                                 }
-                                                                                                                              );
-                                                                                                                            }
-                                                                                                                          );
-                                                                                                                        }
+                                                                                                                              }
+                                                                                                                            );
+                                                                                                                          }
+                                                                                                                        );
                                                                                                                       }
                                                                                                                     );
                                                                                                                   }
@@ -1900,36 +2159,41 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
                                                                         );
                                                                       }
                                                                     );
-                                                                  }
-                                                                );
-                                                              });
-                                                            }
-                                                          );
-                                                        }
-                                                      );
-                                                    });
-                                                  });
-                                                }
-                                              );
-                                            }
-                                          );
-                                        }
-                                      );
-                                    });
-                                  });
-                                }
-                              );
-                            }
-                          );
-                        }
-                      );
+                                                                  });
+                                                                }
+                                                              );
+                                                            });
+                                                          }
+                                                        );
+                                                      }
+                                                    );
+                                                  }
+                                                );
+                                              }
+                                            );
+                                          });
+                                        });
+                                      }
+                                    );
+                                  }
+                                );
+                              }
+                            );
+                          }
+                        );
+                      });
                     }
                   );
                 });
               });
             });
           });
-        });
+        },
+
+        error: (error: any) => {
+          console.error("FAILED TO LOAD ASSETS BEFORE GARBAGE TRUCK:", error);
+          this.currentlystarted = 0;
+        },
       });
     } else {
       this.alertModal.openModal(
@@ -1937,6 +2201,16 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
       );
     }
     console.log("  this.currentlystarted " + this.currentlystarted);
+  }
+
+  private isUniversalTruckBottle(bottleKey: string): boolean {
+    const assetId = bottleKey.split("at")[0];
+
+    const asset = this.assetdataset.find(
+      (item: any) => item.AssetId === assetId
+    );
+
+    return asset?.Bottle_Code?.startsWith("UB") ?? false;
   }
   totalReturnedBottles: any[] = [];
   maxRefill: string = "";
@@ -2008,37 +2282,62 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
     isDragged: boolean,
     bottleloc: string
   ) {
-    // 🔐 SAFETY
-    if (!contentCode || !contentCode.includes(".")) {
-      console.warn("Invalid Content_Code", contentCode, key);
+    const arrayName = this.getBottleArrayName(
+      contentCode,
+      bottleCode,
+      refillCount
+    );
+
+    if (!arrayName) {
       return;
     }
 
-    const content = contentCode.split(".")[1].toLowerCase();
-
-    const isUB = bottleCode?.startsWith("UB");
-    const isV = bottleCode?.endsWith("V");
-    const isRefill = refillCount > 0;
-
-    let suffix = "";
-    if (isUB) suffix += "u";
-    suffix += isV ? "v" : "r";
-    suffix += isRefill ? "pr" : "pn";
-
-    const arrayName = `${content}${suffix}`;
     const modifiedKey = `${key}at${arrayName}`;
 
-    // ✅ ALWAYS STORE
     this.modifiedKeyMap[key] = modifiedKey;
 
-    // 🚦 Only control pushing into arrays
-    if (isDragged || bottleloc !== "Supermarket shelf") return;
+    if (isDragged || bottleloc !== "Supermarket shelf") {
+      return;
+    }
 
     if ((this as any)[arrayName]) {
       (this as any)[arrayName].push(modifiedKey);
     }
   }
+  private getBottleArrayName(
+    contentCode: string,
+    bottleCode: string,
+    refillCount: number
+  ): string {
+    const isUB = bottleCode?.startsWith("UB");
 
+    // Clean Universal Bottle:
+    // Content_Code is intentionally removed after cleaning
+    if (isUB && !contentCode) {
+      return "";
+    }
+
+    if (!contentCode || !contentCode.includes(".")) {
+      console.warn("Invalid Content_Code:", contentCode, bottleCode);
+      return "";
+    }
+
+    const content = contentCode.split(".")[1].toLowerCase();
+
+    const isV = bottleCode?.endsWith("V");
+    const isRefill = Number(refillCount) > 0;
+
+    let suffix = "";
+
+    if (isUB) {
+      suffix += "u";
+    }
+
+    suffix += isV ? "v" : "r";
+    suffix += isRefill ? "pr" : "pn";
+
+    return `${content}${suffix}`;
+  }
   async loadAvailableAsset() {
     if (
       this.logser.currentuser.Username != "" &&
@@ -2131,13 +2430,178 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
       });
     }
   }
+  private handleAssetUpdate(asset: any): void {
+    console.log("Handling single asset update:", asset);
+
+    const assetIndex = this.assetdataset.findIndex(
+      (item: any) => item.AssetId === asset.AssetId
+    );
+
+    let updatedAsset: any;
+
+    if (assetIndex !== -1) {
+      // Merge websocket changes with existing complete asset
+      updatedAsset = {
+        ...this.assetdataset[assetIndex],
+        ...asset,
+      };
+
+      this.assetdataset[assetIndex] = updatedAsset;
+    } else {
+      updatedAsset = asset;
+      this.assetdataset.push(updatedAsset);
+    }
+
+    // IMPORTANT:
+    // From here onward use updatedAsset, NOT asset
+
+    const isDragged = updatedAsset.dragged;
+
+    const bottleloc = updatedAsset.Bottle_loc;
+
+    const isPurchased = updatedAsset.purchased;
+
+    const bottle_status = updatedAsset.Bottle_Status;
+
+    const bottle_remquantity = Number(updatedAsset.remQuantity || 0);
+
+    const contentCode = updatedAsset.Content_Code;
+
+    const bottleCode = updatedAsset.Bottle_Code;
+
+    const refillCount = Number(updatedAsset.Current_PlantRefill_Count || 0);
+
+    const key = "City" + updatedAsset.AssetId;
+
+    const oldModifiedKey = this.modifiedKeyMap[key];
+
+    // Remove bottle from its previous location/array
+    this.removeAssetFromArrays(oldModifiedKey, updatedAsset.AssetId);
+
+    // Build correct modified key
+    this.pushToContentArray(
+      contentCode,
+      bottleCode,
+      refillCount,
+      key,
+      isDragged,
+      bottleloc
+    );
+
+    const finalKey = this.modifiedKeyMap[key];
+
+    // Put bottle into correct current location array
+    this.updateobjects(
+      finalKey,
+      isDragged,
+      isPurchased,
+      bottleloc,
+      bottle_status,
+      bottle_remquantity
+    );
+  }
+
+  private removeAssetFromArrays(
+    oldModifiedKey: string | undefined,
+    assetId: string
+  ): void {
+    if (!oldModifiedKey) {
+      return;
+    }
+
+    const arraysToCheck = [
+      "shinyvpn",
+      "shinyvpr",
+      "shinyrpn",
+      "shinyrpr",
+      "shinyuvpn",
+      "shinyuvpr",
+      "shinyurpn",
+      "shinyurpr",
+
+      "spikyvpn",
+      "spikyvpr",
+      "spikyrpn",
+      "spikyrpr",
+      "spikyuvpn",
+      "spikyuvpr",
+      "spikyurpn",
+      "spikyurpr",
+
+      "silkyvpn",
+      "silkyvpr",
+      "silkyrpn",
+      "silkyrpr",
+      "silkyuvpn",
+      "silkyuvpr",
+      "silkyurpn",
+      "silkyurpr",
+
+      "bouncyvpn",
+      "bouncyvpr",
+      "bouncyrpn",
+      "bouncyrpr",
+      "bouncyuvpn",
+      "bouncyuvpr",
+      "bouncyurpn",
+      "bouncyurpr",
+
+      "wavyvpn",
+      "wavyvpr",
+      "wavyrpn",
+      "wavyrpr",
+      "wavyuvpn",
+      "wavyuvpr",
+      "wavyurpn",
+      "wavyurpr",
+    ];
+
+    for (const arrayName of arraysToCheck) {
+      const arr = (this as any)[arrayName];
+
+      if (Array.isArray(arr)) {
+        (this as any)[arrayName] = arr.filter(
+          (item: string) => item !== oldModifiedKey
+        );
+      }
+    }
+
+    // Other location-based arrays
+
+    this.currentUserPurhcased = this.currentUserPurhcased.filter(
+      (item: string) => item !== oldModifiedKey
+    );
+
+    this.refillbottles = this.refillbottles.filter(
+      (item: string) => item !== oldModifiedKey
+    );
+
+    this.BottleInHouseList = this.BottleInHouseList.filter(
+      (item: string) => item !== oldModifiedKey
+    );
+
+    this.dustbinbottles = this.dustbinbottles.filter(
+      (item: string) => item !== oldModifiedKey
+    );
+
+    this.throwntoTruckList = this.throwntoTruckList.filter(
+      (item: string) => item !== oldModifiedKey
+    );
+  }
 
   alertnotified: boolean = false;
   private citySocket: WebSocket | null = null;
   private setupCityWebSocket(): void {
     const cityId = this.logser.currentuser.CityId;
 
-    this.citySocket = new WebSocket(`ws://127.0.0.1:8000/ws/city/${cityId}/`);
+    console.log("SETTING UP CITY SOCKET FOR CITY:", cityId);
+
+  this.citySocket = new WebSocket(`ws://127.0.0.1:8000/ws/city/${cityId}/`);
+    // const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+
+    // const socketUrl = `${protocol}://${window.location.host}/ws/city/${cityId}/`;
+
+    // this.citySocket = new WebSocket(socketUrl);
 
     this.citySocket.onopen = () => {
       console.log("CITY WEBSOCKET CONNECTED");
@@ -2146,51 +2610,125 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
     this.citySocket.onmessage = (event) => {
       const message = JSON.parse(event.data);
 
-      console.log("CITY WEBSOCKET MESSAGE:", message);
+      //   console.log("WEBSOCKET MESSAGE:", message);
 
-      if (message.type === "city_update") {
+      // console.log("CITY WEBSOCKET MESSAGE:", message);
+
+      // =====================================================
+      // CITY TIMER UPDATE
+      // =====================================================
+      if (message.type === "city_timer_update") {
         const data = message.data;
 
+        console.log(
+          "TIMER UPDATE RECEIVED:",
+          data.CurrentDay,
+          data.CurrentTime
+        );
         this.citytiming["CurrentTime"] = this.convertSeconds(data.CurrentTime);
 
         this.citytiming["CurrentDay"] = data.CurrentDay;
 
-        // Mayor reminder
+        const currentDay = Number(this.citytiming["CurrentDay"]);
+
+        // ===================================================
+        // MAYOR CITY RULE REMINDER
+        // ===================================================
         if (
-          this.citytiming["CurrentDay"] % 100 === 0 &&
+          currentDay > 0 &&
+          currentDay % 100 === 0 &&
           this.currentUserRole === "Mayor" &&
-          this.citytiming["CurrentDay"] !== this.cityRuleReminderDay &&
-          this.alertnotified === false
+          currentDay !== this.cityRuleReminderDay
         ) {
+          console.log("CITY RULE REMINDER FOR DAY:", currentDay);
+
+          /*
+          IMPORTANT
+
+          Mark this day BEFORE opening the modal.
+
+          WebSocket keeps sending city_update messages.
+          Without this line, the modal will keep opening
+          again and again while CurrentDay is still 100,
+          200, 300, etc.
+        */
+          this.cityRuleReminderDay = currentDay;
+
           this.alertModal.openModal(
-            "Remainder !!! <br/><div class='cssalignment'>You may edit the City Rules If you Wish. Please Click on the Below link to Proceed</div>",
+            "Reminder !!! <br/>" +
+              "<div class='cssalignment'>" +
+              "You may edit the City Rules If you Wish. " +
+              "Please Click on the Below link to Proceed" +
+              "</div>",
+
             true,
+
             () => {
-              this.alertnotified = true;
+              // Mayor chose to edit city rules
 
               this.logser
                 .updateNoticeonCityTable({
-                  cityrul_notification: this.citytiming["CurrentDay"],
+                  cityrul_notification: currentDay,
                 })
-                .subscribe(() => {});
+                .subscribe({
+                  next: () => {
+                    console.log(
+                      "City rule reminder updated for day:",
+                      currentDay
+                    );
 
-              this.router.navigate(["cityrule"], {
-                queryParams: { option: "cityrule" },
-              });
+                    this.router.navigate(["cityrule"], {
+                      queryParams: {
+                        option: "cityrule",
+                      },
+                    });
+                  },
+
+                  error: (error: any) => {
+                    console.error("Error updating city rule reminder:", error);
+                  },
+                });
             }
           );
         }
       }
+
+      // =====================================================
+      // ASSET UPDATE
+      // =====================================================
+      if (message.type === "asset_update") {
+        const asset = message.data;
+
+        console.log("ASSET WEBSOCKET UPDATE:", asset);
+
+        this.handleAssetUpdate(asset);
+      }
     };
 
+    // =======================================================
+    // WEBSOCKET ERROR
+    // =======================================================
     this.citySocket.onerror = (error) => {
       console.error("CITY WEBSOCKET ERROR:", error);
     };
 
-    this.citySocket.onclose = () => {
-      console.log("CITY WEBSOCKET CLOSED");
+    // =======================================================
+    // WEBSOCKET CLOSED
+    // =======================================================
+    this.citySocket.onclose = (event) => {
+      console.log(
+        "CITY WEBSOCKET CLOSED",
+        "code:",
+        event.code,
+        "reason:",
+        event.reason,
+        "wasClean:",
+        event.wasClean
+      );
     };
   }
+
+  canPay: boolean = false;
   updateobjects(
     cat: any,
     isDragged: any,
@@ -2265,17 +2803,33 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
     ) {
       this.whichRoad = "refillingstation";
       this.setTrue();
-      if (this.currentUserPurhcased.length > 0) {
-        this.playAudioElement(this.StopEntry.nativeElement, 0.8);
-        this.alertModal.openModal(
-          "Sorry!  You are allowed to take only empty shampoo bottles inside this facility.     Please leave your non-empty bottles on the shelf at your house and come. You may also empty the bottle or throw the bottle if you wish, before entering.  Mind you! You may have to pay a fine if you throw the bottle.",
-          false
-        );
-        this.canMoveRight = false;
+
+      // 1. First check whether Refilling Station has an active owner
+      if (this.isFacilityAvailable("Shampoo Refilling Station Owner")) {
+        // 2. Existing bottle check
+        if (this.currentUserPurhcased.length > 0) {
+          this.playAudioElement(this.StopEntry.nativeElement, 0.8);
+
+          this.alertModal.openModal(
+            "Sorry! You are allowed to take only empty shampoo bottles inside this facility. " +
+              "Please leave your non-empty bottles on the shelf at your house and come. " +
+              "You may also empty the bottle or throw the bottle if you wish, before entering. " +
+              "Mind you! You may have to pay a fine if you throw the bottle.",
+            false
+          );
+
+          this.canMoveRight = false;
+        } else {
+          // 3. Facility active + bottle check passed
+          this.opensuperflag = 2;
+          this.refilledbottles.length = 0;
+
+          this.openrefillingstation();
+        }
       } else {
-        this.opensuperflag = 2;
-        this.refilledbottles.length = 0;
-        this.openrefillingstation();
+        // Facility is unavailable
+        // Stop player from moving into the facility
+        this.canMoveRight = false;
       }
     } else if (
       isWithinRange(topValue, 2200, 2300) &&
@@ -2283,15 +2837,21 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
     ) {
       this.whichRoad = "reverseVendingMachine";
       this.setTrue();
-      if (this.currentUserPurhcased.length > 0) {
-        this.playAudioElement(this.StopEntry.nativeElement, 0.8);
-        this.alertModal.openModal(
-          "Sorry!  You are allowed to take only empty shampoo bottles inside this facility.     Please leave your non-empty bottles on the shelf at your house and come. You may also empty the bottle or throw the bottle if you wish, before entering.  Mind you! You may have to pay a fine if you throw the bottle.",
-          false
-        );
-        this.canMoveRight = false;
+      if (this.isFacilityAvailable("Bottle Reverse Vending Machine Owner")) {
+        if (this.currentUserPurhcased.length > 0) {
+          this.playAudioElement(this.StopEntry.nativeElement, 0.8);
+          this.alertModal.openModal(
+            "Sorry!  You are allowed to take only empty shampoo bottles inside this facility.     Please leave your non-empty bottles on the shelf at your house and come. You may also empty the bottle or throw the bottle if you wish, before entering.  Mind you! You may have to pay a fine if you throw the bottle.",
+            false
+          );
+          this.canMoveRight = false;
+        } else {
+          this.dopanzoom(-5250, -1862, "1");
+        }
       } else {
-        this.dopanzoom(-5250, -1862, "1");
+        // Facility is unavailable
+        // Stop player from moving into the facility
+        this.canMoveRight = false;
       }
     } else if (
       isWithinRange(topValue, 3524, 3640) &&
@@ -2306,18 +2866,7 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
       this.whichRoad = "Supermarketroad";
       this.setTrue();
       if (topValue < 2720) {
-        if (this.currentUserPurhcased.length > 0) {
-          this.playAudioElement(this.StopEntry.nativeElement, 0.8);
-          this.alertModal.openModal(
-            "Sorry!  You are allowed to take only empty shampoo bottles inside this facility.     Please leave your non-empty bottles on the shelf at your house and come. You may also empty the bottle or throw the bottle if you wish, before entering.  Mind you! You may have to pay a fine if you throw the bottle.",
-            false
-          );
-        } else {
-          this.playAudioElement(this.Supermarket_Return.nativeElement, 0.8);
-          this.opensuperflag = 1;
-
-          this.opensupermarket();
-        }
+        this.opensupermarket();
       }
     } else if (
       isWithinRange(topValue, 4000, 4065) &&
@@ -2757,48 +3306,189 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
       this.recenter();
     }
   }
-
   zoomIn(event: any) {
     event.preventDefault();
     event.stopPropagation();
-    if (this.opensuperflag == 0) {
-      let c = this.instance.getTransform();
-      let r = c.scale;
-      if (r < 2.5 && r > 0.25) {
-        let s = r + 0.1;
-        this.instance.zoomTo(0, 0, s);
-        this.instance.getTransform().scale = s;
-      }
-    } else if (this.opensuperflag == 1) {
-      let c = this.instance1.getTransform();
-      let r = c.scale;
-      if (r < 2.5 && r > 0.25) {
-        let s = r + 0.1;
-        this.instance1.zoomTo(0, 0, s);
-        this.instance1.getTransform().scale = s;
-      }
+
+    // CITY
+    if (this.opensuperflag === 0) {
+      this.zoomCityBy(0.1);
+    }
+
+    // SUPERMARKET
+    else if (this.opensuperflag === 1) {
+      this.zoomSupermarketBy(0.1);
     }
   }
   zoomOut(event: any) {
     event.preventDefault();
     event.stopPropagation();
-    if (this.opensuperflag == 0) {
-      let c = this.instance.getTransform();
-      let r = c.scale;
-      if (r > 0.4 && r < 2.5) {
-        let z = r - 0.1;
-        this.instance.zoomTo(0, 0, z);
-        this.instance.getTransform().scale = z;
-      }
-    } else if (this.opensuperflag == 1) {
-      let c = this.instance1.getTransform();
-      let r = c.scale;
-      if (r > 0.4 && r < 2.5) {
-        let z = r - 0.1;
-        this.instance1.zoomTo(0, 0, z);
-        this.instance1.getTransform().scale = z;
-      }
+
+    // CITY
+    if (this.opensuperflag === 0) {
+      this.zoomCityBy(-0.1);
     }
+
+    // SUPERMARKET
+    else if (this.opensuperflag === 1) {
+      this.zoomSupermarketBy(-0.1);
+    }
+  }
+  private zoomSupermarketBy(change: number): void {
+    if (!this.instance1) {
+      return;
+    }
+
+    const supermarket = this.supermarket.nativeElement;
+
+    const viewport = this.supermarketViewport.nativeElement;
+
+    const transform = this.instance1.getTransform();
+
+    const currentScale = transform.scale;
+
+    // ----------------------------------
+    // Calculate minimum allowed zoom
+    // ----------------------------------
+
+    const minScaleX = viewport.clientWidth / supermarket.offsetWidth;
+
+    const minScaleY = viewport.clientHeight / supermarket.offsetHeight;
+
+    const minZoom = Math.max(minScaleX, minScaleY) * 1.01;
+
+    const maxZoom = 3;
+
+    // ----------------------------------
+    // Calculate requested scale
+    // ----------------------------------
+
+    let newScale = currentScale + change;
+
+    newScale = Math.max(minZoom, Math.min(maxZoom, newScale));
+
+    // Already at min/max
+    if (Math.abs(newScale - currentScale) < 0.001) {
+      return;
+    }
+
+    // ----------------------------------
+    // Center of visible supermarket
+    // ----------------------------------
+
+    const centerX = viewport.clientWidth / 2;
+
+    const centerY = viewport.clientHeight / 2;
+
+    // zoomTo() expects a relative factor
+    const scaleFactor = newScale / currentScale;
+
+    this.instance1.zoomTo(centerX, centerY, scaleFactor);
+  }
+  private isCorrectingSupermarketBounds = false;
+
+  private keepSupermarketInsideViewport(): void {
+    if (
+      !this.instance1 ||
+      !this.supermarket ||
+      !this.supermarketViewport ||
+      this.isCorrectingSupermarketBounds
+    ) {
+      return;
+    }
+
+    const supermarket = this.supermarket.nativeElement;
+
+    const viewport = this.supermarketViewport.nativeElement;
+
+    const transform = this.instance1.getTransform();
+
+    const scaledWidth = supermarket.offsetWidth * transform.scale;
+
+    const scaledHeight = supermarket.offsetHeight * transform.scale;
+
+    const viewportWidth = viewport.clientWidth;
+
+    const viewportHeight = viewport.clientHeight;
+
+    // ----------------------------------
+    // Allowed boundaries
+    // ----------------------------------
+
+    const minX = viewportWidth - scaledWidth;
+
+    const maxX = 0;
+
+    const minY = viewportHeight - scaledHeight;
+
+    const maxY = 0;
+
+    // ----------------------------------
+    // Clamp current position
+    // ----------------------------------
+
+    const x = Math.max(minX, Math.min(maxX, transform.x));
+
+    const y = Math.max(minY, Math.min(maxY, transform.y));
+
+    // Already inside boundaries
+    if (Math.abs(x - transform.x) < 0.5 && Math.abs(y - transform.y) < 0.5) {
+      return;
+    }
+
+    // ----------------------------------
+    // Correct position
+    // ----------------------------------
+
+    this.isCorrectingSupermarketBounds = true;
+
+    this.instance1.moveTo(x, y);
+
+    this.isCorrectingSupermarketBounds = false;
+  }
+  private zoomCityBy(change: number): void {
+    if (!this.instance) {
+      return;
+    }
+
+    const city = this.scene.nativeElement;
+    const viewport = this.viewport.nativeElement;
+
+    const transform = this.instance.getTransform();
+
+    const currentScale = transform.scale;
+
+    // Calculate minimum zoom
+    // so that white background never appears
+    const minScaleX = viewport.clientWidth / city.offsetWidth;
+
+    const minScaleY = viewport.clientHeight / city.offsetHeight;
+
+    const minZoom = Math.max(minScaleX, minScaleY) * 1.01;
+
+    const maxZoom = 3;
+
+    // Calculate new zoom
+    let newScale = currentScale + change;
+
+    // Keep zoom within min and max
+    newScale = Math.max(minZoom, Math.min(maxZoom, newScale));
+
+    // Already reached min/max
+    if (Math.abs(newScale - currentScale) < 0.001) {
+      return;
+    }
+
+    // Find center of visible screen
+    const centerX = viewport.clientWidth / 2;
+
+    const centerY = viewport.clientHeight / 2;
+
+    // zoomTo needs relative zoom amount
+    const scaleFactor = newScale / currentScale;
+
+    // Zoom around center of screen
+    this.instance.zoomTo(centerX, centerY, scaleFactor);
   }
 
   refillcartposition() {
@@ -3039,6 +3729,7 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
             $("#checklight2").removeClass("green");
             this.setflag = 4;
             $("#innerdoor1").animate({ height: "1076px" }, 300);
+            $("#innerdoor1").css("background-color", "#99d8cf");
           }
         }
         this.cartlocmarket = "maincorider";
@@ -3070,6 +3761,7 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
           this.takenItemsfromSupermarket = this.bottletaken.length; // Prevent re-entry
           this.previousBottleTaken = [...this.bottletaken]; // Store a copy for comparison
           console.log(this.previousBottleTaken);
+          this.canPay = true;
           this.startbilling();
           this.playAudioElement(this.cityrail.nativeElement, 0.3);
         }
@@ -3111,6 +3803,7 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
         }
         if (leftValue <= 1070) {
           this.closesupermarket();
+          this.canPay = false;
         }
       } else if (topValue > 1005 && topValue < 1270 && leftValue < 1000) {
         this.cartlocmarket = "stopped";
@@ -3234,45 +3927,113 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
     Bottle_loc: "",
     currentbottle: "",
   };
-
   payamount() {
     const purchaseData = {
       userid: this.logser.currentuser.UserId,
       cityid: this.currentusercityId,
       bottles: this.bottletaken,
+
       transactionday: String(this.citytiming["CurrentDay"]),
+
       transactionTime: String(this.citytiming["CurrentTime"]),
+
       userrole: this.currentUserRole,
       bottleloc: this.currentUserCartId,
     };
 
-    this.logser.purchase(purchaseData).subscribe((res) => {
-      this.currentwallet = res.wallet;
-      this.billpaid = true;
+    this.logser.purchase(purchaseData).subscribe({
+      next: async (res: any) => {
+        console.log("PURCHASE RESPONSE:", res);
 
-      $(".displaymoniter").html("Payment Received");
-      $(".tick").show();
-      $(".close").show();
+        // ==========================================
+        // PURCHASE FAILED
+        // ==========================================
 
-      this.playAudioElement(this.paymentreceived.nativeElement, 0.8);
-      this.playAudioElement(this.transactioncomplete.nativeElement, 0.8);
+        if (!res.success) {
+          console.log("PURCHASE FAILED:", res.message);
+
+          this.billpaid = false;
+
+          $(".tick").hide();
+
+          $(".displaymoniter").html(res.message || "Payment failed");
+
+          this.alertModal.openModal(
+            res.message || "Unable to complete purchase."
+          );
+
+          return;
+        }
+
+        // ==========================================
+        // PURCHASE SUCCESSFUL
+        // ==========================================
+
+        this.currentwallet = Number(res.wallet);
+
+        // Keep logged-in user wallet synchronized
+        this.logser.currentuser.wallet = res.wallet;
+
+        this.billpaid = true;
+
+        // Move purchased bottles to city cart
+        for (const bottle of this.bottletaken) {
+          if (!this.currentUserPurhcased.includes(bottle)) {
+            this.currentUserPurhcased.push(bottle);
+          }
+        }
+
+        $(".displaymoniter").html("Payment Received");
+
+        $(".tick").show();
+        $(".close").show();
+
+        await this.playAudioElement(this.paymentreceived.nativeElement, 0.8);
+
+        await this.playAudioElement(
+          this.transactioncomplete.nativeElement,
+          0.8
+        );
+      },
+
+      // ==========================================
+      // HTTP / SERVER ERROR
+      // ==========================================
+
+      error: (error: any) => {
+        console.error("PURCHASE API ERROR:", error);
+
+        this.billpaid = false;
+
+        $(".tick").hide();
+
+        const message = error?.error?.message || "Unable to complete purchase.";
+
+        $(".displaymoniter").html("Payment Failed");
+
+        this.alertModal.openModal(message);
+      },
     });
   }
   billingstarted: boolean = false;
 
   async startbilling() {
+    this.currentwallet = Number(this.logser.currentuser.wallet ?? 0);
+
+    console.log("CURRENT WALLET BEFORE BILLING:", this.currentwallet);
+
     this.playAudioElement(this.doneshopping.nativeElement, 0.8);
 
     $(".cartid_highlight").addClass("highlight");
     $(".beam").show();
     $(".displaymoniter").html("Scanning");
 
-    // Await the animations using a helper function
     await this.animateingElement(
       $(".scanneranimation"),
       { left: "6918px" },
       2000
     );
+
     await this.animateingElement(
       $(".scanneranimation"),
       { left: "6656px" },
@@ -3282,17 +4043,17 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
     $(".beam").hide();
 
     if (!this.billpaid) {
-      //await this.delay(500); // Replaces setTimeout
-      this.docalculation(); // Ensure docalculation supports async if necessary
+      this.docalculation();
     }
 
     this.playAudioElement(this.cartdisplay.nativeElement, 0.8);
+
     $(".displaymoniter").html(
       "Check and pay by clicking the cart display panel"
     );
+
     $(".displaycallout").show();
   }
-
   // Helper function to convert jQuery animate to Promise
   animateingElement(
     element: any,
@@ -3324,20 +4085,104 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
     }
   }
 
+  // private initializePanzoom(): void {
+  //   this.instance = panzoom(this.scene.nativeElement, {
+  //     maxZoom: 3,
+  //     minZoom: 0.3,
+  //     bounds: true,
+  //     boundsPadding: 1,
+  //     smoothScroll: true,
+  //     filterKey: () => true,
+  //     beforeWheel: (e) => !e.shiftKey,
+  //     beforeMouseDown: (e) => !e.shiftKey,
+  //     onDoubleClick: () => false,
+  //   });
+  // }
+
+  @ViewChild("viewport", { static: false })
+  private viewport!: ElementRef;
+
+  private isCorrectingBounds = false;
+
   private initializePanzoom(): void {
-    this.instance = panzoom(this.scene.nativeElement, {
+    const city = this.scene.nativeElement;
+    const viewport = this.viewport.nativeElement;
+
+    const cityWidth = city.offsetWidth;
+    const cityHeight = city.offsetHeight;
+
+    const viewportWidth = viewport.clientWidth;
+    const viewportHeight = viewport.clientHeight;
+
+    const minScaleX = viewportWidth / cityWidth;
+    const minScaleY = viewportHeight / cityHeight;
+
+    // 1% safety to avoid fractional-pixel white lines
+    const minZoom = Math.max(minScaleX, minScaleY) * 1.01;
+
+    this.instance = panzoom(city, {
+      minZoom: minZoom,
       maxZoom: 3,
-      minZoom: 0.3,
-      bounds: true,
-      boundsPadding: 1,
-      smoothScroll: true,
+
+      bounds: false,
+
+      smoothScroll: false,
+      zoomSpeed: 0.065,
+
       filterKey: () => true,
-      beforeWheel: (e) => !e.shiftKey,
+
       beforeMouseDown: (e) => !e.shiftKey,
+
       onDoubleClick: () => false,
+    });
+
+    this.instance.on("transform", () => {
+      this.keepCityInsideViewport();
     });
   }
 
+  private keepCityInsideViewport(): void {
+    if (!this.instance || this.isCorrectingBounds) {
+      return;
+    }
+
+    const city = this.scene.nativeElement;
+    const viewport = this.viewport.nativeElement;
+
+    const transform = this.instance.getTransform();
+
+    const scaledWidth = city.offsetWidth * transform.scale;
+
+    const scaledHeight = city.offsetHeight * transform.scale;
+
+    const viewportWidth = viewport.clientWidth;
+
+    const viewportHeight = viewport.clientHeight;
+
+    // Allowed boundaries
+    const minX = viewportWidth - scaledWidth;
+    const maxX = 0;
+
+    const minY = viewportHeight - scaledHeight;
+    const maxY = 0;
+
+    // Clamp current position
+    const x = Math.max(minX, Math.min(maxX, transform.x));
+
+    const y = Math.max(minY, Math.min(maxY, transform.y));
+
+    // Already valid
+    if (Math.abs(x - transform.x) < 0.5 && Math.abs(y - transform.y) < 0.5) {
+      return;
+    }
+
+    // Correct invalid position
+    this.isCorrectingBounds = true;
+
+    this.instance.moveTo(x, y);
+
+    this.isCorrectingBounds = false;
+  }
   private subscribeToSharedServices(): void {
     this.sharedService.showWarning$.subscribe(
       (value) => (this.showwarning = value)
@@ -3363,9 +4208,10 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
         this.openAuditBottleMakingVideoModal()
       );
 
-    this.runGarbagetruck = this.sharedService.rungarbagetruck$.subscribe(() =>
-      this.rungarbagetruck()
-    );
+    this.runBottleCollectionTruckSubscription =
+      this.sharedService.runBottleCollectionTruck$.subscribe(() =>
+        this.runBottleCollectionTruck()
+      );
     this.loadPlantBottlesSubscription =
       this.sharedService.loadPlantBottles$.subscribe(() =>
         this.loadPlantBottles()
@@ -3814,7 +4660,7 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
       this.playAudioElement(this.selectbrand.nativeElement, 0.8);
       this.refillbrandselected = "";
       $(".displaylight").removeClass("off").addClass("on");
-      this.getbrandfunction(placedBottle);
+      this.getRefillBrandDetails(placedBottle);
       $(".displayboard").html(
         "Your bottle's brand =" +
           this.getcurrentplacedbrand +
@@ -3823,9 +4669,40 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
       this.brandselected = true;
     }
   }
-  getdetailbrandfunction(placedBottle: string) {
-    let getbrand = placedBottle.split("at")[1];
-    console.log(getbrand, "coming from getdetail");
+  getReturnBrandDetails(placedBottle: string) {
+    const getbrand = placedBottle.split("at")[1]?.toLowerCase() || "";
+    const assetId = placedBottle.split("at")[0].replace("City", "");
+
+    const asset = this.assetdataset.find(
+      (item: any) => item.AssetId === assetId
+    );
+
+    if (!asset) {
+      console.error("Asset not found:", assetId);
+      return;
+    }
+
+    // Return animation alone needs topR / topOther
+    this.getBottleCode = getbrand.endsWith("r") ? "R" : "N";
+
+    // Damaged gets priority for RETURN only
+    if (asset.Bottle_Status === "Damaged-Empty") {
+      this.getcurrentplacedbrand = "Damaged";
+      return;
+    }
+
+    // Universal bottle for RETURN only
+    if (
+      getbrand.includes("uvpn") ||
+      getbrand.includes("uvpr") ||
+      getbrand.includes("urpn") ||
+      getbrand.includes("urpr")
+    ) {
+      this.getcurrentplacedbrand = "Universal";
+      return;
+    }
+
+    // Normal branded bottle
     if (getbrand.includes("shiny")) {
       this.getcurrentplacedbrand = "B1.Shiny";
     } else if (getbrand.includes("spiky")) {
@@ -3836,29 +4713,60 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
       this.getcurrentplacedbrand = "B4.Wavy";
     } else if (getbrand.includes("silky")) {
       this.getcurrentplacedbrand = "B5.Silky";
-    } else if (
-      getbrand.includes("uvpn") ||
-      getbrand.includes("uvpr") ||
-      getbrand.includes("urpn") ||
-      getbrand.includes("urpr")
-    ) {
-      this.getcurrentplacedbrand = "Universal";
     }
+
+    console.log(
+      "RETURN ROUTE:",
+      this.getcurrentplacedbrand,
+      this.getBottleCode === "R" ? "topR" : "topOther"
+    );
   }
-  getbrandfunction(placedBottle: string) {
-    let getbrand = placedBottle.split("at")[1];
-    if (getbrand == "UB1" || getbrand == "B1") {
+
+  getRefillBrandDetails(placedBottle: string) {
+    const assetId = placedBottle.split("at")[0].replace("City", "");
+
+    const asset = this.assetdataset.find(
+      (item: any) => item.AssetId === assetId
+    );
+
+    if (!asset) {
+      console.error("Asset not found:", assetId);
+      return;
+    }
+
+    const contentCode = asset.Content_Code?.toLowerCase() || "";
+
+    if (contentCode.includes("shiny")) {
       this.getcurrentplacedbrand = "B1.Shiny";
-    } else if (getbrand == "UB2" || getbrand == "B2") {
+    } else if (contentCode.includes("spiky")) {
       this.getcurrentplacedbrand = "B2.Spiky";
-    } else if (getbrand == "UB3" || getbrand == "B3") {
+    } else if (contentCode.includes("bouncy")) {
       this.getcurrentplacedbrand = "B3.Bouncy";
-    } else if (getbrand == "UB4" || getbrand == "B4") {
+    } else if (contentCode.includes("wavy")) {
       this.getcurrentplacedbrand = "B4.Wavy";
-    } else if (getbrand == "UB5" || getbrand == "B5") {
+    } else if (contentCode.includes("silky")) {
       this.getcurrentplacedbrand = "B5.Silky";
+    } else {
+      console.error("Unable to determine refill content:", asset);
+      return;
     }
+
+    console.log("REFILL CONTENT:", this.getcurrentplacedbrand);
   }
+  // getbrandfunction(placedBottle: string) {
+  //   let getbrand = placedBottle.split("at")[1];
+  //   if (getbrand == "UB1" || getbrand == "B1") {
+  //     this.getcurrentplacedbrand = "B1.Shiny";
+  //   } else if (getbrand == "UB2" || getbrand == "B2") {
+  //     this.getcurrentplacedbrand = "B2.Spiky";
+  //   } else if (getbrand == "UB3" || getbrand == "B3") {
+  //     this.getcurrentplacedbrand = "B3.Bouncy";
+  //   } else if (getbrand == "UB4" || getbrand == "B4") {
+  //     this.getcurrentplacedbrand = "B4.Wavy";
+  //   } else if (getbrand == "UB5" || getbrand == "B5") {
+  //     this.getcurrentplacedbrand = "B5.Silky";
+  //   }
+  // }
   increament() {
     if (this.refillbrandselected != "") {
       if (this.selectquantity < 500) {
@@ -3964,182 +4872,236 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
     }
   }
   refill_amount_topay = 0;
+
+  private refillTransactionInProgress = false;
+
   startrefillinganimation() {
-    $(".displaylight").removeClass("on").addClass("off");
-    if (this.currentwallet > this.refill_amount_topay) {
-      this.currentwallet = this.currentwallet - this.refill_amount_topay;
-      this.logser.currentuser.wallet = this.currentwallet;
-
-      this.logser.updatewallet().subscribe(
-        (data) => {
-          data = this.currentwallet;
-          this.playAudioElement(this.paymentreceived.nativeElement, 0.8);
-          let transactioncount = "";
-          this.logser.gettransactions().subscribe((data) => {
-            transactioncount = "0000" + (data.length + 1);
-
-            this.transaction["TransactionId"] =
-              this.currentusercityId +
-              "_" +
-              this.citytiming["CurrentDay"] +
-              "_" +
-              this.citytiming["CurrentTime"] +
-              "_" +
-              this.transactioncount +
-              "_03";
-            this.transaction["Amount"] = String(this.refill_amount_topay);
-            this.transaction["CreditFacility"] = "Refilling Station";
-            this.transaction["DebitFacility"] = this.currentUserRole;
-            this.transaction["Purpose"] =
-              "Refilling shampoo from the Refilling Station";
-            this.transaction["Container_Amt"] = "0";
-            this.transaction["Content_Amt"] = "0";
-            this.logser.createtransaction(this.transaction).subscribe(
-              (data) => {
-                data = this.transaction;
-
-                this.updatebottleasset["bottlestatus"] = "InUse";
-                this.updatebottleasset["transactionid"] =
-                  this.currentusercityId +
-                  "_" +
-                  this.citytiming["CurrentDay"] +
-                  "_" +
-                  this.citytiming["CurrentTime"] +
-                  "_" +
-                  this.transactioncount +
-                  "_03";
-                this.updatebottleasset["fromfacility"] =
-                  "Shampoo Refilling Station ";
-                this.updatebottleasset["tofacility"] = this.currentUserRole;
-                this.updatebottleasset["transactiondate"] = String(
-                  this.citytiming["CurrentDay"]
-                );
-                this.updatebottleasset["Latest_Refill_Date"] = String(
-                  this.citytiming["CurrentDay"]
-                );
-                this.updatebottleasset["Bottleloc"] = this.currentUserCartId;
-                this.updatebottleasset["contentCode"] =
-                  this.refillbrandselected;
-                this.updatebottleasset["currentitem"] =
-                  this.currentlyrefillingBottle.split("at")[0].split("City")[1];
-                this.logser
-                  .updatethisAssets(this.updatebottleasset)
-                  .subscribe((data) => {
-                    this.playAudioElement(
-                      this.transactioncomplete.nativeElement,
-                      0.8
-                    );
-                  });
-                this.logser
-                  .getFacilitycashbox("Shampoo Refilling Station Owner")
-                  .subscribe((data) => {
-                    data[0]["Cashbox"] == ""
-                      ? (this.getrefillingstationcashbox = 0)
-                      : (this.getrefillingstationcashbox = parseInt(
-                          data[0]["Cashbox"]
-                        ));
-                    this.getrefillingstationcashbox -= this.refill_amount_topay;
-                    this.logser
-                      .updateFacilitycashbox(
-                        "Shampoo Refilling Station Owner",
-                        String(this.getrefillingstationcashbox)
-                      )
-                      .subscribe((data) => {});
-                  });
-              },
-              (error) => {
-                //console.log(error);
-              }
-            );
-          });
-        },
-        (error) => {
-          //console.log(error);
-        }
-      );
-
-      $(".displayboard").html(
-        "Brand =" +
-          this.refillbrandselected +
-          "<br/>Quantity = " +
-          this.selectquantity +
-          "ml<br/>Price/ml = ₹" +
-          this.unitprice +
-          "<br/>Discount = " +
-          this.currentDiscount +
-          "%<br/>Net Amount = ₹" +
-          this.refill_amount_topay +
-          "<br/> Order Confirmed. Please wait till we refill your bottle."
-      );
-      $("#pressor").animate({ top: "1px" }, 2000, () => {
-        $("#pressor").animate({ top: "-10px" });
-        $(".gear").addClass("icon");
-        let getbrand = $(".refilllist").children("div")[0].classList[1];
-        $("." + getbrand).addClass("removedcap");
-        if (this.refillbrandselected == "B1.Shiny") {
-          $(".refilldropper").animate({ left: "44px" }, 2000, () => {
-            $(".shinyfiller").show();
-            $(".gear").removeClass("icon");
-            let that = this;
-            setTimeout(function () {
-              $(".gear").addClass("icon");
-              $(".shinyfiller").hide();
-              that.closecap();
-            }, 2000);
-          });
-        }
-        if (this.refillbrandselected == "B2.Spiky") {
-          $(".refilldropper").animate({ left: "94px" }, 2000, () => {
-            $(".spikyfiller").show();
-            $(".gear").removeClass("icon");
-            let that = this;
-            setTimeout(function () {
-              $(".gear").addClass("icon");
-              $(".spikyfiller").hide();
-              that.closecap();
-            }, 2000);
-          });
-        }
-        if (this.refillbrandselected == "B4.Wavy") {
-          $(".refilldropper").animate({ left: "196px" }, 2000, () => {
-            $(".wavyfiller").show();
-            $(".gear").removeClass("icon");
-            let that = this;
-            setTimeout(function () {
-              $(".gear").addClass("icon");
-              $(".wavyfiller").hide();
-              that.closecap();
-            }, 2000);
-          });
-        }
-        if (this.refillbrandselected == "B5.Silky") {
-          $(".refilldropper").animate({ left: "247px" }, 2000, () => {
-            $(".silkyfiller").show();
-            $(".gear").removeClass("icon");
-            let that = this;
-            setTimeout(function () {
-              $(".gear").addClass("icon");
-              $(".silkyfiller").hide();
-              that.closecap();
-            }, 2000);
-          });
-        }
-        if (this.refillbrandselected == "B3.Bouncy") {
-          $(".refilldropper").animate({ left: "145px" }, 2000, () => {
-            $(".bouncyfiller").show();
-            $(".gear").removeClass("icon");
-            let that = this;
-            setTimeout(function () {
-              $(".gear").addClass("icon");
-              $(".bouncyfiller").hide();
-              that.closecap();
-            }, 2000);
-          });
-        }
-      });
-    } else {
-      this.alertModal.openModal("You have Insuccifient Balance");
+    // Prevent duplicate refill transactions
+    if (this.refillTransactionInProgress) {
+      return;
     }
+
+    // Basic UI validation
+    if (!this.currentlyrefillingBottle) {
+      this.alertModal.openModal("Please place a bottle in the refill machine.");
+      return;
+    }
+
+    if (!this.refillbrandselected) {
+      this.alertModal.openModal("Please select the shampoo brand.");
+      return;
+    }
+
+    if (!this.selectquantity || this.selectquantity <= 0) {
+      this.alertModal.openModal("Please select the refill quantity.");
+      return;
+    }
+
+    this.refillTransactionInProgress = true;
+
+    $(".displaylight").removeClass("on").addClass("off");
+
+    const refillData = {
+      userid: this.logser.currentuser.UserId,
+
+      cityid: this.currentusercityId,
+
+      bottle_id: this.currentlyrefillingBottle.split("at")[0].split("City")[1],
+
+      brand: this.refillbrandselected,
+
+      quantity: this.selectquantity,
+
+      transactionday: String(this.citytiming["CurrentDay"]),
+
+      transactionTime: String(this.citytiming["CurrentTime"]),
+
+      userrole: this.currentUserRole,
+
+      bottleloc: this.currentUserCartId,
+    };
+
+    console.log("REFILL REQUEST:", refillData);
+
+    this.logser.refillBottle(refillData).subscribe({
+      next: async (response: any) => {
+        this.refillTransactionInProgress = false;
+
+        console.log("REFILL RESPONSE:", response);
+
+        // Django returned successful transaction
+        this.currentwallet = Number(response.wallet);
+
+        this.logser.currentuser.wallet = response.wallet;
+
+        // Use SERVER amount after successful transaction
+        // This becomes especially useful once Django
+        // calculates the price itself.
+        if (response.refill_amount !== undefined) {
+          this.refill_amount_topay = Number(response.refill_amount);
+        }
+
+        await this.playAudioElement(this.paymentreceived.nativeElement, 0.8);
+
+        await this.playAudioElement(
+          this.transactioncomplete.nativeElement,
+          0.8
+        );
+
+        // ------------------------------------------------
+        // EXISTING DISPLAY
+        // ------------------------------------------------
+
+        $(".displayboard").html(
+          "Brand =" +
+            this.refillbrandselected +
+            "<br/>Quantity = " +
+            this.selectquantity +
+            "ml<br/>Price/ml = ₹" +
+            this.unitprice +
+            "<br/>Discount = " +
+            this.currentDiscount +
+            "%<br/>Net Amount = ₹" +
+            this.refill_amount_topay +
+            "<br/> Order Confirmed. Please wait till we refill your bottle."
+        );
+
+        // ------------------------------------------------
+        // EXISTING REFILL ANIMATION
+        // ------------------------------------------------
+
+        $("#pressor").animate({ top: "1px" }, 2000, () => {
+          $("#pressor").animate({
+            top: "-10px",
+          });
+
+          $(".gear").addClass("icon");
+
+          const refillList = $(".refilllist").children("div");
+
+          if (refillList.length === 0) {
+            console.error("No bottle found in refill machine.");
+
+            return;
+          }
+
+          const getbrand = refillList[0].classList[1];
+
+          $("." + getbrand).addClass("removedcap");
+
+          // ==============================
+          // SHINY
+          // ==============================
+
+          if (this.refillbrandselected === "B1.Shiny") {
+            $(".refilldropper").animate({ left: "44px" }, 2000, () => {
+              $(".shinyfiller").show();
+
+              $(".gear").removeClass("icon");
+
+              setTimeout(() => {
+                $(".gear").addClass("icon");
+
+                $(".shinyfiller").hide();
+
+                this.closecap();
+              }, 2000);
+            });
+          }
+
+          // ==============================
+          // SPIKY
+          // ==============================
+          else if (this.refillbrandselected === "B2.Spiky") {
+            $(".refilldropper").animate({ left: "94px" }, 2000, () => {
+              $(".spikyfiller").show();
+
+              $(".gear").removeClass("icon");
+
+              setTimeout(() => {
+                $(".gear").addClass("icon");
+
+                $(".spikyfiller").hide();
+
+                this.closecap();
+              }, 2000);
+            });
+          }
+
+          // ==============================
+          // BOUNCY
+          // ==============================
+          else if (this.refillbrandselected === "B3.Bouncy") {
+            $(".refilldropper").animate({ left: "145px" }, 2000, () => {
+              $(".bouncyfiller").show();
+
+              $(".gear").removeClass("icon");
+
+              setTimeout(() => {
+                $(".gear").addClass("icon");
+
+                $(".bouncyfiller").hide();
+
+                this.closecap();
+              }, 2000);
+            });
+          }
+
+          // ==============================
+          // WAVY
+          // ==============================
+          else if (this.refillbrandselected === "B4.Wavy") {
+            $(".refilldropper").animate({ left: "196px" }, 2000, () => {
+              $(".wavyfiller").show();
+
+              $(".gear").removeClass("icon");
+
+              setTimeout(() => {
+                $(".gear").addClass("icon");
+
+                $(".wavyfiller").hide();
+
+                this.closecap();
+              }, 2000);
+            });
+          }
+
+          // ==============================
+          // SILKY
+          // ==============================
+          else if (this.refillbrandselected === "B5.Silky") {
+            $(".refilldropper").animate({ left: "247px" }, 2000, () => {
+              $(".silkyfiller").show();
+
+              $(".gear").removeClass("icon");
+
+              setTimeout(() => {
+                $(".gear").addClass("icon");
+
+                $(".silkyfiller").hide();
+
+                this.closecap();
+              }, 2000);
+            });
+          }
+        });
+      },
+
+      error: (error: any) => {
+        // Allow another attempt
+        this.refillTransactionInProgress = false;
+
+        console.error("REFILL TRANSACTION FAILED:", error);
+
+        const message = error?.error?.message || "Unable to complete refill.";
+
+        this.alertModal.openModal(message);
+
+        // Transaction failed:
+        // restore machine display
+        $(".displaylight").removeClass("off").addClass("on");
+      },
+    });
   }
   resetrefilling() {
     this.resetanimation = true;
@@ -4298,7 +5260,7 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
     return bottle ? parseFloat(bottle["Bottle_Price"]) * 0.5 : 0;
   }
 
-  // Helper function to update bottle location
+  // Helper fun// Helper function to update bottle location / apply fine
   private updateBottleLocationandFine(
     location: string,
     fine: number,
@@ -4306,66 +5268,107 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
     transactionType: string,
     bottleId?: string
   ) {
+    // ------------------------------------------------
+    // CASE 1: Only update bottle location
+    // No fine involved
+    // ------------------------------------------------
     if (bottleId) {
       this.updateonlyloc["currentbottle"] = bottleId;
       this.updateonlyloc["Bottleloc"] = location;
+
       this.logser.updatelocation(this.updateonlyloc).subscribe(() => {});
-    } else {
-      this.updatebottlereturn["currentitem"] = this.selectedBottleatStage
-        .split("at")[0]
-        .split("City")[1];
-      this.updatebottlereturn["Bottleloc"] = location;
-      this.updatebottlereturn["bottlestatus"] =
-        this.bottleStatus_Display["Bottle_Status"];
-      this.updatebottlereturn["fromfacility"] = this.currentUserRole;
-      this.updatebottlereturn["tofacility"] = "Municipality Office";
 
-      if (this.currentwallet > fine) {
-        this.alertModal.openModal(
-          `A fine of ₹${fine} has been charged for this offense`
-        );
-        this.currentwallet -= fine;
-        this.logser.currentuser.wallet = this.currentwallet;
-
-        this.logser.updatewallet().subscribe(() => {
-          this.handleTransaction(fine, purpose, transactionType);
-        });
-      }
+      return;
     }
-  }
 
-  // Helper function to handle transactions
-  private handleTransaction(
-    amount: number,
-    purpose: string,
-    transactionType: string
-  ) {
-    this.logser.gettransactions().subscribe((transactions) => {
-      const transactionCount = "0000" + (transactions.length + 1);
-      this.transaction[
-        "TransactionId"
-      ] = `${this.currentusercityId}_${this.citytiming["CurrentDay"]}_${this.citytiming["CurrentTime"]}_${transactionCount}_${transactionType}`;
-      this.transaction["Amount"] = String(amount);
-      this.transaction["CreditFacility"] = "Municipality Office";
-      this.transaction["DebitFacility"] = this.currentUserRole;
-      this.transaction["Purpose"] = purpose;
-      this.transaction["Container_Amt"] = "0";
-      this.transaction["Content_Amt"] = "0";
+    // ------------------------------------------------
+    // CASE 2: Fine transaction
+    // Backend FineService handles everything
+    // ------------------------------------------------
 
-      this.logser.createtransaction(this.transaction).subscribe(() => {
-        this.updatebottlereturn["transactionid"] =
-          this.transaction["TransactionId"];
-        this.updatebottlereturn["transactiondate"] = String(
-          this.citytiming["CurrentDay"]
+    const assetId = this.selectedBottleatStage.split("at")[0].split("City")[1];
+
+    const fineData = {
+      userid: this.logser.currentuser.UserId,
+      cityid: this.currentusercityId,
+
+      bottle_id: assetId,
+      location: location,
+
+      transaction_type: transactionType,
+      purpose: purpose,
+
+      transactionday: this.citytiming["CurrentDay"],
+      transactionTime: this.citytiming["CurrentTime"],
+
+      userrole: this.currentUserRole,
+    };
+
+    this.logser.applyBottleFine(fineData).subscribe({
+      next: async (response: any) => {
+        console.log("FINE RESPONSE:", response);
+
+        // -----------------------------------------
+        // 1. Update wallet from backend response
+        // -----------------------------------------
+        this.currentwallet = Number(response.wallet);
+        this.logser.currentuser.wallet = response.wallet;
+
+        // -----------------------------------------
+        // 2. Remove thrown bottle from TOP cart
+        // -----------------------------------------
+        const purchasedIndex = this.currentUserPurhcased.findIndex(
+          (item: string) => item === this.selectedBottleatStage
         );
 
-        this.logser
-          .updateConveyorAssets(this.updatebottlereturn)
-          .subscribe(() => {
-            this.playAudioElement(this.Fine.nativeElement, 0.8);
-            this.updateMunicipalCashbox(amount);
-          });
-      });
+        if (purchasedIndex !== -1) {
+          this.currentUserPurhcased.splice(purchasedIndex, 1);
+        }
+
+        // -----------------------------------------
+        // 3. Remove thrown bottle from BOTTOM cart
+        // -----------------------------------------
+        const refillIndex = this.refillbottles.findIndex(
+          (item: string) => item === this.selectedBottleatStage
+        );
+
+        if (refillIndex !== -1) {
+          this.refillbottles.splice(refillIndex, 1);
+        }
+
+        // -----------------------------------------
+        // 4. Keep local assetdataset synchronized
+        // -----------------------------------------
+        const assetIndex = this.assetdataset.findIndex(
+          (item: any) => item.AssetId === response.asset_id
+        );
+
+        if (assetIndex !== -1) {
+          this.assetdataset[assetIndex].Bottle_loc = response.location;
+          this.assetdataset[assetIndex].Transaction_Id =
+            response.transaction_id;
+        }
+
+        // -----------------------------------------
+        // 5. Existing alert
+        // -----------------------------------------
+        this.alertModal.openModal(
+          `A fine of ₹${response.fine} has been charged for this offense`
+        );
+
+        // -----------------------------------------
+        // 6. Existing audio
+        // -----------------------------------------
+        await this.playAudioElement(this.Fine.nativeElement, 0.8);
+      },
+
+      error: (error: any) => {
+        console.error("FINE TRANSACTION FAILED:", error);
+
+        const message = error?.error?.message || "Unable to apply fine.";
+
+        this.alertModal.openModal(message);
+      },
     });
   }
 
@@ -4393,20 +5396,41 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
     transactionType: string,
     purpose: string
   ) {
-    this.logser.getthisAssets(bottleId).subscribe((data) => {
-      const bottleType =
-        currentlyDropped.split("id")[0].split("_")[2] +
-        "." +
-        currentlyDropped.split("id")[1].split("_")[0];
-      const fine = this.calculateFine(bottleType);
+    const fineData = {
+      userid: this.logser.currentuser.UserId,
+      cityid: this.currentusercityId,
+      bottle_id: bottleId,
+      location: location,
+      transaction_type: transactionType,
+      purpose: purpose,
+      transactionday: String(this.citytiming["CurrentDay"]),
+      transactionTime: String(this.citytiming["CurrentTime"]),
+      userrole: this.currentUserRole,
+    };
 
-      this.updateBottleLocationandFine(
-        location,
-        fine,
-        purpose,
-        transactionType,
-        bottleId
-      );
+    console.log("FINE REQUEST:", fineData);
+
+    this.logser.applyBottleFine(fineData).subscribe({
+      next: async (response: any) => {
+        console.log("FINE RESPONSE:", response);
+
+        this.currentwallet = Number(response.wallet);
+        this.logser.currentuser.wallet = response.wallet;
+
+        this.alertModal.openModal(
+          `A fine of ₹${response.fine} has been charged for this offense`
+        );
+
+        await this.playAudioElement(this.Fine.nativeElement, 0.8);
+      },
+
+      error: (error: any) => {
+        console.error("FINE TRANSACTION FAILED:", error);
+
+        const message = error?.error?.message || "Unable to apply fine.";
+
+        this.alertModal.openModal(message);
+      },
     });
   }
 
@@ -4470,86 +5494,79 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
   }
   getBottleStatus = "";
   getBottleCode = "";
-
+  private bottlesBeingReturned = new Set<string>();
   returndrop(event: CdkDragDrop<string[]>) {
     // --------------------------------------------------
     // MOVE / REORDER BOTTLE
     // --------------------------------------------------
 
     if (event.previousContainer === event.container) {
-      moveItemInArray(
-        event.container.data,
-        event.previousIndex,
-        event.currentIndex
-      );
-    } else {
-      transferArrayItem(
-        event.previousContainer.data,
-        event.container.data,
-        event.previousIndex,
-        event.currentIndex
-      );
+      return;
     }
 
-    const currentlyDroped = event.item.element.nativeElement.id;
+    const currentlyDropped =
+      event.item.data?.id ?? event.item.element.nativeElement.id;
 
     const currentDropzone = event.container.element.nativeElement.classList;
 
+    const bottleId = currentlyDropped.split("City")[1].split("at")[0];
     // --------------------------------------------------
     // UPDATE DROPPED BOTTLE LIST
     // --------------------------------------------------
-
-    if (
-      event.container.element.nativeElement.classList.contains("bottle_list")
-    ) {
-      this.bottledropped.length = 0;
-
-      this.bottledropped.push(currentlyDroped);
-    }
 
     // ==================================================
     // RETURN BOTTLE
     // ==================================================
 
     if (currentDropzone.contains("bottle_list")) {
-      const bottleId = currentlyDroped.split("City")[1].split("at")[0];
+      console.log("RETURN DROP:");
+      console.log("DOM ID:", currentlyDropped);
+      console.log("BOTTLE ID:", bottleId);
+
+      const actualIndex = event.previousContainer.data.findIndex(
+        (item: string) => item === currentlyDropped
+      );
+
+      console.log("FOUND INDEX:", actualIndex);
+      console.log("PREVIOUS DATA:", event.previousContainer.data);
+
+      // Safety check
+      if (actualIndex === -1) {
+        console.error(
+          "ERROR: Dragged bottle was not found in previous container:",
+          currentlyDropped
+        );
+        return;
+      }
+
+      // Move ONLY the bottle identified by its ID
+      transferArrayItem(
+        event.previousContainer.data,
+        event.container.data,
+        actualIndex,
+        event.currentIndex
+      );
 
       const returnData = {
         userid: this.logser.currentuser.UserId,
-
         cityid: this.currentusercityId,
-
         bottleid: bottleId,
-
         transactionday: String(this.citytiming["CurrentDay"]),
-
         transactionTime: String(this.citytiming["CurrentTime"]),
-
         userrole: this.currentUserRole,
-
         tofacility: "Return Conveyor",
-
         Bottleloc: "Return Conveyor",
         transactiontype: "08",
       };
 
       console.log("RETURN DATA:", returnData);
 
-      // --------------------------------------------------
-      // CALL OPTIMIZED RETURN API
-      // --------------------------------------------------
-
       this.logser.returnBottle(returnData).subscribe({
         next: (res: any) => {
           console.log("Return successful:", res);
 
           const refund = Number(res.refund || 0);
-
           const status = res.status;
-
-          // ==================================================
-          // CASE 1: MAX REFILL COUNT = 0
-          // ==================================================
 
           if (status === "RECYCLE") {
             this.alertModal.openModal(
@@ -4562,19 +5579,12 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
                 "bottle label next time you buy or return. " +
                 "However, you may refill such bottle at the " +
                 "refilling station if you wish (next time).",
-
               false,
-
               () => {
-                this.startreturnanimation(currentlyDroped);
+                this.startreturnanimation(currentlyDropped);
               }
             );
-          }
-
-          // ==================================================
-          // CASE 2: MAX REFILL COUNT REACHED
-          // ==================================================
-          else if (status === "END_OF_LIFE") {
+          } else if (status === "END_OF_LIFE") {
             this.alertModal.openModal(
               "Thanks for returning the bottle. " +
                 "This bottle has reached the Max-Refill count limit. " +
@@ -4582,19 +5592,12 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
                 "An amount of ₹" +
                 refund.toFixed(2) +
                 " has been credited to your wallet.",
-
               false,
-
               () => {
-                this.startreturnanimation(currentlyDroped);
+                this.startreturnanimation(currentlyDropped);
               }
             );
-          }
-
-          // ==================================================
-          // CASE 3: NORMAL RETURN
-          // ==================================================
-          else {
+          } else {
             console.log(
               "Normal return. Existing bottle status:",
               res.bottle_status
@@ -4602,15 +5605,22 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
 
             console.log("Refund:", refund);
 
-            // No status change here.
-            // Django already preserved the Asset status.
-
-            this.startreturnanimation(currentlyDroped);
+            this.startreturnanimation(currentlyDropped);
           }
         },
 
         error: (error) => {
           console.error("Return bottle failed:", error);
+
+          // Put the exact dragged bottle back
+          transferArrayItem(
+            event.container.data,
+            event.previousContainer.data,
+            event.currentIndex,
+            actualIndex
+          );
+
+          this.alertModal.openModal("Unable to return bottle.", false);
         },
       });
     }
@@ -4618,10 +5628,16 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
     // ==================================================
     // MOVE BOTTLE BACK TO CART
     // ==================================================
-    else if (currentDropzone.contains("cart_bottle_list")) {
-      this.updateonlyloc["currentbottle"] = currentlyDroped
+    if (currentDropzone.contains("cart_bottle_list")) {
+      this.updateonlyloc["currentbottle"] = currentlyDropped
         .split("City")[1]
         .split("at")[0];
+      transferArrayItem(
+        event.container.data,
+        event.previousContainer.data,
+        event.currentIndex,
+        event.previousIndex
+      );
 
       this.updateonlyloc["Bottleloc"] = this.currentUserCartId;
 
@@ -4855,7 +5871,9 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
 
   startreturnanimation(currentlyDropped: string) {
     console.log("Starting return animation for:", currentlyDropped);
-    this.getdetailbrandfunction(currentlyDropped);
+
+    this.getReturnBrandDetails(currentlyDropped);
+
     const positions: {
       [key: string]: {
         left: string;
@@ -4870,36 +5888,42 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
         topOther: "2260px",
         speed: 500,
       },
+
       "B2.Spiky": {
         left: "2313px",
         topR: "2960px",
         topOther: "2260px",
         speed: 1000,
       },
-      "B4.Wavy": {
-        left: "3091px",
-        topR: "2960px",
-        topOther: "2260px",
-        speed: 1500,
-      },
-      "B5.Silky": {
-        left: "3482px",
-        topR: "2960px",
-        topOther: "2260px",
-        speed: 2500,
-      },
+
       "B3.Bouncy": {
         left: "2704px",
         topR: "2960px",
         topOther: "2260px",
         speed: 2000,
       },
+
+      "B4.Wavy": {
+        left: "3091px",
+        topR: "2960px",
+        topOther: "2260px",
+        speed: 1500,
+      },
+
+      "B5.Silky": {
+        left: "3482px",
+        topR: "2960px",
+        topOther: "2260px",
+        speed: 2500,
+      },
+
       Universal: {
         left: "3873px",
         topR: "2960px",
         topOther: "2260px",
         speed: 3000,
       },
+
       Damaged: {
         left: "4220px",
         topR: "2960px",
@@ -4907,31 +5931,49 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
         speed: 3000,
       },
     };
-    let dummyvar;
-    const defaultPosition = { left: "1694px", top: "2579px" };
-    this.getBottleStatus == "Damaged-Empty"
-      ? (dummyvar = "Damaged")
-      : (dummyvar = this.getcurrentplacedbrand);
-    const position = positions[dummyvar];
-    if (position) {
-      $(".conveyorbottledropper").animate(
-        { left: position.left },
-        position.speed,
-        () => {
-          const topPosition =
-            this.getBottleCode == "R" ? position.topR : position.topOther;
-          $(".conveyorbottledropper").animate(
-            { top: topPosition },
-            2000,
-            () => {
-              $(".conveyorbottledropper").css(defaultPosition);
-              this.bottledropped.length = 0;
-              $(".displayconveyor").html("Return used bottles here");
-            }
-          );
-        }
+
+    const defaultPosition = {
+      left: "1694px",
+      top: "2579px",
+    };
+
+    const position = positions[this.getcurrentplacedbrand];
+
+    console.log("Selected return route:", this.getcurrentplacedbrand, position);
+
+    if (!position) {
+      console.error(
+        "No return position found for:",
+        this.getcurrentplacedbrand
       );
+
+      return;
     }
+
+    $(".conveyorbottledropper").animate(
+      {
+        left: position.left,
+      },
+      position.speed,
+      () => {
+        const topPosition =
+          this.getBottleCode === "R" ? position.topR : position.topOther;
+
+        $(".conveyorbottledropper").animate(
+          {
+            top: topPosition,
+          },
+          2000,
+          () => {
+            $(".conveyorbottledropper").css(defaultPosition);
+
+            this.bottledropped.length = 0;
+
+            $(".displayconveyor").html("Return used bottles here");
+          }
+        );
+      }
+    );
   }
 
   currentlyrefillingBottle = "";
@@ -4992,7 +6034,8 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
             }
 
             this.droppedbottle = true;
-            this.getdetailbrandfunction(currentlyDroped);
+
+            //  this.getRefillBrandDetails(currentlyDroped);
             if (this.resetanimation == true) {
               this.initiateanimation(currentlyDroped);
               this.playAudioElement(this.bottledroppeded.nativeElement, 0.8);
@@ -5015,46 +6058,65 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
         }
 
         if (currentDropzone.contains("refilled_list")) {
-          this.updateonlyloc["currentbottle"] = currentlyDroped
-            .split("City")[1]
-            .split("at")[0];
-          this.updateonlyloc["Bottleloc"] = this.currentUserCartId;
-          this.logser.updatelocation(this.updateonlyloc).subscribe((data) => {
-            for (let i = 0; i < this.assetdataset.length; i++) {
-              if (
-                this.assetdataset[i]["AssetId"] ==
-                this.updateonlyloc["currentbottle"]
-              ) {
-                this.bottleDataatRefill["Current_SelfRefill_Count"] =
-                  this.assetdataset[i]["Current_SelfRefill_Count"];
-                break;
-              }
-            }
+          const bottleId = currentlyDroped.split("City")[1].split("at")[0];
 
-            this.currentUserPurhcased.push(currentlyDroped);
-            let index = this.refillbottles.findIndex(
-              (item) => item === currentlyDroped
-            );
-            this.refillbottles.splice(index, 1);
-            this.bottleDataatRefill["Current_SelfRefill_Count"] =
-              this.bottleDataatRefill["Current_SelfRefill_Count"] + 1;
-            this.bottleDataatRefill["currentQuantity"] = this.selectquantity;
-            this.bottleDataatRefill["Bottle_Status"] = "InUse";
-            this.bottleDataatRefill["RefillingBottle"] = currentlyDroped
-              .split("City")[1]
-              .split("at")[0];
-            this.logser
-              .updateRefillData(this.bottleDataatRefill)
-              .subscribe((data) => {
-                $(".displayboard").html(
-                  "Thank you. Visit again. Please press Continue button to refill another bottle"
+          const completeRefillData = {
+            bottle_id: bottleId,
+
+            quantity: this.selectquantity,
+
+            bottleloc: this.currentUserCartId,
+          };
+
+          this.logser.completeRefill(completeRefillData).subscribe({
+            next: (response: any) => {
+              console.log("REFILL COMPLETION RESPONSE:", response);
+
+              if (!response.success) {
+                this.alertModal.openModal(
+                  response.message || "Unable to complete refill."
                 );
-                this.playAudioElement(this.thankyou.nativeElement, 0.8);
-                this.refillbrandselected = "";
-                $(".refilldropper").css({ left: "8px" }).hide();
-                this.resetanimation = false;
-                $(".continue").show();
-              });
+
+                return;
+              }
+
+              // ---------------------------------
+              // UI updates remain in Angular
+              // ---------------------------------
+
+              this.currentUserPurhcased.push(currentlyDroped);
+
+              const index = this.refillbottles.findIndex(
+                (item) => item === currentlyDroped
+              );
+
+              if (index !== -1) {
+                this.refillbottles.splice(index, 1);
+              }
+
+              $(".displayboard").html(
+                "Thank you. Visit again. Please press Continue button to refill another bottle"
+              );
+
+              this.playAudioElement(this.thankyou.nativeElement, 0.8);
+
+              this.refillbrandselected = "";
+
+              $(".refilldropper").css({ left: "8px" }).hide();
+
+              this.resetanimation = false;
+
+              $(".continue").show();
+            },
+
+            error: (error: any) => {
+              console.error("COMPLETE REFILL FAILED:", error);
+
+              const message =
+                error?.error?.message || "Unable to complete refill.";
+
+              this.alertModal.openModal(message);
+            },
           });
         }
       }
@@ -5199,41 +6261,124 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
     }
   }
   opensupermarket() {
-    this.instance1 = panzoom(this.supermarket.nativeElement, {
-      maxZoom: 2,
-      minZoom: 0.4,
-      bounds: true,
-      boundsPadding: 1,
-      smoothScroll: false,
-      autocenter: true,
-      filterKey: function () {
-        return true;
-      },
-      beforeMouseDown: function (e) {
-        // allow mouse-down panning only if altKey is down. Otherwise - ignore
-        var shouldIgnore = !e.shiftKey;
-        return shouldIgnore;
-      },
-      beforeWheel: function (e) {
-        var shouldIgnore = !e.shiftKey;
-        return shouldIgnore;
-      },
-      onDoubleClick: function (e) {
-        return true; // tells the library to not preventDefault, and not stop propagation
-      },
-      onTouch: function (e) {
-        return false; // tells the library to not preventDefault.
-      },
-    });
-    $(".displayconveyor").html("Return used bottles here");
-    let that = this;
-    setTimeout(function () {
-      $(".supermarketcart").css({ left: "927px", top: "3209px" });
-      that.dopanzoomsupermarket(-317, -835, "0.4");
-      that.setflag = 0;
-      that.billpaid = false;
-    }, 300);
-    $(".displaymoniter").html("");
+    // 1. Check whether supermarket has an active owner
+    if (this.isFacilityAvailable("Supermarket Owner")) {
+      // 2. User cannot enter with purchased/non-empty bottles
+      if (this.currentUserPurhcased.length > 0) {
+        this.playAudioElement(this.StopEntry.nativeElement, 0.8);
+
+        this.alertModal.openModal(
+          "Sorry! You are allowed to take only empty shampoo bottles inside this facility. " +
+            "Please leave your non-empty bottles on the shelf at your house and come. " +
+            "You may also empty the bottle or throw the bottle if you wish, before entering. " +
+            "Mind you! You may have to pay a fine if you throw the bottle.",
+          false
+        );
+
+        return;
+      }
+
+      // ==========================================
+      // ENTRY ALLOWED
+      // ==========================================
+
+      this.playAudioElement(this.Supermarket_Return.nativeElement, 0.8);
+
+      this.opensuperflag = 1;
+
+      // Wait until Angular displays supermarketstage
+      setTimeout(() => {
+        const supermarket = this.supermarket.nativeElement;
+
+        const viewport = this.supermarketViewport.nativeElement;
+
+        // ==========================================
+        // CALCULATE CORRECT MINIMUM ZOOM
+        // ==========================================
+
+        const minScaleX = viewport.clientWidth / supermarket.offsetWidth;
+
+        const minScaleY = viewport.clientHeight / supermarket.offsetHeight;
+
+        const minZoom = Math.max(minScaleX, minScaleY) * 1.01;
+
+        console.log(
+          "SUPERMARKET:",
+          supermarket.offsetWidth,
+          supermarket.offsetHeight
+        );
+
+        console.log(
+          "SUPERMARKET VIEWPORT:",
+          viewport.clientWidth,
+          viewport.clientHeight
+        );
+
+        console.log("SUPERMARKET MIN ZOOM:", minZoom);
+
+        // ==========================================
+        // DESTROY OLD INSTANCE IF IT EXISTS
+        // ==========================================
+
+        if (this.instance1) {
+          this.instance1.dispose();
+        }
+
+        // ==========================================
+        // CREATE SUPERMARKET PANZOOM
+        // ==========================================
+
+        this.instance1 = panzoom(supermarket, {
+          minZoom: minZoom,
+          maxZoom: 3,
+
+          // Our own hard boundary code handles this
+          bounds: false,
+
+          smoothScroll: false,
+
+          zoomSpeed: 0.065,
+
+          filterKey: () => true,
+
+          beforeMouseDown: (e) => !e.shiftKey,
+
+          onDoubleClick: () => false,
+
+          onTouch: () => false,
+        });
+
+        // ==========================================
+        // HARD SUPERMARKET BOUNDARIES
+        // ==========================================
+
+        this.instance1.on("transform", () => {
+          this.keepSupermarketInsideViewport();
+        });
+
+        // ==========================================
+        // EXISTING SUPERMARKET CART POSITION
+        // ==========================================
+
+        $(".supermarketcart").css({
+          left: "927px",
+          top: "3209px",
+        });
+
+        // ==========================================
+        // INITIAL SUPERMARKET POSITION
+        // ==========================================
+
+        this.dopanzoomsupermarket(-317, -835, "0.4");
+
+        this.setflag = 0;
+        this.billpaid = false;
+      }, 300);
+
+      $(".displayconveyor").html("Return used bottles here");
+
+      $(".displaymoniter").html("");
+    }
   }
   closesupermarket() {
     $("#innerdoor3").animate({ height: "100px" }, 300);
@@ -5241,6 +6386,7 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
     setTimeout(function () {
       $(".supermarketcart").animate({ left: "400px" }, 1000, () => {
         that.opensuperflag = 0;
+        that.netamount = 0;
         that.bottletaken.length = 0;
         let w = that;
         $("#innerdoor3").animate({ height: "1030px" }, 300);
@@ -5280,11 +6426,26 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.clearMovement();
-    // Clear all intervals when component is destroyed
-    if (this.timeInterval) clearInterval(this.timeInterval);
-    if (this.assetInterval) clearInterval(this.assetInterval);
+
+    if (this.timeInterval) {
+      clearInterval(this.timeInterval);
+      this.timeInterval = null;
+    }
+
+    if (this.assetInterval) {
+      clearInterval(this.assetInterval);
+      this.assetInterval = null;
+    }
+
     if (this.subscription) {
       this.subscription.unsubscribe();
+    }
+
+    if (this.citySocket) {
+      console.log("CLOSING CITY WEBSOCKET FROM COMPONENT DESTROY");
+
+      this.citySocket.close();
+      this.citySocket = null;
     }
   }
 
@@ -5486,36 +6647,104 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
       this.intervalId = null;
     }
   }
-
   makeitEmpty() {
     this.isDisabled = true;
+
     this.bottleStatus_Display["currentQuantity"] = 0;
+
     $("." + this.bottleStatus_Display["contentCode"] + ".shampoolevel").css(
       "height",
       "0px"
     );
-    if (this.bottleStatus_Display["Bottle_Status"] == "InUse") {
-      $(".Inhouseshelf_bottles #" + this.selectedBottleatStage).addClass(
-        "Empty-Dirty"
-      );
+
+    // =====================================================
+    // Current bottle location BEFORE changing UI arrays
+    // =====================================================
+
+    const currentLocation = this.bottleStatus_Display["Bottle_loc"] || "";
+
+    const bottleUiId = this.selectedBottleatStage;
+
+    console.log("EMPTYING BOTTLE:", bottleUiId);
+    console.log("CURRENT LOCATION:", currentLocation);
+
+    // House bottles are stored as:
+    // House@<cartId>
+    const isBottleInHouse = currentLocation.startsWith("House@");
+
+    // =====================================================
+    // Update bottle status
+    // =====================================================
+
+    if (this.bottleStatus_Display["Bottle_Status"] === "InUse") {
       this.bottleStatus_Display["Bottle_Status"] = "Empty-Dirty";
-    } else if (this.bottleStatus_Display["Bottle_Status"] == "Damaged-InUse") {
+
+      $(".Inhouseshelf_bottles #" + bottleUiId).addClass("Empty-Dirty");
+    } else if (this.bottleStatus_Display["Bottle_Status"] === "Damaged-InUse") {
       this.bottleStatus_Display["Bottle_Status"] = "Damaged-Empty";
-      $(".Inhouseshelf_bottles #" + this.selectedBottleatStage).addClass(
-        "Damaged-Empty"
-      );
+
+      $(".Inhouseshelf_bottles #" + bottleUiId).addClass("Damaged-Empty");
     }
-    this.logser
-      .updatethisAssetQuantity(this.bottleStatus_Display)
-      .subscribe((data) => {
-        if (this.bottleStatus_Display["Bottle_Status"] == "InUse") {
-          let index = this.currentUserPurhcased.findIndex(
-            (item) => item === this.bottleStatus_Display["currentbottle"]
+
+    // =====================================================
+    // Update DB
+    // =====================================================
+
+    this.logser.updatethisAssetQuantity(this.bottleStatus_Display).subscribe({
+      next: () => {
+        console.log("EMPTY BOTTLE UPDATED:", bottleUiId);
+
+        // =================================================
+        // CASE 1:
+        // Bottle is currently in HOUSE
+        // =================================================
+        //
+        // Do NOT move it into refillbottles.
+        // It must remain exactly where it is.
+        //
+
+        if (isBottleInHouse) {
+          console.log(
+            "Bottle emptied inside house. Keeping it on house shelf:",
+            bottleUiId
           );
-          this.currentUserPurhcased.splice(index, 1);
-          this.refillbottles.push(this.bottleStatus_Display["currentbottle"]);
+
+          console.log("HOUSE SHELF:", this.Inhouseshelf_bottles);
+
+          return;
         }
-      });
+
+        // =================================================
+        // CASE 2:
+        // Bottle is currently in CART
+        // =================================================
+        //
+        // Remove from upper/non-empty cart
+        // and move to lower empty/refill cart.
+        //
+
+        const index = this.currentUserPurhcased.findIndex(
+          (item: string) => item === bottleUiId
+        );
+
+        if (index !== -1) {
+          this.currentUserPurhcased.splice(index, 1);
+        }
+
+        // Add to lower cart only once
+        if (!this.refillbottles.includes(bottleUiId)) {
+          this.refillbottles.push(bottleUiId);
+        }
+
+        console.log("PURCHASED/TOP CART:", this.currentUserPurhcased);
+
+        console.log("EMPTY/LOWER CART:", this.refillbottles);
+      },
+
+      error: (error: any) => {
+        console.error("Unable to empty bottle:", error);
+      },
+    });
   }
   isDamaged: boolean = false;
   makeitDamaged() {
@@ -5580,14 +6809,27 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
         this.bottleStatus_Display["Bottle_Status"] == "InUse"
           ? (this.bottleStatus_Display["Bottle_Status"] = "Empty-Dirty")
           : (this.bottleStatus_Display["Bottle_Status"] = "Damaged-Empty");
+
         this.logser
           .updatethisAssetQuantity(this.bottleStatus_Display)
-          .subscribe((data) => {
-            let index = this.currentUserPurhcased.findIndex(
-              (item) => item === this.bottleStatus_Display["currentbottle"]
+          .subscribe(() => {
+            const bottleUiId = this.selectedBottleatStage;
+
+            const index = this.currentUserPurhcased.findIndex(
+              (item: string) => item === bottleUiId
             );
-            this.currentUserPurhcased.splice(index, 1);
-            this.refillbottles.push(this.bottleStatus_Display["currentbottle"]);
+
+            if (index !== -1) {
+              this.currentUserPurhcased.splice(index, 1);
+            }
+
+            if (!this.refillbottles.includes(bottleUiId)) {
+              this.refillbottles.push(bottleUiId);
+            }
+
+            console.log("MOVED TO EMPTY BASKET:", bottleUiId);
+            console.log("PURCHASED:", this.currentUserPurhcased);
+            console.log("EMPTY:", this.refillbottles);
           });
       }
     }
@@ -5629,84 +6871,211 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
 
   isDisabled: boolean = false;
   checkthebottlestatusfordisplay() {
-    if (this.bottleStatus_Display["currentbottle"] != "") {
-      console.log(this.bottleStatus_Display["currentbottle"]);
-      this.logser
-        .getthisAssets(this.bottleStatus_Display["currentbottle"])
-        .subscribe((data) => {
-          this.sldBottleData = data;
+    if (this.bottleStatus_Display["currentbottle"] == "") {
+      return;
+    }
+
+    console.log(this.bottleStatus_Display["currentbottle"]);
+
+    this.logser
+      .getthisAssets(this.bottleStatus_Display["currentbottle"])
+      .subscribe({
+        next: (data: any) => {
           console.log(data);
+
           $(".loading").hide();
-          if (data[0]["remQuantity"] == "") {
-            data[0]["remQuantity"] = 500;
+
+          // --------------------------------------------------
+          // 1. SAFETY CHECK
+          // --------------------------------------------------
+
+          if (!data || data.length === 0) {
+            console.error(
+              "Bottle data not found for:",
+              this.bottleStatus_Display["currentbottle"]
+            );
+            return;
           }
-          this.bottleStatus_Display["contentCode"] =
-            data[0]["Current_Content_Code"].split(".")[0];
-          this.bottleStatus_Display["currentQuantity"] = data[0]["remQuantity"];
-          this.bottleStatus_Display["Bottle_Status"] = data[0]["Bottle_Status"];
-          this.bottleStatus_Display["Bottle_loc"] = data[0]["Bottle_loc"];
-          let content =
-            this.sldBottleData[0]["Current_Content_Code"].split(".")[0];
+
+          const asset = data[0];
+
+          this.sldBottleData = data;
+
+          // --------------------------------------------------
+          // 2. QUANTITY
+          // --------------------------------------------------
+
+          if (
+            asset["remQuantity"] === "" ||
+            asset["remQuantity"] === null ||
+            asset["remQuantity"] === undefined
+          ) {
+            asset["remQuantity"] = 500;
+          }
+
+          // --------------------------------------------------
+          // 3. CONTENT CODE
+          //
+          // Some records may have Current_Content_Code,
+          // others have Content_Code.
+          // --------------------------------------------------
+
+          const currentContentCode =
+            asset["Current_Content_Code"] || asset["Content_Code"];
+
+          if (!currentContentCode) {
+            console.error(
+              "Content code missing for Asset:",
+              asset["AssetId"],
+              asset
+            );
+
+            return;
+          }
+
+          // Example:
+          // B4.Wavy
+          //
+          // content = B4
+          // bottle class/label = Wavy
+
+          const contentParts = currentContentCode.split(".");
+
+          const content = contentParts[0] || "";
+
+          const contentName = contentParts[1] || "";
+
+          this.bottleStatus_Display["contentCode"] = content;
+
+          this.bottleStatus_Display["currentQuantity"] = Number(
+            asset["remQuantity"] || 0
+          );
+
+          this.bottleStatus_Display["Bottle_Status"] = asset["Bottle_Status"];
+
+          this.bottleStatus_Display["Bottle_loc"] = asset["Bottle_loc"];
+
+          // --------------------------------------------------
+          // 4. NORMAL BOTTLE DISPLAY
+          // --------------------------------------------------
+
           if (this.bottleStatus_Display["Bottle_loc"] !== "Street") {
             $(".shampoolevel").addClass(content);
-            let getheight = parseFloat(
-              $("." + content + ".shampoolevel")
-                .css("height")
-                .split("px")[0]
+
+            const heightValue = $("." + content + ".shampoolevel").css(
+              "height"
             );
+
+            let getheight = 0;
+
+            if (heightValue) {
+              getheight = parseFloat(heightValue.split("px")[0]) || 0;
+            }
+
             this.stepheight = getheight / 25;
-            let unitreduction =
+
+            const unitreduction =
               500 - this.bottleStatus_Display["currentQuantity"];
-            let reductionpropo = unitreduction / 500;
-            let heightred = getheight * reductionpropo;
-            let reducedheight = getheight - heightred;
+
+            const reductionpropo = unitreduction / 500;
+
+            const heightred = getheight * reductionpropo;
+
+            const reducedheight = getheight - heightred;
+
             let unitprice = 0;
+
             $("." + content + ".shampoolevel").css(
               "height",
               reducedheight + "px"
             );
 
+            // --------------------------------------------------
+            // 5. GET SHAMPOO UNIT PRICE
+            // --------------------------------------------------
+
             for (let r = 0; r < this.shampooPrice.length; r++) {
-              if (
-                this.shampooPrice[r]["BottleContent"] ==
-                this.sldBottleData[0]["Current_Content_Code"]
-              ) {
-                unitprice = this.shampooPrice[r]["UnitPrice"];
+              if (this.shampooPrice[r]["BottleContent"] == currentContentCode) {
+                unitprice = Number(this.shampooPrice[r]["UnitPrice"]) || 0;
+
+                break;
               }
             }
 
-            let checkuniversal =
-              this.sldBottleData[0]["Bottle_Code"].split(".")[0];
+            // --------------------------------------------------
+            // 6. BOTTLE TYPE
+            // --------------------------------------------------
+
+            const bottleCode = asset["Bottle_Code"] || "";
+
+            const checkuniversal = bottleCode ? bottleCode.split(".")[0] : "";
+
             this.shapooprice = unitprice;
+
+            // --------------------------------------------------
+            // 7. TOTAL VALUE
+            // --------------------------------------------------
+
             this.totalamount =
-              parseFloat(this.sldBottleData[0]["Bottle_Price"]) +
-              parseFloat(this.sldBottleData[0]["Content_Price"]) +
-              parseFloat(this.sldBottleData[0]["Env_Tax_Customer"]);
-            if (checkuniversal == "UB") {
+              Number(asset["Bottle_Price"] || 0) +
+              Number(asset["Content_Price"] || 0) +
+              Number(asset["Env_Tax_Customer"] || 0);
+
+            // --------------------------------------------------
+            // 8. UNIVERSAL / BRANDED BOTTLE
+            // --------------------------------------------------
+
+            if (checkuniversal === "UB") {
               this.leblfound = true;
+
               this.bottleclass = "universal";
-              this.frontlabel =
-                this.sldBottleData[0]["Current_Content_Code"]
-                  .split(".")[1]
-                  .toString()
-                  .toLowerCase() + "_label";
+
+              if (contentName) {
+                this.frontlabel = contentName.toLowerCase() + "_label";
+              } else {
+                this.frontlabel = "";
+              }
             } else {
               this.leblfound = false;
-              this.bottleclass =
-                this.sldBottleData[0]["Current_Content_Code"].split(".")[1];
+
+              this.bottleclass = contentName;
             }
-          } else {
-            this.isThrown = true;
-            $(".btncont,.shampoolevel").hide();
-            $(
-              "#" + this.selectedBottleatStage.split("at")[0].split("City")[1]
-            ).addClass("Street");
           }
+
+          // --------------------------------------------------
+          // 9. STREET BOTTLE
+          // --------------------------------------------------
+          else {
+            this.isThrown = true;
+
+            $(".btncont,.shampoolevel").hide();
+
+            if (this.selectedBottleatStage) {
+              const streetBottleId = this.selectedBottleatStage
+                .split("at")[0]
+                .split("City")[1];
+
+              if (streetBottleId) {
+                $("#" + streetBottleId).addClass("Street");
+              }
+            }
+          }
+
+          // --------------------------------------------------
+          // 10. SHOW BOTTLE
+          // --------------------------------------------------
+
           $(".currentbottleshow").fadeIn(2000);
+
           this.workonflags();
-        });
-    } else {
-    }
+        },
+
+        error: (error: any) => {
+          console.error("Failed to load bottle details:", error);
+
+          $(".loading").hide();
+        },
+      });
   }
   workonflags() {
     this.isThrown = false;
@@ -5748,17 +7117,24 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
     }
   }
 
-  playAudioElement(audioElement: HTMLAudioElement, volume: number) {
+  playAudioElement(
+    audioElement: HTMLAudioElement,
+    volume: number
+  ): Promise<void> {
     audioElement.volume = volume;
     audioElement.muted = this.isMuted;
-    audioElement
-      .play()
-      .then(() => {})
-      .catch((error) => {
-        console.error(`Error playing ${audioElement.src}:`, error);
-      });
-  }
 
+    return new Promise((resolve, reject) => {
+      audioElement.onended = () => {
+        resolve();
+      };
+
+      audioElement.play().catch((error) => {
+        console.error(`Error playing ${audioElement.src}:`, error);
+        reject(error);
+      });
+    });
+  }
   toggleAudio() {
     const audioElements = document.querySelectorAll("audio");
 

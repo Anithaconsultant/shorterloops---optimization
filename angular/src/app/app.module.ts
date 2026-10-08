@@ -36,6 +36,7 @@ import { MatInputModule } from '@angular/material/input';
 
 
 import { BottleInventoryFormComponent } from './bottle-inventory-form/bottle-inventory-form.component';
+import { VerifyEmailComponent } from './verify-email/verify-email.component';
 @NgModule({
   declarations: [
     AppComponent,
@@ -52,7 +53,8 @@ import { BottleInventoryFormComponent } from './bottle-inventory-form/bottle-inv
     AlertModalComponent,
     ChartComponent,
     CityruleComponent,
-    BottleInventoryFormComponent
+    BottleInventoryFormComponent,
+    VerifyEmailComponent
   ],
   imports: [
     BrowserModule,

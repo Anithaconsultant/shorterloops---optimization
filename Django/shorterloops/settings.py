@@ -13,6 +13,7 @@ import os
 from datetime import timedelta
 
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -29,7 +30,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-
+load_dotenv()
 # Application definition
 
 INSTALLED_APPS = [
@@ -46,14 +47,14 @@ INSTALLED_APPS = [
     'corsheaders',
     'bootstrap4',
     'auditlog',
-    'silk',
+ #   'silk',
     'channels',
 
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'silk.middleware.SilkyMiddleware',
+  #  'silk.middleware.SilkyMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -258,3 +259,19 @@ CACHES = {
         "LOCATION": "redis://127.0.0.1:6379/1",
     }
 }
+
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.zeptomail.in'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+DEFAULT_FROM_EMAIL = '"Shorterloops" <shorterloops.dbl@iihs.ac.in>'
+SERVER_EMAIL = 'shorterloops.dbl@iihs.ac.in'
+# EMAIL_DEBUG = True
+
+ACCOUNT_EMAIL_SUBJECT_PREFIX = 'Shorterloops - '
+ACCOUNT_EMAIL_VERIFICATION_SUBJECT = 'Verify your email address'
+ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 1

@@ -11,8 +11,8 @@ export class SharedServiceService {
   auditBottleCleaningVideoModal$ = this.auditBottleCleaningVideoModalSubject.asObservable();
   private auditBottleMakingVideoModalSubject = new Subject<void>();
   auditBottleMakingVideoModal$ = this.auditBottleMakingVideoModalSubject.asObservable();
-  private rungarbagetruckSubject = new Subject<void>();
-  rungarbagetruck$ = this.rungarbagetruckSubject.asObservable();
+  private runBottleCollectionTruckSource = new Subject<void>();
+  runBottleCollectionTruck$ = this.runBottleCollectionTruckSource.asObservable();
   private loadPlantBottlesSubject = new Subject<void>();
   loadPlantBottles$ = this.loadPlantBottlesSubject.asObservable();
   private openModalSource = new Subject<void>();
@@ -47,8 +47,8 @@ export class SharedServiceService {
   open_Audit_plastic_Video(): void {
     this.auditPlasticVideoModalSubject.next();
   }
-  rungarbagetruck(): void {
-    this.rungarbagetruckSubject.next();
+  runBottleCollectionTruck(): void {
+    this.runBottleCollectionTruckSource.next();
   }
   loadPlantBottles(): void {
     this.loadPlantBottlesSubject.next();

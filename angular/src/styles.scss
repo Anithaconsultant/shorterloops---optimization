@@ -1180,8 +1180,7 @@ app-signup {
 
 }
 
-$shelves: (
-  shinyvpn_shelf: (17px, 92px),
+$shelves: (shinyvpn_shelf: (17px, 92px),
   shinyvpr_shelf: (162px, 92px),
   shinyrpn_shelf: (17px, 230px),
   shinyrpr_shelf: (162px, 230px),
@@ -1227,7 +1226,8 @@ $shelves: (
   silkyurpr_shelf:(1365px, 512px),
 );
 
-@each $name, $values in $shelves {
+@each $name,
+$values in $shelves {
   .#{$name} {
     @include shelf(nth($values, 1), nth($values, 2));
   }
@@ -1250,17 +1250,19 @@ $shelves: (
 
 
 
-$contents: (
-  shiny: B1,
+$contents: (shiny: B1,
   spiky: B2,
   bouncy: B3,
   wavy: B4,
-  silky: B5
-);
+  silky: B5);
 
-$variants: vpn, vpr, rpn, rpr;
+$variants: vpn,
+vpr,
+rpn,
+rpr;
 
-@each $name, $img in $contents {
+@each $name,
+$img in $contents {
 
   // InUse + Empty-Dirty
   @each $v in $variants {
@@ -1281,10 +1283,19 @@ $variants: vpn, vpr, rpn, rpr;
   }
 }
 
-$contents: shiny, spiky, bouncy, wavy, silky;
-$types: vpn, vpr, rpn, rpr;
-$statuses-use: InUse, Empty-Dirty;
-$statuses-dmg: Damaged-Empty, Damaged-InUse;
+$contents: shiny,
+spiky,
+bouncy,
+wavy,
+silky;
+$types: vpn,
+vpr,
+rpn,
+rpr;
+$statuses-use: InUse,
+Empty-Dirty;
+$statuses-dmg: Damaged-Empty,
+Damaged-InUse;
 
 $ub-width: 96px;
 $ub-height: 253px;
@@ -1356,8 +1367,7 @@ $ub-height: 253px;
   }
 }
 
-$bottles: (
-  shiny: (img: "./assets/img/shiny.png",
+$bottles: (shiny: (img: "./assets/img/shiny.png",
     img_no: "./assets/img/shiny_without.png",
     w: 40px,
     h: 91px,
@@ -1390,10 +1400,10 @@ $bottles: (
     w: 34px,
     h: 90px,
     rw: 9px,
-    rh: 24px)
-);
+    rh: 24px));
 
-@each $name, $cfg in $bottles {
+@each $name,
+$cfg in $bottles {
 
   .#{$name}vpn,
   .#{$name}vpr,
@@ -1408,8 +1418,7 @@ $bottles: (
   }
 }
 
-$uv-bottles: (
-  shiny: (img: "./assets/img/shiny_uvpn.png",
+$uv-bottles: (shiny: (img: "./assets/img/shiny_uvpn.png",
     img_no: "./assets/img/shinyub_without.png",
     w: 38px,
     h: 94px),
@@ -1431,10 +1440,10 @@ $uv-bottles: (
   silky: (img: "./assets/img/silky_uvpn.png",
     img_no: "./assets/img/silkyub_without.png",
     w: 38px,
-    h: 94px)
-);
+    h: 94px));
 
-@each $name, $cfg in $uv-bottles {
+@each $name,
+$cfg in $uv-bottles {
 
   .#{$name}uvpn,
   .#{$name}uvpr,
@@ -1453,8 +1462,8 @@ $uv-bottles: (
 
 .labelholder {
   position: absolute;
-  top: 476px;
-  font-size: 11px;
+  top: 430px;
+  font-size: 10px;
   left: 224px;
   width: 100%;
 
@@ -1470,8 +1479,8 @@ $uv-bottles: (
 
   .Current_PlantRefill_Count {
     position: absolute;
-    top: 34px;
-    left: -16px;
+    top: 257px;
+    left: 46px;
   }
 
   .Latest_Refill_Date {
@@ -1481,25 +1490,26 @@ $uv-bottles: (
 
   .Shampoo_Price {
     position: absolute;
-    top: 85px;
+    top: 50px;
     left: 17px;
   }
 
   .Content_Price {
     position: absolute;
-    top: 103px;
+    top: 68px;
+    left: 30px;
   }
 
   .Bottle_Price {
     position: absolute;
     left: 22px;
-    top: 120px;
+    top: 85px;
   }
 
   .Discount_RefillB {
     position: absolute;
     left: 47px;
-    top: 141px;
+    top: 137px;
     width: 35px;
   }
 
@@ -1511,14 +1521,14 @@ $uv-bottles: (
 
   .Max_Refill_Count {
     position: absolute;
-    left: -87px;
-    top: 225px;
+    left: 31px;
+    top: 239px;
     font-size: 9px;
   }
 
   .Redeem_Good {
     position: absolute;
-    left: 47px;
+    left: 58px;
     top: 153px;
     width: 37px;
   }
@@ -1531,7 +1541,7 @@ $uv-bottles: (
     color: #000;
     width: 60px;
     height: 30px;
-    font-size: 9px;
+    font-size: 7px;
   }
 
   .Discard_fine {
@@ -1581,8 +1591,7 @@ $uv-bottles: (
   height: $h;
 }
 
-$big-fronts: (
-  shinyuvpn_big: ("./assets/img/universal.png", 300px),
+$big-fronts: (shinyuvpn_big: ("./assets/img/universal.png", 300px),
   shinyuvpr_big: ("./assets/img/universal.png", 300px),
   shinyurpn_big: ("./assets/img/universal.png", 300px),
   shinyurpr_big: ("./assets/img/universal.png", 300px),
@@ -1633,23 +1642,23 @@ $big-fronts: (
   wavyvpr_big: ("./assets/img/wavy.svg", 275px),
 );
 
-@each $name, $cfg in $big-fronts {
+@each $name,
+$cfg in $big-fronts {
   .#{$name} {
     @include big-front(nth($cfg, 1), nth($cfg, 2));
     @extend .big-view;
   }
 }
 
-$back-big: (
-  shiny: ("./assets/img/shiny_back.png", 362px, 770px, #dddd6b),
+$back-big: (shiny: ("./assets/img/shiny_back.png", 362px, 770px, #dddd6b),
   silky: ("./assets/img/silky_back.png", 276px, 770px, #fff),
   spiky: ("./assets/img/spiky_back.png", 362px, 764px, #633cce),
   wavy: ("./assets/img/wavy_back.png", 362px, 770px, #633cce),
   bouncy:("./assets/img/bouncy_back.png", 355px, 770px, #fff),
-  universal: ("./assets/img/universal_back.png", 299px, 770px, #000)
-);
+  universal: ("./assets/img/universal_back.png", 299px, 770px, #000));
 
-@each $name, $cfg in $back-big {
+@each $name,
+$cfg in $back-big {
   .#{$name}back {
     @include back-view(nth($cfg, 1), nth($cfg, 2), nth($cfg, 3));
     @extend .back-view;
@@ -1661,7 +1670,8 @@ $back-big: (
   }
 }
 
-@each $name, $cfg in $back-big {
+@each $name,
+$cfg in $back-big {
   .#{$name}back_small {
     @include back-view(nth($cfg, 1), nth($cfg, 2), nth($cfg, 3));
     @extend .back-view;
@@ -1673,10 +1683,16 @@ $back-big: (
   }
 }
 
+.DOM {
+  top: 205px;
+  left: 19px;
+  position: absolute;
+}
+
 .shinyback .labelholder {
   .AssetId {
-    left: -278px;
-    top: 27px;
+    left: -279px;
+    top: -33px;
   }
 
   .Env_Tax_Customer {
@@ -1684,41 +1700,83 @@ $back-big: (
   }
 
   .Total_price {
-    top: 204px;
+    top: 172px;
   }
 
-  .Max_Refill_Count {
-    top: 221px;
+  .DOM {
+    top: 204px;
+    position: absolute;
+    left: 18px;
   }
 }
 
 .universalback .labelholder {
-  top: 475px;
-  left: 192px;
 
-  .AssetId {
-    left: -249px;
-    top: 72px;
-  }
+  top: 430px;
+  left: 189px;
 
-  .Bottle_Price {
-    top: 124px;
-  }
+  //   top: 475px;
+  //   left: 192px;
 
-  .Redeem_Good {
-    top: 159px;
-  }
+  //   .AssetId {
+  //     left: -249px;
+  //     top: 72px;
+  //   }
 
-  .Discard_fine {
-    top: 176px;
-  }
+  //   .Bottle_Price {
+  //     top: 124px;
+  //   }
 
-  .Env_Tax_Customer {
-    top: 192px;
-  }
+  //   .Redeem_Good {
+  //     top: 159px;
+  //   }
+
+  //   .Discard_fine {
+  //     top: 176px;
+  //   }
+
+  //   .Env_Tax_Customer {
+  //     top: 192px;
+  //   }
 
   .Total_price {
-    top: 208px;
+    top: 171px;
+  }
+}
+
+.silkyback .labelholder {
+
+  top: 435px;
+  left: 181px;
+
+  .Total_price {
+    top: 168px;
+  }
+  .AssetId{
+    top:104px;
+  }
+}
+
+.bouncyback .labelholder {
+  top: 421px;
+  left: 229px;
+
+  .Total_price {
+    top: 173px;
+  }
+
+  .Max_Refill_Count {
+    top: 244px;
+  }
+
+  .Current_PlantRefill_Count {
+    top: 263px;
+  }
+
+  .AssetId {
+    left: -288px;
+    top: 74px;
+    font-size: 7px;
   }
 }
 

@@ -69,120 +69,126 @@
   <audio #Fine preload="auto">
     <source src="assets/audio/Fine.mp3" type="audio/mp3" />
   </audio>
-  <div class="maincity" #maincity id="maincity" [hidden]="opensuperflag != 0">
-    <div class="truck side">
-      <div class="holder">
-        <div cdkDropList #truckList="cdkDropList" [cdkDropListConnectedTo]="[
+  <div #viewport class="city-viewport">
+    <div #cityscene class="city-scene">
+      <div class="maincity" #maincity id="maincity" [hidden]="opensuperflag != 0">
+        <div class="truck side">
+          <div class="holder">
+            <div cdkDropList #truckList="cdkDropList" [cdkDropListConnectedTo]="[
             houseshelfList,
             customercartBottomList,
             customercartList
           ]" [cdkDropListData]="throwntoTruckList" (cdkDropListDropped)="boughtdrop($event)" class="truckContList">
-          <div *ngFor="let item of throwntoTruckList" id="{{ item }}" class="bottle {{ item.split('at')[1] }} "></div>
-        </div>
-      </div>
-    </div>
-    <div class="bottletruck garbageside">
-      <div class="bottleWrapper">
-        <div *ngFor="let item of bottletoClean" id="{{ item }}" class="bottle {{ item.split('at')[1] }} "></div>
-      </div>
-    </div>
-    <div class="UbottleCleaning"></div>
-    <div class="cart">
-      <div class="cartavatar" (click)="opensuperflag = 1; opensupermarket()"
-        (touchend)="opensuperflag = 1; opensupermarket()"></div>
-      <div class="cartid" (click)="
-          opencart(cartcontent, $event); calculatenetfine(); showcashflow()
-        "></div>
-      <div class="loadinglogo">Loading...</div>
-      <div class="topbasketholder">
-        <div cdkDropList #customercartList="cdkDropList"
-          [cdkDropListConnectedTo]="[houseshelfList, DustbinList, truckList]" [cdkDropListData]="currentUserPurhcased"
-          (cdkDropListDropped)="boughtdrop($event)" [cdkDropListEnterPredicate]="checksBottleStatus"
-          class="newbottle_list">
-          <div *ngFor="let item of currentUserPurhcased; trackBy: trackByItem" id="{{ item }}" class="bottle {{ item.split('at')[1] }} "
-            cdkDrag (dragstart)="onDragStart($event)" longPressDrag [cdkDragStartDelay]="250" [cdkDragData]="item"
-            (click)="openbottelstages(cartcontent, $event)">
-            <ng-template cdkDragPreview>
-              <div class="bottle {{ item.split('at')[1] }}"></div>
-            </ng-template>
+              <div *ngFor="let item of throwntoTruckList" id="{{ item }}" class="bottle {{ item.split('at')[1] }} ">
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="bottombasketholder">
-        <div cdkDropList #customercartBottomList="cdkDropList" [cdkDropListConnectedTo]="[
+        <div class="bottletruck garbageside">
+          <div class="bottleWrapper">
+            <div *ngFor="let item of bottletoClean" id="{{ item }}" class="bottle  {{ item.split('at')[1] }}  "></div>
+          </div>
+        </div>
+        <div class="UbottleCleaning"></div>
+        <div class="cart">
+          <div class="cartavatar" (click)=" opensupermarket()" (touchend)="opensupermarket()"></div>
+          <div class="cartid" (click)="
+          opencart(cartcontent, $event); calculatenetfine(); showcashflow()
+        "></div>
+          <div class="loadinglogo">Loading...</div>
+          <div class="topbasketholder">
+            <div cdkDropList #customercartList="cdkDropList"
+              [cdkDropListConnectedTo]="[houseshelfList, DustbinList, truckList]"
+              [cdkDropListData]="currentUserPurhcased" (cdkDropListDropped)="boughtdrop($event)"
+              [cdkDropListEnterPredicate]="checksBottleStatus" class="newbottle_list">
+              <div *ngFor="let item of currentUserPurhcased; trackBy: trackByItem" id="{{ item }}"
+                class="bottle {{ item.split('at')[1] }} " cdkDrag (dragstart)="onDragStart($event)" longPressDrag
+                [cdkDragStartDelay]="250" [cdkDragData]="item" (click)="openbottelstages(cartcontent, $event)">
+                <ng-template cdkDragPreview>
+                  <div class="bottle  {{ item.split('at')[1] }} "></div>
+                </ng-template>
+              </div>
+            </div>
+          </div>
+          <div class="bottombasketholder">
+            <div cdkDropList #customercartBottomList="cdkDropList" [cdkDropListConnectedTo]="[
             houseshelfList,
             DustbinList,
             truckList,
             reverseVendingList
           ]" [cdkDropListData]="refillbottles" (cdkDropListDropped)="boughtdrop($event)"
-          [cdkDropListEnterPredicate]="checksBottleempty" class="cart_bottle_list">
-          <div *ngFor="let item of refillbottles; trackBy: trackByItem" id="{{ item }}" class="bottle {{ item.split('at')[1] }} " cdkDrag
-            (dragstart)="onDragStart($event)" [cdkDragData]="item" [cdkDragStartDelay]="250"
-            (click)="openbottelstages(cartcontent, $event)"></div>
+              [cdkDropListEnterPredicate]="checksBottleempty" class="cart_bottle_list">
+              <div *ngFor="let item of refillbottles; trackBy: trackByItem" id="{{ item }}"
+                class="bottle {{ item.split('at')[1] }} " cdkDrag (dragstart)="onDragStart($event)" [cdkDragData]="item"
+                [cdkDragStartDelay]="250" (click)="openbottelstages(cartcontent, $event)"></div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-    <!-- <div class="housedisplay">{{currentusername | titlecase}}</div> -->
-    <div class="boardholder">
-      <div class="Supermarket_Owner commoncls">CLOSED</div>
-      <div class="Plastic_Recycling_Plant_Owner commoncls">CLOSED</div>
-      <div class="Universal_Bottle_Cleaning_Plant_Owner commoncls">CLOSED</div>
-      <div class="Universal_Bottle_Manufacturing_Plant_owner commoncls">
-        CLOSED
-      </div>
-      <div class="Shampoo_Refilling_Station_Owner commoncls">CLOSE</div>
-    </div>
-    <div class="mayorflag"></div>
+        <!-- <div class="housedisplay">{{currentusername | titlecase}}</div> -->
+        <div class="boardholder">
+          <div class="Supermarket_Owner commoncls">CLOSED</div>
+          <div class="Plastic_Recycling_Plant_Owner commoncls">CLOSED</div>
+          <div class="Universal_Bottle_Cleaning_Plant_Owner commoncls">CLOSED</div>
+          <div class="Universal_Bottle_Manufacturing_Plant_owner commoncls">
+            CLOSED
+          </div>
+          <div class="Shampoo_Refilling_Station_Owner commoncls">CLOSE</div>
+        </div>
+        <div class="mayorflag"></div>
 
-    <div id="clock">Time {{ citytiming["CurrentTime"] }}</div>
-    <div id="day">Day :{{ citytiming["CurrentDay"] }}</div>
-    <div class="mayorofzboard">{{ cityname | uppercase }} MUNICIPAL OFFICE</div>
-    <div class="leftcolony">{{ cityname | uppercase }} HOUSING COLONY</div>
-    <div class="rightcolony">{{ cityname | uppercase }} HOUSING COLONY</div>
+        <div id="clock">Time {{ citytiming["CurrentTime"] }}</div>
+        <div id="day">Day :{{ citytiming["CurrentDay"] }}</div>
+        <div class="mayorofzboard">{{ cityname | uppercase }} MUNICIPAL OFFICE</div>
+        <div class="leftcolony">{{ cityname | uppercase }} HOUSING COLONY</div>
+        <div class="rightcolony">{{ cityname | uppercase }} HOUSING COLONY</div>
 
-    <div class="HouseWrapper">
-      <div *ngFor="let key of objkey(positionObject); let i = index" class="house {{ formatKey(key) }}">
-        <div class="logInLight houselite"></div>
-        <div class="roleDisplay displaypanel"></div>
+        <div class="HouseWrapper">
+          <div *ngFor="let key of objkey(positionObject); let i = index" class="house {{ formatKey(key) }}">
+            <div class="logInLight houselite"></div>
+            <div class="roleDisplay displaypanel"></div>
 
-        <div class="namedisplay housedisplay"></div>
-      </div>
-      <div class="bottleStore {{ formatKey(currentUserRole) }}">
-        <div cdkDropList #houseshelfList="cdkDropList" [cdkDropListConnectedTo]="[
+            <div class="namedisplay housedisplay"></div>
+          </div>
+          <div class="bottleStore {{ formatKey(currentUserRole) }}">
+            <div cdkDropList #houseshelfList="cdkDropList" [cdkDropListConnectedTo]="[
             customercartList,
             customercartBottomList,
             truckList
           ]" [cdkDropListData]="BottleInHouseList" (cdkDropListDropped)="boughtdrop($event)"
-          class="Inhouseshelf_bottles">
-          <div *ngFor="let item of BottleInHouseList; trackBy: trackByItem" class="bottle {{ item.split('at')[1] }}" id="{{ item }}" cdkDrag
-            (dragstart)="onDragStart($event)"  [cdkDragData]="item" longPressDrag [cdkDragStartDelay]="250"
-            (click)="openbottelstages(cartcontent, $event)"></div>
-        </div>
-      </div>
-    </div>
-    <div class="CityDustBin">
-      <div cdkDropList #DustbinList="cdkDropList" [cdkDropListConnectedTo]="[customercartList, customercartBottomList]"
-        [cdkDropListData]="dustbinbottles" (cdkDropListDropped)="boughtdrop($event)" class="dustbin_bottles">
-        <div *ngFor="let item of dustbinbottles" class="bottle {{ item.split('at')[1] }}" id="{{ item }}" cdkDrag
-          (dragstart)="onDragStart($event)" longPressDrag [cdkDragStartDelay]="250"
-          (click)="openbottelstages(cartcontent, $event)"></div>
-      </div>
-      <div class="warning" *ngIf="showwarning == true"></div>
-    </div>
-    <div class="reverseVending">
-      <div class="reverseDropper">
-        <div cdkDropList #reverseVendingList="cdkDropList" [cdkDropListConnectedTo]="[customercartBottomList]"
-          [cdkDropListData]="reversedBottles" (cdkDropListDropped)="returnreverse($event)" class="vending_list">
-          <div *ngFor="let item of reversedBottles" class="bottle {{ item.split('at')[1] }} reversed" id="{{ item }}">
+              class="Inhouseshelf_bottles">
+              <div *ngFor="let item of BottleInHouseList; trackBy: trackByItem" class="bottle {{ item.split('at')[1] }}"
+                id="{{ item }}" cdkDrag (dragstart)="onDragStart($event)" [cdkDragData]="item" longPressDrag
+                [cdkDragStartDelay]="250" (click)="openbottelstages(cartcontent, $event)"></div>
+            </div>
           </div>
         </div>
-      </div>
-      <div class="reverseBoard">Place your Bottle on the Placeholder</div>
-    </div>
+        <div class="CityDustBin">
+          <div cdkDropList #DustbinList="cdkDropList"
+            [cdkDropListConnectedTo]="[customercartList, customercartBottomList]" [cdkDropListData]="dustbinbottles"
+            (cdkDropListDropped)="boughtdrop($event)" class="dustbin_bottles">
+            <div *ngFor="let item of dustbinbottles" class="bottle {{ item.split('at')[1] }}" id="{{ item }}" cdkDrag
+              (dragstart)="onDragStart($event)" longPressDrag [cdkDragStartDelay]="250"
+              (click)="openbottelstages(cartcontent, $event)"></div>
+          </div>
+          <div class="warning" *ngIf="showwarning == true"></div>
+        </div>
+        <div class="reverseVending">
+          <div class="reverseDropper">
+            <div cdkDropList #reverseVendingList="cdkDropList" [cdkDropListConnectedTo]="[customercartBottomList]"
+              [cdkDropListData]="reversedBottles" (cdkDropListDropped)="returnreverse($event)" class="vending_list">
+              <div *ngFor="let item of reversedBottles" class="bottle {{ item.split('at')[1] }} reversed"
+                id="{{ item }}">
+              </div>
+            </div>
+          </div>
+          <div class="reverseBoard">Place your Bottle on the Placeholder</div>
+        </div>
 
-    <div class="supermarketentry" (click)="rungarbagetruck()"></div>
+        <div class="supermarketentry" (click)="runBottleCollectionTruck()"></div>
+      </div>
+    </div>
   </div>
-  <div class="supermarketstage" [hidden]="opensuperflag != 1">
+  <div class="supermarketstage" #supermarketViewport [hidden]="opensuperflag != 1">
     <div class="loadimg" #supermarket>
       <div class="displaynetamount">
         &#x20B9; {{ netamount | number : "1.2-2" }}
@@ -238,7 +244,7 @@
 
             <div *ngFor="let item of bottletaken; trackBy: trackByBottleId" cdkDrag
               [cdkDragData]="{ id: item, className: item.split('at')[1] }" [id]="item"
-              class="bottle {{ item.split('at')[1] }}">{{ getBottleNumber(item) }}
+              class="bottle {{ item.split('at')[1] }}">
             </div>
 
           </div>
@@ -251,12 +257,12 @@
         <div *ngFor="let shelf of shelfConfig" class="dropper" [ngClass]="shelf.class + '_shelf'">
 
 
-          <div cdkDropList #shelfDropLists="cdkDropList" [cdkDropListData]="getShelfArray(shelf.key)" [cdkDropListConnectedTo]="[bottlesshopped]"
-            (cdkDropListDropped)="drop($event)" [cdkDropListEnterPredicate]="genericShelfPredicate(shelf.key)"
-            [ngClass]="shelf.class + '_list'">
+          <div cdkDropList #shelfDropLists="cdkDropList" [cdkDropListData]="getShelfArray(shelf.key)"
+            [cdkDropListConnectedTo]="[bottlesshopped]" (cdkDropListDropped)="drop($event)"
+            [cdkDropListEnterPredicate]="genericShelfPredicate(shelf.key)" [ngClass]="shelf.class + '_list'">
             <div *ngFor="let item of getShelfArray(shelf.key); trackBy: trackByBottleId" cdkDrag
               [cdkDragData]="{ id: item, className: shelf.key }" [id]="item" class="bottle {{ shelf.class }}"
-              longPressDrag [cdkDragStartDelay]="250" (click)="opensticker(bottlesticker, $event)">{{item}}
+              longPressDrag [cdkDragStartDelay]="250" (click)="opensticker(bottlesticker, $event)">
             </div>
 
           </div>
@@ -498,7 +504,7 @@
       </div>
       <div class="backside {{ bottleclass | lowercase }}back">
         <div class="labelholder">
-          <div class="DOM">{{ assetdata[0].DOM }}</div>
+        
           <div class="Quantity">
             {{ assetdata[0].Quantity }} {{ assetdata[0].Units }}
           </div>
@@ -520,16 +526,15 @@
             &#8377; {{ assetdata[0].Discount_RefillB }}
           </div>
           <div class="Redeem_Good">&#8377; {{ assetdata[0].Redeem_Good }}</div>
-          <div class="Discard_fine">
-            &#8377; {{ assetdata[0].Discard_fine }}
-          </div>
+          
           <div class="Env_Tax_Customer">
             &#8377; {{ assetdata[0].Env_Tax_Customer }}
           </div>
           <div class="Total_price">&#8377; {{ totalamount }}</div>
           <div class="AssetId">{{ assetdata[0].AssetId }}</div>
+            <div class="DOM">{{ assetdata[0].DOM }}</div>
           <div class="Max_Refill_Count">
-            Maximum Refill Count :{{ assetdata[0].Max_Refill_Count }}
+            {{ assetdata[0].Max_Refill_Count }}
           </div>
         </div>
       </div>
@@ -615,7 +620,8 @@
       <div *ngIf="altertab == 1 && opensuperflag == 1">
         <div class="tablecontent" *ngIf="bottletaken.length > 0">
           <div class="daytime">
-            Day : {{ citycurrentday }} Time: {{ cityCurrentTime }}
+            Day : {{ citytiming["CurrentDay"] }}
+            Time: {{ citytiming["CurrentTime"] }}
           </div>
           <div class="net">
             Net Amount :&#x20B9; {{ netamount | number : "1.2-2" }}
@@ -860,7 +866,8 @@
       <div class="icncon" [ngClass]="{ highlighttab: altertab == 3 }">
         <div class="recyclebtn" (click)="altertab = 3"></div>
       </div>
-      <div class="btn btn-outline-dark pay" [ngClass]="{ disabled: billpaid }" (click)="payamount()">
+      <div class="btn btn-outline-dark pay" [ngClass]="{ disabled: billpaid || !canPay }"
+        (click)="canPay && !billpaid && payamount()">
         Pay
       </div>
       <div class="btn btn-outline-dark cancel" (click)="modal.close('Save click')">

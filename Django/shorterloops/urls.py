@@ -1,5 +1,5 @@
 from django.contrib import admin
-from accounts.views import SignUpView, LoginView, UserProfileView, UserListView
+from accounts.views import SignUpView, LoginView, UserProfileView, UserListView,VerifyEmailView
 from django.urls import include, path
 from accounts import views
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -9,11 +9,12 @@ urlpatterns = [
     path('api/users/', UserListView.as_view(), name='user-list'),
     path('api/auth/signup/', SignUpView.as_view(), name='signup'),
     path('api/auth/login/', LoginView.as_view(), name='login'),
-    path('auth/refresh/', TokenRefreshView.as_view()),
+    path('api/auth/verify-email/<uuid:token>/', VerifyEmailView.as_view(),    name='verify-email'),
+    
+    path('api/auth/refresh/', TokenRefreshView.as_view()),
     path('api/auth/profile/', UserProfileView.as_view(), name='profile'),
     path('api/updateusercity/<userid>',
          views.updateusercity, name='updateusercity'),
-    # path('api/signup/', views.signup, name='signup'),
     path('api/addcity/', views.addcity, name='addcity'),
     path('api/addcity/<cityid>', views.editcity, name='editcity'),
     path('api/get-csrf/', views.get_csrf, name='get_csrf'),
@@ -57,9 +58,15 @@ urlpatterns = [
     path('api/calculatepurchase/', views.calculatepurchase, name='calculatepurchase'),
     
     path('api/returnbottle/',views.return_bottle,name='return_bottle'),
-    path('silk/', include('silk.urls', namespace='silk')),
-    
-   # path('api/get_last_serial/', views.get_last_serial, name='get_last_serial'),
+    path("api/refill-bottle/", views.refill_bottle,name="refill-bottle"),
+    path("api/complete-refill/",views.complete_refill, name="complete-refill"),
+    path("api/apply-bottle-fine/", views.apply_bottle_fine,name="apply-bottle-fine"),
+    path("api/bulk-clean-bottles/", views.bulk_clean_bottles, name="bulk-clean-bottles"),
+    path("api/bulk-move-bottles/",views.bulk_move_bottles,name="bulk_move_bottles"),
+    path("api/cashflow-summary/",views.cashflow_summary,name="cashflow_summary"),
+    path("api/supermarket-order/", views.supermarket_order, name="supermarket_order"),
+    path('api/city-rule-master/<str:citytype>/',views.get_city_rule_master,name='city-rule-master'),
+  
 
 
 ]

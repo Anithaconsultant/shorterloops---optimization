@@ -1,8 +1,8 @@
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { BehaviorSubject, Observable, throwError } from 'rxjs';
-import { tap, catchError } from 'rxjs/operators';
-import { Router } from '@angular/router';
+import { Injectable } from "@angular/core";
+import { HttpClient, HttpHeaders } from "@angular/common/http";
+import { BehaviorSubject, Observable, throwError } from "rxjs";
+import { tap, catchError } from "rxjs/operators";
+import { Router } from "@angular/router";
 
 interface AuthResponse {
   access: string;
@@ -11,45 +11,54 @@ interface AuthResponse {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: "root",
 })
 export class AuthService {
-  //  private apiUrl = 'https://dbl.iihs.in/api/auth';
-  private apiUrl = 'http://127.0.0.1:8000/api/auth';
+  //private apiUrl = 'https://dev-dbl.iihs.co.in/api/auth';
+  private apiUrl = "http://127.0.0.1:8000/api/auth";
   private currentUserSubject = new BehaviorSubject<any>(null);
 
-  constructor(private http: HttpClient, private router: Router) {
+  constructor(
+    private http: HttpClient,
+    private router: Router,
+  ) {
     this.loadUserFromStorage();
   }
 
   public getAuthHeaders(): HttpHeaders {
     const token = this.getAccessToken();
     return new HttpHeaders({
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
     });
   }
 
   getAccessToken(): string | null {
-    return localStorage.getItem('access_token');
+    return localStorage.getItem("access_token");
   }
 
   getRefreshToken(): string | null {
-    return localStorage.getItem('refresh_token');
+    return localStorage.getItem("refresh_token");
   }
 
   refreshToken(): Observable<any> {
-    return this.http.post(`${this.apiUrl}/refresh/`, {
-      refresh: this.getRefreshToken()
-    }, { headers: this.getAuthHeaders() }).pipe(
-      tap((tokens: any) => {
-        this.storeTokens(tokens);
-      }),
-      catchError((error) => {
-        this.logout();
-        return throwError(error);
-      })
-    );
+    return this.http
+      .post(
+        `${this.apiUrl}/refresh/`,
+        {
+          refresh: this.getRefreshToken(),
+        },
+        { headers: this.getAuthHeaders() }
+      )
+      .pipe(
+        tap((tokens: any) => {
+          this.storeTokens(tokens);
+        }),
+        catchError((error) => {
+          this.logout();
+          return throwError(error);
+        })
+      );
   }
 
   get currentUser$(): Observable<any> {
@@ -57,50 +66,61 @@ export class AuthService {
   }
 
   private loadUserFromStorage(): void {
-    const user = localStorage.getItem('currentUser');
-    if (user) {
+    const user = localStorage.getItem("currentUser");
+
+    if (!user || user === "undefined" || user === "null") {
+      localStorage.removeItem("currentUser");
+      return;
+    }
+
+    try {
       this.currentUserSubject.next(JSON.parse(user));
+    } catch (error) {
+      console.error("Invalid currentUser in localStorage:", error);
+      localStorage.removeItem("currentUser");
     }
   }
-
-  signup(userData: any): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/signup/`, userData).pipe(
-      tap(response => {
-        this.storeAuthData(response);
-        this.router.navigate(['/login']);
-      })
-    );
+  signup(userData: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/signup/`, userData);
   }
 
-  login(credentials: { Username: string, Password: string }): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/login/`, credentials).pipe(
-      tap(response => {
-        this.storeAuthData(response);
-        //this.router.navigate(['/home']);
-      })
-    );
+  login(credentials: {
+    Username: string;
+    Password: string;
+  }): Observable<AuthResponse> {
+    return this.http
+      .post<AuthResponse>(`${this.apiUrl}/login/`, credentials)
+      .pipe(
+        tap((response) => {
+          this.storeAuthData(response);
+          //this.router.navigate(['/home']);
+        })
+      );
+  }
+  verifyEmail(token: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/verify-email/${token}/`);
   }
 
-  private storeAuthData(response: AuthResponse): void {
-    localStorage.setItem('access_token', response.access);
-    localStorage.setItem('refresh_token', response.refresh);
-    localStorage.setItem('currentUser', JSON.stringify(response.user));
+  storeAuthData(response: AuthResponse): void {
+    localStorage.setItem("access_token", response.access);
+    localStorage.setItem("refresh_token", response.refresh);
+    localStorage.setItem("currentUser", JSON.stringify(response.user));
     this.currentUserSubject.next(response.user);
   }
 
   private storeTokens(tokens: any): void {
-    localStorage.setItem('access_token', tokens.access);
+    localStorage.setItem("access_token", tokens.access);
     if (tokens.refresh) {
-      localStorage.setItem('refresh_token', tokens.refresh);
+      localStorage.setItem("refresh_token", tokens.refresh);
     }
   }
 
   logout(): void {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('currentUser');
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("currentUser");
     this.currentUserSubject.next(null);
-    this.router.navigate(['/login']);
+    this.router.navigate(["/login"]);
   }
 
   isLoggedIn(): boolean {
@@ -108,13 +128,16 @@ export class AuthService {
   }
 
   updateProfile(profileData: any): Observable<any> {
-    return this.http.patch(`${this.apiUrl}/profile/`, profileData, {
-      headers: this.getAuthHeaders()
-    }).pipe(
-      tap(user => {
-        localStorage.setItem('currentUser', JSON.stringify(user));
-        this.currentUserSubject.next(user);
+    return this.http
+      .patch(`${this.apiUrl}/profile/`, profileData, {
+        headers: this.getAuthHeaders(),
       })
-    );
+      .pipe(
+        tap((user) => {
+          localStorage.setItem("currentUser", JSON.stringify(user));
+          this.currentUserSubject.next(user);
+        })
+      );
   }
+
 }

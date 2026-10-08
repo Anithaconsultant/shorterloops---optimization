@@ -2,11 +2,9 @@ import json
 
 from channels.generic.websocket import AsyncWebsocketConsumer
 
-
 class CityConsumer(AsyncWebsocketConsumer):
 
     async def connect(self):
-
         self.city_id = self.scope["url_route"]["kwargs"]["city_id"]
 
         self.room_group_name = f"city_{self.city_id}"
@@ -61,6 +59,23 @@ class CityConsumer(AsyncWebsocketConsumer):
         await self.send(
             text_data=json.dumps({
                 "type": "city_timer_update",
+                "data": event["data"]
+            })
+        )
+
+    async def asset_update(self, event):
+
+        await self.send(
+            text_data=json.dumps({
+                "type": "asset_update",
+                "data": event["data"]
+            })
+        )
+
+    async def websocket_test(self, event):
+        await self.send(
+            text_data=json.dumps({
+                "type": "websocket_test",
                 "data": event["data"]
             })
         )

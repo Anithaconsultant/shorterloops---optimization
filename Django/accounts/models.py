@@ -155,51 +155,93 @@ class Asset(models.Model):
 
 
 class Cityrule(models.Model):
+        class Meta:
+            db_table = "Cityrule"
+
+        ruleId = models.AutoField(primary_key=True)
+        cityId = models.CharField(max_length=70, blank=True)
+        rule_number = models.IntegerField(unique=True, editable=False)
+        day_number = models.CharField(max_length=70, blank=True)
+        time_in_hours = models.FloatField(null=True, blank=True)
+        virgin_plastic_price = models.FloatField(null=True, blank=True)
+        recycled_plastic_price = models.FloatField(null=True, blank=True)
+        envtx_p_shampoo = models.FloatField(null=True, blank=True)
+        envtx_p_bvb = models.FloatField(null=True, blank=True)
+        envtx_p_brcb = models.FloatField(null=True, blank=True)
+        envtx_p_brfb = models.FloatField(null=True, blank=True)
+        envtx_p_uvb = models.FloatField(null=True, blank=True)
+        envtx_p_urcb = models.FloatField(null=True, blank=True)
+        envtx_p_urfb = models.FloatField(null=True, blank=True)
+        envtx_r_bvb = models.FloatField(null=True, blank=True)
+        envtx_r_brcb = models.FloatField(null=True, blank=True)
+        envtx_r_brfb = models.FloatField(null=True, blank=True)
+        envtx_r_uvb = models.FloatField(null=True, blank=True)
+        envtx_r_urcb = models.FloatField(null=True, blank=True)
+        envtx_r_urfb = models.FloatField(null=True, blank=True)
+        envtx_c_bvb = models.FloatField(null=True, blank=True)
+        envtx_c_brcb = models.FloatField(null=True, blank=True)
+        envtx_c_brfb = models.FloatField(null=True, blank=True)
+        envtx_c_uvb = models.FloatField(null=True, blank=True)
+        envtx_c_urcb = models.FloatField(null=True, blank=True)
+        envtx_c_urfb = models.FloatField(null=True, blank=True)
+        fine_for_throwing_bottle = models.FloatField(null=True, blank=True)
+        dustbinning_fine = models.FloatField(null=True, blank=True)
+
+        def save(self, *args, **kwargs):
+            if not self.rule_number:  # If rule_number is not set
+                last_rule = Cityrule.objects.order_by('-rule_number').first()
+                if last_rule:
+                    self.rule_number = last_rule.rule_number + 1
+                else:
+                    self.rule_number = 1  # Start from 1 if no rules exist
+            super().save(*args, **kwargs)
+
+        def __str__(self):
+            return f"Rule {self.rule_number} for City {self.cityId}"
+
+class CityruleMaster(models.Model):
     class Meta:
-        db_table = "Cityrule"
+        db_table = "CityruleMaster"
+        managed = False
 
     ruleId = models.AutoField(primary_key=True)
-    cityId = models.CharField(max_length=70, blank=True)
-    rule_number = models.IntegerField(unique=True, editable=False)
+    citytype = models.CharField(max_length=20)
+
+    rule_number = models.IntegerField()
     day_number = models.CharField(max_length=70, blank=True)
     time_in_hours = models.FloatField(null=True, blank=True)
+
     virgin_plastic_price = models.FloatField(null=True, blank=True)
     recycled_plastic_price = models.FloatField(null=True, blank=True)
+
     envtx_p_shampoo = models.FloatField(null=True, blank=True)
+
     envtx_p_bvb = models.FloatField(null=True, blank=True)
     envtx_p_brcb = models.FloatField(null=True, blank=True)
     envtx_p_brfb = models.FloatField(null=True, blank=True)
+
     envtx_p_uvb = models.FloatField(null=True, blank=True)
     envtx_p_urcb = models.FloatField(null=True, blank=True)
     envtx_p_urfb = models.FloatField(null=True, blank=True)
+
     envtx_r_bvb = models.FloatField(null=True, blank=True)
     envtx_r_brcb = models.FloatField(null=True, blank=True)
     envtx_r_brfb = models.FloatField(null=True, blank=True)
+
     envtx_r_uvb = models.FloatField(null=True, blank=True)
     envtx_r_urcb = models.FloatField(null=True, blank=True)
     envtx_r_urfb = models.FloatField(null=True, blank=True)
+
     envtx_c_bvb = models.FloatField(null=True, blank=True)
     envtx_c_brcb = models.FloatField(null=True, blank=True)
     envtx_c_brfb = models.FloatField(null=True, blank=True)
+
     envtx_c_uvb = models.FloatField(null=True, blank=True)
     envtx_c_urcb = models.FloatField(null=True, blank=True)
     envtx_c_urfb = models.FloatField(null=True, blank=True)
+
     fine_for_throwing_bottle = models.FloatField(null=True, blank=True)
     dustbinning_fine = models.FloatField(null=True, blank=True)
-
-    def save(self, *args, **kwargs):
-        if not self.rule_number:  # If rule_number is not set
-            last_rule = Cityrule.objects.order_by('-rule_number').first()
-            if last_rule:
-                self.rule_number = last_rule.rule_number + 1
-            else:
-                self.rule_number = 1  # Start from 1 if no rules exist
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"Rule {self.rule_number} for City {self.cityId}"
-
-
 class Auditlog(models.Model):
     class Meta:
         db_table = "audit_log"
@@ -251,7 +293,18 @@ class CustomUser(AbstractBaseUser):
     UserId = models.AutoField(primary_key=True)
     Username = models.CharField(max_length=70, blank=False, unique=True)
     email = models.CharField(max_length=50, blank=False, unique=True)
-   # is_verified = models.BooleanField(default=False)
+    is_email_verified = models.BooleanField(default=False)
+
+    email_verification_token = models.UUIDField(
+        null=True,
+        blank=True,
+        unique=True
+    )
+
+    email_verification_sent_at = models.DateTimeField(
+        null=True,
+        blank=True
+    )
     mobile = models.CharField(blank=False, max_length=20)
     wallet = models.CharField(max_length=70, default=2000, blank=False)
     status = models.CharField(max_length=70, blank=False)

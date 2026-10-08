@@ -1,4 +1,4 @@
-from django.db.models.signals import post_save, pre_save
+from django.db.models.signals import post_save, pre_save,post_delete
 from django.dispatch import receiver, Signal
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
@@ -258,76 +258,75 @@ class CityTimer(threading.Thread):
 
     def run(self):
 
+        print(f"CityTimer STARTED for city {self.city_id}")
+
         while self.running:
 
-            time.sleep(1)
+            try:
+                time.sleep(1)
 
-            with transaction.atomic():
+                with transaction.atomic():
 
-                city = City.objects.select_for_update().get(
-                    pk=self.city_id
-                )
+                    city = City.objects.select_for_update().get(
+                        pk=self.city_id
+                    )
 
-                city.refresh_from_db()
+                    # No need for refresh_from_db().
+                    # select_for_update().get() already fetched the row.
 
-                # -------------------------------------------------
-                # PAUSE CHECK
-                # -------------------------------------------------
+                    # -----------------------------------------
+                    # PAUSE CHECK
+                    # -----------------------------------------
 
-                if city.timer_paused:
-
-                    self.paused = True
-                    continue
-
-                else:
+                    if city.timer_paused:
+                        self.paused = True
+                        continue
 
                     self.paused = False
 
-                # -------------------------------------------------
-                # EXISTING TIMER LOGIC
-                # -------------------------------------------------
 
-                if not self.paused:
+                    # -----------------------------------------
+                    # UPDATE CITY TIME
+                    # -----------------------------------------
 
                     city.CurrentTime += self.intervalcalculation
 
                     if city.CurrentTime >= 86400:
-
                         city.CurrentTime = 0
                         city.CurrentDay += 1
 
-                    # -------------------------------------------------
-                    # EXISTING WALLET UPDATE
-                    # -------------------------------------------------
+
+                    # -----------------------------------------
+                    # WALLET UPDATE
+                    # -----------------------------------------
 
                     if (
                         city.CurrentDay != 0
                         and city.CurrentDay % 30 == 0
                         and city.CurrentDay != self.last_update_day
                     ):
-
                         self.update_wallets(city.CityId)
 
                         self.last_update_day = city.CurrentDay
 
-                    # -------------------------------------------------
-                    # SAVE CITY
-                    # -------------------------------------------------
+
+                    # -----------------------------------------
+                    # SAVE
+                    # -----------------------------------------
 
                     city.save()
-                    print(
-                        f"WEBSOCKET TIMER UPDATE: "
-                        f"city={city.CityId}, "
-                        f"time={city.CurrentTime}, "
-                        f"day={city.CurrentDay}"
-                    )
 
-                    channel_layer = get_channel_layer()
 
-                    async_to_sync(channel_layer.group_send)(
+                    # -----------------------------------------
+                    # SEND TIMER THROUGH WEBSOCKET
+                    # -----------------------------------------
+
+                    async_to_sync(
+                        self.channel_layer.group_send
+                    )(
                         f"city_{city.CityId}",
                         {
-                            "type": "city_update",
+                            "type": "city_timer_update",
                             "data": {
                                 "CurrentTime": city.CurrentTime,
                                 "CurrentDay": city.CurrentDay,
@@ -335,10 +334,31 @@ class CityTimer(threading.Thread):
                         }
                     )
 
-                    # -------------------------------------------------
-                    # WEBSOCKET UPDATE
-                    # -------------------------------------------------
 
+            except City.DoesNotExist:
+
+                print(
+                    f"City {self.city_id} no longer exists. "
+                    "Stopping timer."
+                )
+
+                self.running = False
+
+
+            except Exception as error:
+
+                print(
+                    f"CityTimer ERROR for city "
+                    f"{self.city_id}: {error}"
+                )
+
+                # IMPORTANT:
+                # Do NOT stop the thread.
+                # Next loop will retry.
+                continue
+
+
+        print(f"CityTimer STOPPED for city {self.city_id}")
     
     def update_wallets(self, city_id):
 
@@ -378,10 +398,11 @@ from channels.layers import get_channel_layer
 
 
 def broadcast_asset_update(asset):
+
     channel_layer = get_channel_layer()
 
     async_to_sync(channel_layer.group_send)(
-        f"city_{asset.Asset_CityId}",
+        f"city_{asset.Asset_CityId_id}",
         {
             "type": "asset_update",
             "data": {
@@ -400,5 +421,28 @@ def broadcast_asset_update(asset):
 
     print(
         f"WEBSOCKET ASSET UPDATE: "
-        f"city={asset.Asset_CityId}, asset={asset.AssetId}"
+        f"city={asset.Asset_CityId_id}, "
+        f"asset={asset.AssetId}"
     )
+    
+    
+
+from django.core.cache import cache
+
+from .models import Facility
+
+
+@receiver(post_save, sender=Facility)
+def clear_facility_cache_on_save(sender, instance, **kwargs):
+
+    cache_key = f"facilities_city_{instance.Facility_cityid}"
+
+    cache.delete(cache_key)
+
+
+@receiver(post_delete, sender=Facility)
+def clear_facility_cache_on_delete(sender, instance, **kwargs):
+
+    cache_key = f"facilities_city_{instance.Facility_cityid}"
+
+    cache.delete(cache_key)

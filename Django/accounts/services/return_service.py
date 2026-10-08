@@ -153,7 +153,8 @@ class ReturnService:
     # =========================================================
 
     @staticmethod
-    def update_facility_cashbox(
+
+    def deduct_facility_cashbox(
         facility_name,
         amount,
         cityid
@@ -172,20 +173,25 @@ class ReturnService:
             facility.Cashbox or 0
         )
 
-        facility.Cashbox = str(
-            round(
-                current_cash + amount,
-                2
+        amount = float(amount or 0)
+
+        if current_cash < amount:
+            raise ValueError(
+                f"Insufficient cash in "
+                f"{facility_name} cashbox."
             )
+
+        new_cash = current_cash - amount
+
+        facility.Cashbox = str(
+            round(new_cash, 2)
         )
 
         facility.save(
-            update_fields=[
-                "Cashbox"
-            ]
+            update_fields=["Cashbox"]
         )
 
-
+        return round(new_cash, 2)
     # =========================================================
     # 6. GENERATE TRANSACTION ID
     # =========================================================
@@ -316,7 +322,21 @@ class ReturnService:
             )
             or "Return Conveyor"
         )
+        if to_facility == "Return Conveyor":
 
+            refund_paying_facility = "Supermarket Owner"
+
+        elif to_facility == "Bottle Reverse Vending Machine":
+
+            refund_paying_facility = (
+                "Bottle Reverse Vending Machine Owner"
+            )
+
+        else:
+
+            raise ValueError(
+                f"Invalid return facility: {to_facility}"
+            )
         bottle_location = (
             data.get(
                 "Bottleloc"
@@ -561,18 +581,16 @@ class ReturnService:
         # Facilityname
         # Facility_cityid
         # =====================================================
-
+        updated_facility_cashbox = None
         if refund > 0:
 
-            ReturnService.update_facility_cashbox(
-
-                "Supermarket Owner",
-
-                -refund,
-
-                cityid
+            updated_facility_cashbox = (
+                ReturnService.deduct_facility_cashbox(
+                    refund_paying_facility,
+                    refund,
+                    cityid
+                )
             )
-
 
         # =====================================================
         # 11. RESPONSE
@@ -592,8 +610,16 @@ class ReturnService:
             "bottle_status":
                 asset.Bottle_Status,
 
+            # USER RESULT
             "wallet":
                 new_wallet,
+
+            # FACILITY RESULT
+            "refund_paying_facility":
+                refund_paying_facility,
+
+            "facility_cashbox":
+                updated_facility_cashbox,
 
             "transaction_id":
                 transaction_id,
@@ -601,6 +627,6 @@ class ReturnService:
             "bottleid":
                 bottleid,
 
-            "facility":
+            "return_facility":
                 to_facility
         }

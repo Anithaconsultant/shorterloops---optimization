@@ -1,0 +1,19 @@
+<div class="verify-email-container">
+
+  <div *ngIf="isLoading">
+    <h2>Verifying your email...</h2>
+    <p>Please wait.</p>
+  </div>
+
+  <div *ngIf="!isLoading && message">
+    <h2>Email Verified Successfully</h2>
+    <p>{{ message }}</p>
+    <p>Logging you in...</p>
+  </div>
+
+  <div *ngIf="!isLoading && errorMessage">
+    <h2>Email Verification Failed</h2>
+    <p>{{ errorMessage }}</p>
+  </div>
+
+</div>

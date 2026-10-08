@@ -98,25 +98,34 @@ class PurchaseService:
         tax_transaction_id = PurchaseService.generate_transaction_id(cityid,transaction_day,transactionTime,transaction_count, "02")
 
         PurchaseService.create_cashflow(tax_transaction_id,total_env,0,0,"Municipality Office",user_role,"Environment tax for Shampoo purchase")
-        PurchaseService.update_facility_cashbox("Supermarket Owner",total_bill-total_env)
-        PurchaseService.update_facility_cashbox("Municipality Office",total_env)
+        supermarket_cashbox = (
+            PurchaseService.update_facility_cashbox(
+                "Supermarket Owner",
+                total_bill - total_env,
+                cityid
+            )
+        )
+
+        municipality_cashbox = (
+            PurchaseService.update_facility_cashbox(
+                "Municipality Office",
+                total_env,
+                cityid
+            )
+        )
         return {
-
             "success": True,
-
             "wallet": round(wallet, 2),
-
             "transaction_id": transaction_id,
-
             "total_bill": round(total_bill, 2),
-
             "container_total": round(container_total, 2),
-
             "content_total": round(content_total, 2),
-
             "env_tax": round(total_env, 2),
+            "details": purchase_details,
 
-            "details": purchase_details
+            # temporary debugging
+            "supermarket_cashbox": supermarket_cashbox,
+            "municipality_cashbox": municipality_cashbox
 
         }
 
@@ -189,24 +198,49 @@ class PurchaseService:
             Purpose=purpose
         )
     @staticmethod
-    def update_facility_cashbox(facility_name, amount):
-
+    def update_facility_cashbox(
+        facility_name,
+        amount,
+        cityid
+    ):
         facility = (
             Facility.objects
             .select_for_update()
-            .filter(Facilityname=facility_name)
+            .filter(
+                Facilityname=facility_name,
+                Facility_cityid=cityid
+            )
             .first()
         )
 
         if not facility:
-            return
+            raise ValueError(
+                f"{facility_name} not found for city {cityid}"
+            )
 
         current_cash = float(facility.Cashbox or 0)
+        amount = float(amount or 0)
 
-        facility.Cashbox = str(round(current_cash + amount, 2))
+        new_cash = current_cash + amount
 
-        facility.save(update_fields=["Cashbox"])
+        facility.Cashbox = str(
+            round(new_cash, 2)
+        )
 
+        facility.save(
+            update_fields=["Cashbox"]
+        )
+
+        print(
+            f"CASHBOX UPDATED: "
+            f"city={cityid}, "
+            f"facility={facility_name}, "
+            f"old={current_cash}, "
+            f"added={amount}, "
+            f"new={new_cash}"
+        )
+
+        return round(new_cash, 2)
     @staticmethod
     def calculate_purchase(data):
 

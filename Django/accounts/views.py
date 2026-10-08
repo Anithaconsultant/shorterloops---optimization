@@ -1,5 +1,5 @@
 from django.db.models import Q
-from .models import City, CustomUser, Facility, FACILITY_CHOICES, Cityrule, Asset, Cashflow, Auditlog, Bottleprice, Shampooprice,BottleInventory
+from .models import City, CustomUser, Facility, FACILITY_CHOICES, Cityrule, Asset, Cashflow, Auditlog, Bottleprice, Shampooprice,BottleInventory,CityruleMaster
 from .serializers import CustomUserSerializer, citySerializer, facilitySerializer, cityRuleSerializer, AssetSerializer, cashflowSerializer, AuditSerializer, BottleSerializer, shampooSerializer,BottleInventorySerializer
 from rest_framework.decorators import api_view
 from rest_framework.parsers import JSONParser
@@ -11,7 +11,7 @@ import json
 from django.db.models import QuerySet
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.signals import post_save
-from .signals import user_data_received, pause_timer_for_city, resume_timer_for_city
+from .signals import user_data_received, pause_timer_for_city, resume_timer_for_city,broadcast_asset_update
 from django.utils.decorators import method_decorator
 from django.contrib.auth import authenticate
 from rest_framework.response import Response
@@ -30,65 +30,266 @@ from collections import Counter
 from .services.inventory import create_initial_inventory_for_city
 from .services.purchase_service import PurchaseService
 from .services.return_service import ReturnService
+from .services.bottle_cleaning_service import BottleCleaningService
+from .services.cashflow_service import CashflowService
+from django.core.cache import cache
+from django.utils import timezone
+from uuid import uuid4
+from django.core.mail import send_mail
+from datetime import timedelta
+import socket
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
+from django.db import transaction
 currentuser = ''
 cartcount = 100
-
 import string
 import random
 
 def generate_short_id(length=8):
     characters = string.ascii_letters + string.digits  # a-zA-Z0-9
     return ''.join(random.choices(characters, k=length))
-
 @method_decorator(csrf_exempt, name='dispatch')
 class SignUpView(APIView):
-    # authentication_classes = []  # Disable all authentication
-    # permission_classes = []     # Disable all permissions
-
-    # def post(self, request):
-    #     serializer = CustomUserSerializer(data=request.data)
-    #     if serializer.is_valid():
-    #         user = serializer.save()
-    #         user.is_active = True
-    #         user.save()
-
-    #         # Create token
-    #         refresh = RefreshToken.for_user(user)
-    #         token = str(refresh.access_token)
-
-    #         # Verification link
-    #         verify_url = f"http://localhost:8000/api/verify-email/?token={token}"
-
-    #         send_mail(
-    #             subject="Verify your email",
-    #             message=f"Click to verify: {verify_url}",
-    #             from_email=settings.EMAIL_HOST_USER,
-    #             recipient_list=[user.email],
-    #         )
-
-    #         return Response({"message": "User created. Check email to verify."})
-
-    #     return Response(serializer.errors, status=400)
-    authentication_classes = []  # Disable all authentication
-    permission_classes = []     # Disable all permissions
+    authentication_classes = []
+    permission_classes = []
 
     def post(self, request):
-        print(request.data)
-        serializer = CustomUserSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-                'user': CustomUserSerializer(user).data
-            }, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+        print(request.data)
+
+        # --------------------------------------------------
+        # CHECK EMAIL FORMAT
+        # --------------------------------------------------
+        email = request.data.get("email", "").strip()
+
+        try:
+            validate_email(email)
+        except ValidationError:
+            return Response(
+                {
+                    "email": [
+                        "Please enter a valid email address."
+                    ]
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # --------------------------------------------------
+        # CHECK WHETHER EMAIL DOMAIN EXISTS
+        # --------------------------------------------------
+        domain = email.split("@")[-1]
+
+        try:
+            socket.gethostbyname(domain)
+        except socket.gaierror:
+            return Response(
+                {
+                    "email": [
+                        "Email domain does not exist. "
+                        "Please enter a valid email address."
+                    ]
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # --------------------------------------------------
+        # VALIDATE USER DATA
+        # --------------------------------------------------
+        serializer = CustomUserSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+
+            # --------------------------------------------------
+            # DATABASE TRANSACTION
+            # User will be rolled back if email sending fails.
+            # --------------------------------------------------
+            with transaction.atomic():
+
+                # --------------------------------------------------
+                # CREATE USER
+                # --------------------------------------------------
+                user = serializer.save()
+
+                # --------------------------------------------------
+                # USER MUST VERIFY EMAIL
+                # --------------------------------------------------
+                user.is_email_verified = False
+
+                # --------------------------------------------------
+                # GENERATE VERIFICATION TOKEN
+                # --------------------------------------------------
+                user.email_verification_token = uuid4()
+
+                print(
+                    "VERIFICATION TOKEN:",
+                    user.email_verification_token
+                )
+
+                print(
+                    "TOKEN LENGTH:",
+                    len(str(user.email_verification_token))
+                )
+
+                # --------------------------------------------------
+                # RECORD VERIFICATION EMAIL TIME
+                # --------------------------------------------------
+                user.email_verification_sent_at = timezone.now()
+
+                user.save(
+                    update_fields=[
+                        'is_email_verified',
+                        'email_verification_token',
+                        'email_verification_sent_at'
+                    ]
+                )
+
+                # --------------------------------------------------
+                # FRONTEND URL
+                # --------------------------------------------------
+                FRONTEND_URL = os.getenv(
+                    "FRONTEND_URL",
+                    "http://localhost:4200/shorterloops/"
+                )
+
+                # Make sure the URL ends with /
+                FRONTEND_URL = FRONTEND_URL.rstrip("/") + "/"
+
+                # --------------------------------------------------
+                # CREATE VERIFICATION LINK
+                # --------------------------------------------------
+                verification_link = (
+                    f"{FRONTEND_URL}#/verify-email/"
+                    f"{user.email_verification_token}"
+                )
+
+                print(
+                    "VERIFICATION LINK:",
+                    verification_link
+                )
+
+                # --------------------------------------------------
+                # SEND VERIFICATION EMAIL
+                # --------------------------------------------------
+                send_mail(
+                    subject='Verify your ShorterLoops account',
+                    message=(
+                        f'Hello {user.Username},\n\n'
+                        f'Please click the link below to verify your email:\n\n'
+                        f'{verification_link}\n\n'
+                        f'This verification link is valid for 24 hours.'
+                    ),
+                    from_email=None,
+                    recipient_list=[user.email],
+                    fail_silently=False,
+                )
+
+            # --------------------------------------------------
+            # TRANSACTION SUCCESSFULLY COMMITTED
+            # --------------------------------------------------
+            return Response(
+                {
+                    'message':
+                        'Registration successful. '
+                        'Please verify your email.'
+                },
+                status=status.HTTP_201_CREATED
+            )
+
+        except Exception as e:
+
+            # --------------------------------------------------
+            # EMAIL / DATABASE / OTHER FAILURE
+            # --------------------------------------------------
+            print("===== SIGNUP FAILED =====")
+            print("ERROR:", str(e))
+
+            return Response(
+                {
+                    "error":
+                        "Registration failed. "
+                        "Your account was not created."
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+class VerifyEmailView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def get(self, request, token):
+        print("===== VERIFY VIEW CALLED =====")
+        print("===== TOKEN =====", token)
+
+
+        try:
+            user = CustomUser.objects.get(
+                email_verification_token=token
+            )
+        except CustomUser.DoesNotExist:
+            return Response(
+                {'error': 'Invalid verification link.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if user.is_email_verified:
+            return Response(
+                {'error': 'Email is already verified.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not user.email_verification_sent_at:
+            return Response(
+                {'error': 'Invalid verification link.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        expiry_time = (
+            user.email_verification_sent_at +
+            timedelta(hours=24)
+        )
+
+        if timezone.now() > expiry_time:
+            return Response(
+                {'error': 'Verification link has expired.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Mark email as verified
+        user.is_email_verified = True
+
+        # Prevent token reuse
+        user.email_verification_token = None
+        user.email_verification_sent_at = None
+
+        user.save(update_fields=[
+            'is_email_verified',
+            'email_verification_token',
+            'email_verification_sent_at'
+        ])
+
+        # Automatically authenticate the user
+        refresh = RefreshToken.for_user(user)
+
+        serializer = CustomUserSerializer(user)
+
+        return Response({
+            'message': 'Email verified successfully.',
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+            'user': serializer.data
+        }, status=status.HTTP_200_OK)
+       
 
 class LoginView(APIView):
-    authentication_classes = []  # Disable authentication
-    permission_classes = []  # Allow unrestricted access
+    authentication_classes = []
+    permission_classes = []
 
     def post(self, request):
         username = request.data.get('Username')
@@ -97,41 +298,34 @@ class LoginView(APIView):
         user = authenticate(Username=username, password=password)
 
         if user:
+
+            # Email verification check
+            if not user.is_email_verified:
+                return Response(
+                    {
+                        'error': 'Please verify your email before logging in.'
+                    },
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
             refresh = RefreshToken.for_user(user)
             serializer = CustomUserSerializer(user)
+
             return Response({
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
                 'user': serializer.data
             })
+
         return Response(
             {'error': 'Invalid credentials'},
             status=status.HTTP_401_UNAUTHORIZED
         )
+
+
+        
 User = CustomUser
 
-class VerifyEmailView(APIView):
-    authentication_classes = []
-    permission_classes = []
-
-    def get(self, request):
-        token = request.GET.get('token')
-
-        try:
-            access_token = AccessToken(token)
-            user_id = access_token['user_id']
-
-            # ✅ FIX HERE
-            user = User.objects.get(UserId=user_id)
-
-            user.is_verified = True
-            user.save()
-
-            return Response({"message": "Email verified successfully"})
-
-        except Exception as e:
-            print("Verification error:", e)
-            return Response({"error": "Invalid or expired token"}, status=400)
 
 class UserListView(APIView):
     authentication_classes = [JWTAuthentication]
@@ -400,11 +594,53 @@ def get_last_city_rule(request, city_id):
 
 @api_view(['GET', 'POST'])
 def getfacility(request, cityid):
-    if request.method == 'GET':
-        data = Facility.objects.filter(Facility_cityid=cityid)
-        serializer = facilitySerializer(data, many=True)
-        return JsonResponse(serializer.data, safe=False)
 
+    if request.method == 'GET':
+
+        cache_key = f"facilities_city_{cityid}"
+
+        # First check Redis
+        cached_data = cache.get(cache_key)
+
+        if cached_data is not None:
+
+            print("FACILITY DATA FROM REDIS")
+
+            return JsonResponse(
+                cached_data,
+                safe=False
+            )
+
+
+        # Not available in Redis
+        # Read from existing Facility table
+        data = Facility.objects.filter(
+            Facility_cityid=cityid
+        )
+
+        serializer = facilitySerializer(
+            data,
+            many=True
+        )
+
+        facility_data = serializer.data
+
+        # serializer.data is a ReturnList.
+        # Convert it to normal Python list before caching.
+        facility_data = list(facility_data)
+
+        cache.set(
+            cache_key,
+            facility_data,
+            timeout=3600
+        )
+
+        print("FACILITY DATA FROM DATABASE")
+
+        return JsonResponse(
+            facility_data,
+            safe=False
+        )
 
 @api_view(['GET', 'PUT'])
 def get_BottlePrice(request):
@@ -433,26 +669,52 @@ def get_ShampooPrice(request):
             print("invalid data")
         return JsonResponse(serializer.data, status=status.HTTP_200_OK)
 
-
-
 @api_view(['GET', 'PUT'])
 def returnasset(request, itemid):
+
     print(itemid)
+
     if request.method == 'GET':
+
         data = Asset.objects.filter(AssetId=itemid)
         serializer = AssetSerializer(data, many=True)
-        # logs = LogEntry.objects.filter(object_id=itemid)
-        return JsonResponse(serializer.data, safe=False)
-    elif request.method == 'PUT':
-        data = JSONParser().parse(request)
-        getasset = Asset.objects.filter(AssetId=itemid).first()
-        serializer = AssetSerializer(getasset, data=data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-        else:
-            print("invalid data")
-        return JsonResponse(serializer.data, status=status.HTTP_200_OK)
 
+        return JsonResponse(serializer.data, safe=False)
+
+    elif request.method == 'PUT':
+
+        data = JSONParser().parse(request)
+
+        asset = Asset.objects.filter(AssetId=itemid).first()
+
+        if not asset:
+            return JsonResponse(
+                {"error": "Asset not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = AssetSerializer(
+            asset,
+            data=data,
+            partial=True
+        )
+
+        if serializer.is_valid():
+
+            serializer.save()
+
+            # Broadcast the UPDATED asset
+            broadcast_asset_update(asset)
+
+            return JsonResponse(
+                serializer.data,
+                status=status.HTTP_200_OK
+            )
+
+        return JsonResponse(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 @api_view(['GET', 'POST'])
 def facility(request, mayorid):
@@ -946,6 +1208,56 @@ def bottle_inventory_detail(request):
             qs = qs.filter(cycle_number=int(cycle_number))
 
         if not qs.exists():
+            print("STEP 1 producer:",
+                list(
+                    BottleInventory.objects
+                    .filter(producer_code=producer_code)
+                    .values(
+                        "id",
+                        "producer_code",
+                        "bottle_type",
+                        "Bottle_CityId_id",
+                        "cycle_number"
+                    )
+                )
+            )
+
+            print("STEP 2 producer + bottle:",
+                list(
+                    BottleInventory.objects
+                    .filter(
+                        producer_code=producer_code,
+                        bottle_type=bottle_type
+                    )
+                    .values(
+                        "id",
+                        "producer_code",
+                        "bottle_type",
+                        "Bottle_CityId_id",
+                        "cycle_number"
+                    )
+                )
+            )
+
+            print("STEP 3 producer + bottle + city:",
+                list(
+                    BottleInventory.objects
+                    .filter(
+                        producer_code=producer_code,
+                        bottle_type=bottle_type,
+                        Bottle_CityId_id=int(city_id)
+                    )
+                    .values(
+                        "id",
+                        "producer_code",
+                        "bottle_type",
+                        "Bottle_CityId_id",
+                        "cycle_number"
+                    )
+                )
+            )
+
+            print("FINAL QUERY:", list(qs.values()))
             return Response(
                 {'error': 'Inventory not found.'},
                 status=status.HTTP_404_NOT_FOUND
@@ -1063,3 +1375,310 @@ def calculatepurchase(request):
     result = PurchaseService.calculate_purchase(request.data)
 
     return Response(result)
+
+
+
+
+
+from accounts.services.refill_service import RefillService
+
+
+@api_view(["POST"])
+def refill_bottle(request):
+
+    try:
+        result = RefillService.refill(request.data)
+
+        if result.get("success"):
+            return Response(
+                result,
+                status=status.HTTP_200_OK
+            )
+
+        return Response(
+            result,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    except Exception as e:
+
+        print("Refill Error:", str(e))
+
+        return Response(
+            {
+                "success": False,
+                "message": str(e)
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+@api_view(["POST"])
+def complete_refill(request):
+
+    try:
+        result = RefillService.complete_refill(
+            request.data
+        )
+
+        if result.get("success"):
+            return Response(
+                result,
+                status=status.HTTP_200_OK
+            )
+
+        return Response(
+            result,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    except Exception as e:
+
+        print("Complete Refill Error:", str(e))
+
+        return Response(
+            {
+                "success": False,
+                "message": str(e)
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )    
+
+
+from accounts.services.fine_service import FineService
+
+
+@api_view(["POST"])
+def apply_bottle_fine(request):
+
+    try:
+        result = FineService.apply_fine(request.data)
+
+        if result.get("success"):
+            return Response(
+                result,
+                status=status.HTTP_200_OK
+            )
+
+        return Response(
+            result,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    except Exception as e:
+        print("Fine Transaction Error:", str(e))
+
+        return Response(
+            {
+                "success": False,
+                "message": str(e)
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+   
+@api_view(["POST"])
+def bulk_clean_bottles(request):
+
+    try:
+
+        result = (
+            BottleCleaningService
+            .clean_bottles(request.data)
+        )
+
+        if result.get("success"):
+
+            return Response(
+                result,
+                status=status.HTTP_200_OK
+            )
+
+        return Response(
+            result,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    except Exception as e:
+
+        print(
+            "Bottle Cleaning Error:",
+            str(e)
+        )
+
+        return Response(
+            {
+                "success": False,
+                "message": str(e)
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        ) 
+
+@api_view(["POST"])
+def bulk_move_bottles(request):
+
+    try:
+
+        result = BottleCleaningService.move_bottles(
+            request.data
+        )
+
+        if result.get("success"):
+            return Response(
+                result,
+                status=status.HTTP_200_OK
+            )
+
+        return Response(
+            result,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    except Exception as e:
+
+        print("Bulk bottle move error:", e)
+
+        return Response(
+            {
+                "success": False,
+                "message": str(e)
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(["GET"])
+def cashflow_summary(request):
+
+    city_id = request.query_params.get("city_id")
+    user_role = request.query_params.get("user_role")
+
+    if not city_id:
+        return Response(
+            {
+                "success": False,
+                "message": "city_id is required."
+            },
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    if not user_role:
+        return Response(
+            {
+                "success": False,
+                "message": "user_role is required."
+            },
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+
+        summary = CashflowService.get_summary(
+            city_id,
+            user_role
+        )
+
+        return Response(
+            {
+                "success": True,
+                "data": summary
+            },
+            status=status.HTTP_200_OK
+        )
+
+    except Exception as e:
+
+        print(
+            "Cashflow Summary Error:",
+            str(e)
+        )
+
+        return Response(
+            {
+                "success": False,
+                "message": str(e)
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+from accounts.services.supermarket_order_service import (
+    SupermarketOrderService
+)
+
+
+@api_view(["POST"])
+def supermarket_order(request):
+
+    try:
+
+        result = SupermarketOrderService.place_order(
+            request.data
+        )
+
+        if result.get("success"):
+
+            return Response(
+                result,
+                status=status.HTTP_200_OK
+            )
+
+        return Response(
+            result,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    except Exception as e:
+
+        print(
+            "SUPERMARKET ORDER ERROR:",
+            str(e)
+        )
+
+        return Response(
+            {
+                "success": False,
+                "message": str(e)
+            },
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+    
+@api_view(['GET'])
+def get_city_rule_master(request, citytype):
+
+    try:
+        rule = CityruleMaster.objects.get(
+            citytype=citytype,
+            rule_number=0
+        )
+
+        return Response({
+            "citytype": rule.citytype,
+
+            "envtx_p_bvb": rule.envtx_p_bvb,
+            "envtx_p_brcb": rule.envtx_p_brcb,
+            "envtx_p_brfb": rule.envtx_p_brfb,
+            "envtx_p_uvb": rule.envtx_p_uvb,
+            "envtx_p_urcb": rule.envtx_p_urcb,
+            "envtx_p_urfb": rule.envtx_p_urfb,
+
+            "envtx_r_bvb": rule.envtx_r_bvb,
+            "envtx_r_brcb": rule.envtx_r_brcb,
+            "envtx_r_brfb": rule.envtx_r_brfb,
+            "envtx_r_uvb": rule.envtx_r_uvb,
+            "envtx_r_urcb": rule.envtx_r_urcb,
+            "envtx_r_urfb": rule.envtx_r_urfb,
+
+            "envtx_c_bvb": rule.envtx_c_bvb,
+            "envtx_c_brcb": rule.envtx_c_brcb,
+            "envtx_c_brfb": rule.envtx_c_brfb,
+            "envtx_c_uvb": rule.envtx_c_uvb,
+            "envtx_c_urcb": rule.envtx_c_urcb,
+            "envtx_c_urfb": rule.envtx_c_urfb,
+        })
+
+    except CityruleMaster.DoesNotExist:
+        return Response(
+            {"error": "City rule master not found"},
+            status=404
+        )
