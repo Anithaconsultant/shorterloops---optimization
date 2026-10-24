@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from accounts.models import City, CustomUser, Facility, Cityrule, Asset, Shampooprice, Bottleprice, Cashflow, Auditlog,BottleInventory
 from django.contrib.auth.hashers import make_password
-
+import re
 
 class CustomUserSerializer(serializers.ModelSerializer):
 
@@ -27,11 +27,53 @@ class CustomUserSerializer(serializers.ModelSerializer):
             'gender',
             'login',
         ]
+
         extra_kwargs = {
             'UserId': {'read_only': True},
         }
 
+    def validate_mobile(self, value):
+
+        value = str(value).strip()
+
+        if not re.fullmatch(r'[6-9][0-9]{9}', value):
+            raise serializers.ValidationError(
+                "Mobile number must be exactly 10 digits."
+            )
+
+        return value
+
+    def validate_password(self, value):
+
+        if len(value) < 8:
+            raise serializers.ValidationError(
+                "Password must contain at least 8 characters."
+            )
+
+        if not re.search(r'[A-Z]', value):
+            raise serializers.ValidationError(
+                "Password must contain at least one uppercase letter."
+            )
+
+        if not re.search(r'[a-z]', value):
+            raise serializers.ValidationError(
+                "Password must contain at least one lowercase letter."
+            )
+
+        if not re.search(r'[0-9]', value):
+            raise serializers.ValidationError(
+                "Password must contain at least one number."
+            )
+
+        if not re.search(r'[@$!%*?&]', value):
+            raise serializers.ValidationError(
+                "Password must contain at least one special character."
+            )
+
+        return value
+
     def create(self, validated_data):
+
         password = validated_data.pop('password', None)
 
         user = CustomUser(**validated_data)
@@ -40,8 +82,8 @@ class CustomUserSerializer(serializers.ModelSerializer):
             user.set_password(password)
 
         user.save()
-        return user
 
+        return user
 class ViewUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser

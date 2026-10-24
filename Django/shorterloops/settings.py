@@ -261,17 +261,21 @@ CACHES = {
 }
 
 
-
+EMAIL_VERIFICATION_REQUIRED = False
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.zeptomail.in'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
-DEFAULT_FROM_EMAIL = '"Shorterloops" <shorterloops.dbl@iihs.ac.in>'
+DEFAULT_FROM_EMAIL = '"Shorter Loops" <shorterloops.dbl@iihs.ac.in>'
+FEEDBACK_RECEIVER_EMAIL = "shorterloops.dbl@iihs.ac.in"
 SERVER_EMAIL = 'shorterloops.dbl@iihs.ac.in'
 # EMAIL_DEBUG = True
-
+print("EMAIL_HOST_USER:", os.getenv("EMAIL_HOST_USER"))
+print("EMAIL_PASSWORD_EXISTS:", bool(os.getenv("EMAIL_HOST_PASSWORD")))
 ACCOUNT_EMAIL_SUBJECT_PREFIX = 'Shorterloops - '
+#PASSWORD_RESET_FRONTEND_URL = "https://dev-dbl.iihs.co.in/shorterloops"
+PASSWORD_RESET_FRONTEND_URL = "http://localhost:4200/shorterloops"
 ACCOUNT_EMAIL_VERIFICATION_SUBJECT = 'Verify your email address'
 ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 1

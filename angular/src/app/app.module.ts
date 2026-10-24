@@ -33,10 +33,11 @@ import { CityruleComponent } from './cityrule/cityrule.component';
 import { JwtInterceptor } from './interceptors/jwt.interceptor';
 import { MatCardModule } from '@angular/material/card';
 import { MatInputModule } from '@angular/material/input';
-
-
 import { BottleInventoryFormComponent } from './bottle-inventory-form/bottle-inventory-form.component';
 import { VerifyEmailComponent } from './verify-email/verify-email.component';
+import { FeedbackComponent } from './feedback/feedback.component';
+import { ForgotPasswordComponent } from './forgot-password/forgot-password.component';
+import { ResetPasswordComponent } from './reset-password/reset-password.component';
 @NgModule({
   declarations: [
     AppComponent,
@@ -54,7 +55,10 @@ import { VerifyEmailComponent } from './verify-email/verify-email.component';
     ChartComponent,
     CityruleComponent,
     BottleInventoryFormComponent,
-    VerifyEmailComponent
+    VerifyEmailComponent,
+    FeedbackComponent,
+    ForgotPasswordComponent,
+    ResetPasswordComponent
   ],
   imports: [
     BrowserModule,

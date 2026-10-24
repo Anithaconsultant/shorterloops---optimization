@@ -1,20 +1,20 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { LoginserviceService } from './../services/loginservice.service';
-import { FormGroup, FormBuilder, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { AlertModalComponent } from '../alert-modal/alert-modal.component';
-import { SharedServiceService } from '../services/shared-service.service';
-import { AuthService } from '../auth.service'; // New auth service
+import { Component, OnInit, ViewChild, ElementRef } from "@angular/core";
+import { HttpClient } from "@angular/common/http";
+import { LoginserviceService } from "./../services/loginservice.service";
+import { FormGroup, FormBuilder, Validators } from "@angular/forms";
+import { Router } from "@angular/router";
+import { NgbModal } from "@ng-bootstrap/ng-bootstrap";
+import { AlertModalComponent } from "../alert-modal/alert-modal.component";
+import { SharedServiceService } from "../services/shared-service.service";
+import { AuthService } from "../auth.service"; // New auth service
 
 @Component({
-  selector: 'app-login',
-  templateUrl: './login.component.html',
-  styleUrls: ['./login.component.scss']
+  selector: "app-login",
+  templateUrl: "./login.component.html",
+  styleUrls: ["./login.component.scss"],
 })
 export class LoginComponent implements OnInit {
-  @ViewChild('alertModal') alertModal!: AlertModalComponent;
+  @ViewChild("alertModal") alertModal!: AlertModalComponent;
   public loginForm!: FormGroup;
   submitted = false;
   isLoading = false;
@@ -27,20 +27,20 @@ export class LoginComponent implements OnInit {
     private router: Router,
     private logser: LoginserviceService,
     private authService: AuthService // Inject new auth service
-  ) { }
+  ) {}
 
   userobj = {
-    'login': '0'
-  }
+    login: "0",
+  };
 
-  @ViewChild('videoPlayer') videoPlayer!: ElementRef<HTMLVideoElement>;
+  @ViewChild("videoPlayer") videoPlayer!: ElementRef<HTMLVideoElement>;
   showImage = false;
   switchYesOrNo!: number;
 
   ngOnInit(): void {
     this.loginForm = this.formbuilder.group({
-      username: ['', Validators.required],
-      password: ['', Validators.required]
+      usernameOrEmail: ["", Validators.required],
+      password: ["", Validators.required],
     });
   }
 
@@ -62,51 +62,53 @@ export class LoginComponent implements OnInit {
 
   // Modal methods
   openwhyshorter(whyshorter: any) {
-    this.modalService.open(whyshorter, { windowClass: 'frontpage' });
+    this.modalService.open(whyshorter, { windowClass: "frontpage" });
   }
 
   openaboutshorter(aboutshorter: any) {
-    this.modalService.open(aboutshorter, { windowClass: 'frontpage' });
+    this.modalService.open(aboutshorter, { windowClass: "frontpage" });
   }
 
   opennavshorter(navigation: any) {
-    this.modalService.open(navigation, { windowClass: 'frontpage' });
+    this.modalService.open(navigation, { windowClass: "frontpage" });
   }
 
   // Updated login method using JWT
+
   login() {
     this.submitted = true;
 
     if (this.loginForm.invalid) {
-      this.alertModal.openModal("Please enter Username and Password", false);
+      this.alertModal.openModal(
+        "Please enter Username/Email and Password",
+        false
+      );
       return;
     }
 
     this.isLoading = true;
 
     const credentials = {
-      Username: this.loginForm.value.username,
-      Password: this.loginForm.value.password
+      Username: this.loginForm.value.usernameOrEmail.trim(),
+      Password: this.loginForm.value.password,
     };
 
     this.authService.login(credentials).subscribe({
       next: (response) => {
         this.isLoading = false;
-        
         this.handleSuccessfulLogin(response.user);
       },
       error: (err) => {
         this.isLoading = false;
         this.handleLoginError(err);
-      }
+      },
     });
   }
 
   private handleSuccessfulLogin(user: any): void {
-
     this.setCurrentUser(user);
     this.loginForm.reset();
-    this.userobj.login = '1';
+    this.userobj.login = "1";
 
     // Update login status in backend if needed
     this.logser.updateloggeduser(this.userobj).subscribe({
@@ -115,20 +117,60 @@ export class LoginComponent implements OnInit {
         this.navigateBasedOnRoleAndCity(user);
       },
       error: (error) => {
-        console.error('Error updating login status:', error);
+        console.error("Error updating login status:", error);
         this.navigateBasedOnRoleAndCity(user); // Still navigate even if update fails
-      }
+      },
     });
   }
 
   private handleLoginError(err: any): void {
-    let errorMessage = "Something went wrong";
+    const backendError =
+      typeof err.error?.error === "string"
+        ? err.error.error
+        : typeof err.error?.message === "string"
+        ? err.error.message
+        : typeof err.error?.detail === "string"
+        ? err.error.detail
+        : null;
 
-    if (err.status === 401) {
-      errorMessage = "Invalid Username/Password or Please Register If You are visiting For First Time";
-    } else if (err.error?.message) {
-      errorMessage = err.error.message;
+    let errorMessage: string;
+
+    switch (err.status) {
+      case 400:
+        errorMessage =
+          backendError || "Please check your login details and try again.";
+        break;
+
+      case 401:
+        errorMessage = backendError || "Invalid username/email or password.";
+        break;
+
+      case 403:
+        errorMessage =
+          backendError ||
+          "Access was denied. Please check your login permissions or contact support.";
+        break;
+
+      case 0:
+        errorMessage =
+          "Unable to connect to the server. Check your internet connection and try again.";
+        break;
+
+      default:
+        if (err.status >= 500) {
+          errorMessage =
+            "The server encountered an error while logging you in. Please try again later.";
+        } else {
+          errorMessage =
+            backendError ||
+            `Login failed (HTTP ${err.status}). Please try again.`;
+        }
     }
+
+    console.error("Login failed:", {
+      status: err.status,
+      response: err.error,
+    });
 
     this.alertModal.openModal(errorMessage, false);
   }
@@ -139,7 +181,7 @@ export class LoginComponent implements OnInit {
     this.logser.currentuser.CityId = user.User_cityid;
     this.logser.currentuser.Role = user.Role;
 
-    if (user.Role !== 'Governor') {
+    if (user.Role !== "Governor") {
       this.logser.currentuser.wallet = user.wallet;
       this.logser.currentuser.cartId = user.cartId;
       this.logser.currentuser.gender = user.gender;
@@ -149,11 +191,10 @@ export class LoginComponent implements OnInit {
   }
 
   private navigateBasedOnRoleAndCity(user: any): void {
-
-    if (user.User_cityid == 0 && user.Role == '') {
+    if (user.User_cityid == 0 && user.Role == "") {
       this.router.navigate(["home"]);
     } else {
-      if (user.Role === 'Governor') {
+      if (user.Role === "Governor") {
         this.router.navigate(["report"]);
       } else {
         this.switchYesOrNo = 0;

@@ -1553,7 +1553,7 @@ $cfg in $uv-bottles {
 
   .Env_Tax_Customer {
     position: absolute;
-    top: 185px;
+    top: 118px;
     left: 5px;
   }
 }
@@ -1682,11 +1682,27 @@ $cfg in $back-big {
     }
   }
 }
-
+.labelholder {
 .DOM {
   top: 205px;
   left: 19px;
   position: absolute;
+}
+}
+
+.spikyback .labelholder {
+  top: 426px;
+  left: 230px;
+
+  .Total_price {
+    top: 168px;
+  }
+
+  .AssetId {
+    left: -285px;
+    top: 66px;
+  }
+
 }
 
 .shinyback .labelholder {
@@ -1695,9 +1711,7 @@ $cfg in $back-big {
     top: -33px;
   }
 
-  .Env_Tax_Customer {
-    top: 189px;
-  }
+
 
   .Total_price {
     top: 172px;
@@ -1718,10 +1732,10 @@ $cfg in $back-big {
   //   top: 475px;
   //   left: 192px;
 
-  //   .AssetId {
-  //     left: -249px;
-  //     top: 72px;
-  //   }
+  .AssetId {
+    left: -246px;
+    top: 101px;
+  }
 
   //   .Bottle_Price {
   //     top: 124px;
@@ -1752,8 +1766,9 @@ $cfg in $back-big {
   .Total_price {
     top: 168px;
   }
-  .AssetId{
-    top:104px;
+
+  .AssetId {
+    top: 104px;
   }
 }
 

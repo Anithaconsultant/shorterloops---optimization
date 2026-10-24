@@ -291,11 +291,11 @@ class PurchaseService:
 
             subtotal = bottle_price + content_price
 
-            discount = subtotal * (
+            discount = bottle_price * (
                 float(asset.Discount_RefillB or 0) / 100
             )
 
-            env_tax = subtotal * (
+            env_tax = bottle_price * (
                 float(asset.Env_Tax_Customer or 0) / 100
             )
 

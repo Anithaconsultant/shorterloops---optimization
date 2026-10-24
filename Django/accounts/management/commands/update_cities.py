@@ -8,6 +8,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         cities = City.objects.all()
         for city in cities:
+
             start_timer_for_city(city)
             
 

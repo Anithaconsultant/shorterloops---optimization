@@ -8,6 +8,8 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 import json
+import base64
+import logging
 from django.db.models import QuerySet
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.signals import post_save
@@ -38,9 +40,19 @@ from uuid import uuid4
 from django.core.mail import send_mail
 from datetime import timedelta
 import socket
+import os
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db import transaction
+from smtplib import SMTPException
+from django.core.mail import EmailMessage
+from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.core.exceptions import ValidationError
+from django.contrib.auth import get_user_model
+logger = logging.getLogger(__name__)
 currentuser = ''
 cartcount = 100
 import string
@@ -153,13 +165,10 @@ class SignUpView(APIView):
                 # --------------------------------------------------
                 # FRONTEND URL
                 # --------------------------------------------------
-                FRONTEND_URL = os.getenv(
-                    "FRONTEND_URL",
-                    "http://localhost:4200/shorterloops/"
-                )
+                FRONTEND_URL = os.getenv("FRONTEND_URL")
 
                 # Make sure the URL ends with /
-                FRONTEND_URL = FRONTEND_URL.rstrip("/") + "/"
+               # FRONTEND_URL = FRONTEND_URL.rstrip("/") + "/"
 
                 # --------------------------------------------------
                 # CREATE VERIFICATION LINK
@@ -177,18 +186,31 @@ class SignUpView(APIView):
                 # --------------------------------------------------
                 # SEND VERIFICATION EMAIL
                 # --------------------------------------------------
+                
                 send_mail(
-                    subject='Verify your ShorterLoops account',
+                    subject='Verify Your Email Address – Shorter Loops',
                     message=(
-                        f'Hello {user.Username},\n\n'
-                        f'Please click the link below to verify your email:\n\n'
+                        f'Hi {user.Username},\n\n'
+                        'Greetings from Shorter Loops!\n\n'
+                        "Thank you for your interest in Shorter Loops. "
+                        "We're excited to have you join our community.\n\n"
+                        'To verify your email address and complete your '
+                        'registration, please click the link below:\n\n'
                         f'{verification_link}\n\n'
-                        f'This verification link is valid for 24 hours.'
+                        'Please note that this verification link is valid '
+                        'for 24 hours from the time this email was sent. '
+                        'If the link expires, you may need to request a '
+                        'new verification link.\n\n'
+                        'If you did not create an account with Shorter Loops, '
+                        'you can safely ignore this email.\n\n'
+                        'Regards,\n'
+                        'Team Shorter Loops'
                     ),
                     from_email=None,
                     recipient_list=[user.email],
                     fail_silently=False,
                 )
+
 
             # --------------------------------------------------
             # TRANSACTION SUCCESSFULLY COMMITTED
@@ -200,6 +222,19 @@ class SignUpView(APIView):
                         'Please verify your email.'
                 },
                 status=status.HTTP_201_CREATED
+            )
+        except SMTPException as e:
+
+            print("===== EMAIL SEND FAILED =====")
+            print("ERROR:", str(e))
+
+            return Response(
+                {
+                    "error":
+                        "Verification email could not be sent. "
+                        "Your account was not created."
+                },
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
             )
 
         except Exception as e:
@@ -287,41 +322,123 @@ class VerifyEmailView(APIView):
         }, status=status.HTTP_200_OK)
        
 
+User = get_user_model()
+
+from django.conf import settings
+from django.contrib.auth import authenticate, get_user_model
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import AllowAny
+from rest_framework_simplejwt.tokens import RefreshToken
+
+User = get_user_model()
+
+
 class LoginView(APIView):
     authentication_classes = []
-    permission_classes = []
+    permission_classes = [AllowAny]
 
     def post(self, request):
-        username = request.data.get('Username')
+        login_value = request.data.get('Username')
         password = request.data.get('Password')
 
-        user = authenticate(Username=username, password=password)
+        # 1. Validate required fields
+        if login_value is None or password is None:
+            return Response(
+                {
+                    'error': 'Username/email and password are required.',
+                    'code': 'MISSING_CREDENTIALS'
+                },
+                status=status.HTTP_not400_BAD_REQUEST
+            )
 
-        if user:
+        if not isinstance(login_value, str) or not isinstance(password, str):
+            return Response(
+                {
+                    'error': 'Username/email and password must be valid text.',
+                    'code': 'INVALID_INPUT'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-            # Email verification check
-            if not user.is_email_verified:
+        login_value = login_value.strip()
+
+        if not login_value or not password:
+            return Response(
+                {
+                    'error': 'Please enter both username/email and password.',
+                    'code': 'MISSING_CREDENTIALS'
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 2. Resolve email to username, if an email was entered
+        username = login_value
+
+        if '@' in login_value:
+            matching_users = User.objects.filter(
+                email__iexact=login_value
+            )
+
+            # Keep invalid credentials generic for account security.
+            if matching_users.count() != 1:
                 return Response(
                     {
-                        'error': 'Please verify your email before logging in.'
+                        'error': 'Invalid username/email or password.',
+                        'code': 'INVALID_CREDENTIALS'
                     },
-                    status=status.HTTP_403_FORBIDDEN
+                    status=status.HTTP_401_UNAUTHORIZED
                 )
 
-            refresh = RefreshToken.for_user(user)
-            serializer = CustomUserSerializer(user)
+            username = matching_users.first().get_username()
 
-            return Response({
+        # 3. Authenticate credentials
+        user = authenticate(
+            request,
+            username=username,
+            password=password
+        )
+
+        if user is None:
+            return Response(
+                {
+                    'error': 'Invalid username/email or password.',
+                    'code': 'INVALID_CREDENTIALS'
+                },
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # 4. Require email verification, if enabled
+        if (
+            getattr(settings, 'EMAIL_VERIFICATION_REQUIRED', False)
+            and not user.is_email_verified
+        ):
+            return Response(
+                {
+                    'error': (
+                        'Your email address is not verified. '
+                        'Please check your inbox and verify your email '
+                        'before logging in.'
+                    ),
+                    'code': 'EMAIL_NOT_VERIFIED'
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # 5. Generate tokens and return the user
+        refresh = RefreshToken.for_user(user)
+        serializer = CustomUserSerializer(user)
+
+        return Response(
+            {
+                'message': 'Login successful.',
                 'refresh': str(refresh),
                 'access': str(refresh.access_token),
                 'user': serializer.data
-            })
-
-        return Response(
-            {'error': 'Invalid credentials'},
-            status=status.HTTP_401_UNAUTHORIZED
+            },
+            status=status.HTTP_200_OK
         )
-
 
         
 User = CustomUser
@@ -1681,4 +1798,206 @@ def get_city_rule_master(request, citytype):
         return Response(
             {"error": "City rule master not found"},
             status=404
+        )
+    
+
+class FeedbackEmailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        message = request.data.get("message", "")
+
+        if not isinstance(message, str) or not message.strip():
+            return Response(
+                {"message": "Please enter your feedback."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        message = message.strip()
+
+        if len(message) > 5000:
+            return Response(
+                {"message": "Feedback cannot exceed 5000 characters."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Always obtain the user from JWT authentication.
+        user = request.user
+
+        # Read the verified email directly from CustomUser.
+       
+        print("Authenticated user:", user)
+        print("User ID:", user.pk)
+        print("Email from DB:", repr(user.email))
+        print("Email verified:", repr(user.is_email_verified))
+
+        recipient = getattr(
+            settings, "FEEDBACK_RECEIVER_EMAIL", ""
+        )
+
+        if not recipient:
+            return Response(
+                {"message": "Feedback recipient is not configured."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
+
+        email = EmailMessage(
+            subject="ShorterLoops - User Feedback",
+            body=(
+                f"Feedback from: {user.Username}\n"
+                f"User email: {user.email}\n"
+                f"User Role: {user.pk}\n\n"
+                f"Feedback:\n{message}"
+            ),
+            from_email=None,
+            to=[recipient],
+            reply_to=[user.email],
+        )
+
+        try:
+            email.send(fail_silently=False)
+        except Exception:
+            return Response(
+                {"message": "Unable to send feedback. Please try again."},
+                status=status.HTTP_502_BAD_GATEWAY
+            )
+
+        return Response(
+            {"message": "Your feedback has been submitted successfully."},
+            status=status.HTTP_200_OK
+        )
+        
+User = get_user_model()
+token_generator = PasswordResetTokenGenerator()
+
+
+class PasswordResetRequestView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        email = request.data.get("email", "")
+
+        if not isinstance(email, str):
+            return Response(
+                {"message": "If an account exists for that email, a reset link will be sent."},
+                status=status.HTTP_200_OK,
+            )
+
+        email = email.strip()
+
+        # Always return the same response to avoid revealing
+        # whether an email address is registered.
+        generic_message = (
+            "If an account exists for that email, a reset link will be sent."
+        )
+
+        if not email:
+            return Response(
+                {"message": generic_message},
+                status=status.HTTP_200_OK,
+            )
+
+        users = User.objects.filter(email__iexact=email)
+
+        # If your application requires verified email addresses,
+        # only send reset links to verified accounts.
+        if hasattr(User, "is_email_verified"):
+            users = users.filter(is_email_verified=True)
+
+        user = users.first()
+
+        if user:
+            try:
+                uid = urlsafe_base64_encode(force_bytes(user.pk))
+                token = token_generator.make_token(user)
+
+                frontend_url = getattr(
+                    settings,
+                    "PASSWORD_RESET_FRONTEND_URL",
+                    "",
+                ).rstrip("/")
+
+                if not frontend_url:
+                    logger.error(
+                        "PASSWORD_RESET_FRONTEND_URL is not configured."
+                    )
+                    return Response(
+                        {"message": generic_message},
+                        status=status.HTTP_200_OK,
+                    )
+
+                reset_link = (
+                    f"{frontend_url}/#/reset-password/{uid}/{token}"
+                )
+
+                send_mail(
+                    subject="ShorterLoops - Reset Your Password",
+                    message=(
+                        f"Hello {user.Username},\n\n"
+                        "We received a request to reset your password.\n\n"
+                        f"Use this link to choose a new password:\n{reset_link}\n\n"
+                        "If you did not request this, you can ignore this email."
+                    ),
+                    from_email=None,
+                    recipient_list=[user.email],
+                    fail_silently=False,
+                )
+
+            except Exception:
+                logger.exception("Failed to send password reset email.")
+
+        return Response(
+            {"message": generic_message},
+            status=status.HTTP_200_OK,
+        )
+
+
+class PasswordResetConfirmView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        uid = request.data.get("uid")
+        token = request.data.get("token")
+        new_password = request.data.get("new_password")
+
+        if not all(
+            isinstance(value, str) and value
+            for value in (uid, token, new_password)
+        ):
+            return Response(
+                {"message": "Invalid or incomplete password reset request."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            user_id = force_str(urlsafe_base64_decode(uid))
+            user = User.objects.get(pk=user_id)
+        except (ValueError, TypeError, OverflowError, User.DoesNotExist):
+            return Response(
+                {"message": "This reset link is invalid or has expired."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not token_generator.check_token(user, token):
+            return Response(
+                {"message": "This reset link is invalid or has expired."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            validate_password(new_password, user=user)
+        except ValidationError as exc:
+            return Response(
+                {"message": list(exc.messages)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user.set_password(new_password)
+        user.save(update_fields=["password"])
+
+        return Response(
+            {"message": "Password reset successfully. Please log in."},
+            status=status.HTTP_200_OK,
         )

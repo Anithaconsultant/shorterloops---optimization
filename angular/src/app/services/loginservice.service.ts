@@ -25,7 +25,7 @@ export class LoginserviceService {
     cityavatar: "",
   };
   // baseurl = "https://dbl.iihs.in/api/";
-  baseurl = "http://127.0.0.1:8000/api/";
+   baseurl = "http://127.0.0.1:8000/api/";
   //baseurl = "https://dev-dbl.iihs.co.in/api/";
 
   constructor(private http: HttpClient, private authService: AuthService) {}
@@ -747,5 +747,25 @@ export class LoginserviceService {
         headers: this.getAuthHeaders(),
       })
       .pipe(catchError(this.handleError));
+  }
+  submitFeedback(message: string) {
+    return this.http.post(`${this.baseurl}feedback/`, { message });
+  }
+  forgotPassword(email: string) {
+    return this.http.post(
+      `${this.baseurl.replace(/\/+$/, "")}/auth/password-reset/`,
+      { email }
+    );
+  }
+
+  resetPassword(uid: string, token: string, newPassword: string) {
+    return this.http.post(
+      `${this.baseurl.replace(/\/+$/, "")}/auth/password-reset-confirm/`,
+      {
+        uid,
+        token,
+        new_password: newPassword,
+      }
+    );
   }
 }

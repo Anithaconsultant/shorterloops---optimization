@@ -10,7 +10,8 @@ urlpatterns = [
     path('api/auth/signup/', SignUpView.as_view(), name='signup'),
     path('api/auth/login/', LoginView.as_view(), name='login'),
     path('api/auth/verify-email/<uuid:token>/', VerifyEmailView.as_view(),    name='verify-email'),
-    
+    path( "api/auth/password-reset/", views.PasswordResetRequestView.as_view(),   name="password-reset",),
+    path("api/auth/password-reset-confirm/",    views.PasswordResetConfirmView.as_view(),    name="password-reset-confirm",),
     path('api/auth/refresh/', TokenRefreshView.as_view()),
     path('api/auth/profile/', UserProfileView.as_view(), name='profile'),
     path('api/updateusercity/<userid>',
@@ -66,7 +67,8 @@ urlpatterns = [
     path("api/cashflow-summary/",views.cashflow_summary,name="cashflow_summary"),
     path("api/supermarket-order/", views.supermarket_order, name="supermarket_order"),
     path('api/city-rule-master/<str:citytype>/',views.get_city_rule_master,name='city-rule-master'),
-  
+    path("api/feedback/",views.FeedbackEmailAPIView.as_view(),    name="feedback-email",),
+
 
 
 ]

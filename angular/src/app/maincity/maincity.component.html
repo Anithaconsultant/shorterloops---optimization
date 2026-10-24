@@ -420,7 +420,10 @@
     </div>
   </div>
 
-  <div class="round-panel">
+  <!-- <div class="round-panel">
+    <button type="button" class="rescue-cart-btn" (click)="rescueActiveCart()">
+      Rescue Cart
+    </button>
     <div>
       <div (click)="moveup($event)" (mousedown)="moveUpbtn($event)" (touchstart)="moveUpbtn($event)"
         (touchend)="clearMovement()" class="button topbtn"></div>
@@ -428,8 +431,10 @@
     <div>
       <div (click)="moveleft($event)" (mousedown)="moveLeftbtn($event)" (touchstart)="moveLeftbtn($event)"
         (touchend)="clearMovement()" class="button left"></div>
-      <div (click)="moveright($event)" (mousedown)="moveRightbtn($event)" (touchstart)="moveRightbtn($event)"
-        (touchend)="clearMovement()" class="button right"></div>
+      <div (mousedown)="moveRightbtn($event)" (touchstart)="moveRightbtn($event)" (mouseup)="clearMovement()"
+        (mouseleave)="clearMovement()" (touchend)="clearMovement()" (touchcancel)="clearMovement()"
+        class="button right">
+      </div>
     </div>
     <div>
       <div (click)="movedown($event)" (mousedown)="moveDownbtn($event)" (touchstart)="moveDownbtn($event)"
@@ -442,7 +447,54 @@
       <div (mousedown)="zoomIn($event)" (touchend)="zoomIn($event)" class="zoomIn"></div>
       <div (mousedown)="zoomOut($event)" (touchend)="zoomOut($event)" class="zoomOut"></div>
     </div>
+  </div> -->
+
+  <div class="round-panel">
+    <button type="button" class="rescue-cart-btn" (click)="rescueActiveCart()">
+      Rescue Cart
+    </button>
+
+    <!-- Up -->
+    <div>
+     <div (mousedown)="moveUpbtn($event)"
+     (touchstart)="moveUpbtn($event)"
+     (mouseup)="clearMovement()"
+     (mouseleave)="clearMovement()"
+     (touchend)="clearMovement()"
+     (touchcancel)="clearMovement()"
+     class="button topbtn"></div>
+    </div>
+
+    <!-- Left and Right -->
+    <div>
+      <div (mousedown)="moveLeftbtn($event)" (touchstart)="moveLeftbtn($event)" (mouseup)="clearMovement()"
+        (mouseleave)="clearMovement()" (touchend)="clearMovement()" (touchcancel)="clearMovement()" class="button left">
+      </div>
+
+      <div (mousedown)="moveRightbtn($event)" (touchstart)="moveRightbtn($event)" (mouseup)="clearMovement()"
+        (mouseleave)="clearMovement()" (touchend)="clearMovement()" (touchcancel)="clearMovement()"
+        class="button right">
+      </div>
+    </div>
+
+    <!-- Down -->
+    <div>
+      <div (mousedown)="moveDownbtn($event)" (touchstart)="moveDownbtn($event)" (mouseup)="clearMovement()"
+        (mouseleave)="clearMovement()" (touchend)="clearMovement()" (touchcancel)="clearMovement()"
+        class="button bottom">
+      </div>
+
+      <button (click)="recente = 0; recenter()" (touchend)="recente = 0; recenter()" class="button center"
+        [disabled]="opensuperflag == 2">
+      </button>
+    </div>
+
+    <div class="zoom">
+      <div (mousedown)="zoomIn($event)" (touchend)="zoomIn($event)" class="zoomIn"></div>
+      <div (mousedown)="zoomOut($event)" (touchend)="zoomOut($event)" class="zoomOut"></div>
+    </div>
   </div>
+
   <div class="topbar">
     <app-hamburger-menu></app-hamburger-menu>
     <div class="iihslogo"></div>
@@ -504,7 +556,7 @@
       </div>
       <div class="backside {{ bottleclass | lowercase }}back">
         <div class="labelholder">
-        
+
           <div class="Quantity">
             {{ assetdata[0].Quantity }} {{ assetdata[0].Units }}
           </div>
@@ -526,13 +578,13 @@
             &#8377; {{ assetdata[0].Discount_RefillB }}
           </div>
           <div class="Redeem_Good">&#8377; {{ assetdata[0].Redeem_Good }}</div>
-          
+
           <div class="Env_Tax_Customer">
-            &#8377; {{ assetdata[0].Env_Tax_Customer }}
+            {{ assetdata[0].Env_Tax_Customer }}%
           </div>
           <div class="Total_price">&#8377; {{ totalamount }}</div>
           <div class="AssetId">{{ assetdata[0].AssetId }}</div>
-            <div class="DOM">{{ assetdata[0].DOM }}</div>
+          <div class="DOM">{{ assetdata[0].DOM }}</div>
           <div class="Max_Refill_Count">
             {{ assetdata[0].Max_Refill_Count }}
           </div>
@@ -638,7 +690,7 @@
                     <th>AssetId</th>
                     <th>Bottle Type</th>
                     <th>Bottle content</th>
-                    <th>Refill Count</th>
+                    <th>Plant refill count / Max refill count</th>
                     <th>Content Price (&#x20B9;)</th>
                     <th>Original Bottle Price(&#x20B9;)</th>
                     <th>Discount on Refill bottle(%)</th>
@@ -653,7 +705,7 @@
                     <td>{{ item.AssetId }}</td>
                     <td>{{ item.Bottle_Code }}</td>
                     <td>{{ item.Content_Code }}</td>
-                    <td>{{ item.Current_PlantRefill_Count }}</td>
+                    <td>{{ item.Current_PlantRefill_Count }}+ '/'+ {{item.Max_Refill_Count}}</td>
                     <td>{{ item.Content_Price }}</td>
                     <td>{{ item.Bottle_Price }}</td>
                     <td>{{ item.Discount }}</td>

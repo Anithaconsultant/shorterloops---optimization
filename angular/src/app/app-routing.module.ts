@@ -7,9 +7,12 @@ import { MaincityComponent } from "./maincity/maincity.component";
 import { HomeComponent } from "./home/home.component";
 import { AddcityComponent } from "./addcity/addcity.component";
 import { ReportComponent } from "./report/report.component";
+import { FeedbackComponent } from "./feedback/feedback.component";
 import { CityruleComponent } from "./cityrule/cityrule.component";
 import { BottleInventoryFormComponent } from "./bottle-inventory-form/bottle-inventory-form.component";
+import { ForgotPasswordComponent } from "./forgot-password/forgot-password.component";
 import { VerifyEmailComponent } from "./verify-email/verify-email.component";
+import { ResetPasswordComponent } from "./reset-password/reset-password.component";
 const routes: Routes = [
   { path: "", redirectTo: "login", pathMatch: "full" },
   { path: "login", component: LoginComponent },
@@ -20,7 +23,10 @@ const routes: Routes = [
   { path: "report", component: ReportComponent },
   { path: "cityrule", component: CityruleComponent },
   { path: "bottleinventory", component: BottleInventoryFormComponent },
-  { path: "verify-email/:token",component: VerifyEmailComponent},
+  { path: "verify-email/:token", component: VerifyEmailComponent },
+  { path: "feedback", component: FeedbackComponent },
+  { path: "forgot-password", component: ForgotPasswordComponent },
+  {  path: 'reset-password/:uid/:token',  component: ResetPasswordComponent}
 ];
 
 @NgModule({

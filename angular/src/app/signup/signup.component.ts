@@ -122,7 +122,7 @@ export class SignupComponent implements OnInit {
           Validators.required,
           Validators.minLength(8),
           Validators.pattern(
-            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).+$/
           ),
         ],
       ],
@@ -148,11 +148,8 @@ export class SignupComponent implements OnInit {
 
     // Debug information
     console.log("EMAIL:", this.signupForm.get("email")?.value);
-
     console.log("EMAIL VALID:", this.signupForm.get("email")?.valid);
-
     console.log("EMAIL ERRORS:", this.signupForm.get("email")?.errors);
-
     console.log("FORM VALID:", this.signupForm.valid);
 
     // -----------------------------
@@ -160,6 +157,12 @@ export class SignupComponent implements OnInit {
     // -----------------------------
 
     if (this.signupForm.invalid) {
+      // Username validation
+      if (this.signupForm.get("username")?.hasError("required")) {
+        this.alertModal.openModal("Please enter your username.");
+        return;
+      }
+
       // Email validation
       if (this.signupForm.get("email")?.hasError("required")) {
         this.alertModal.openModal("Please enter your email address.");
@@ -179,14 +182,41 @@ export class SignupComponent implements OnInit {
 
       if (this.signupForm.get("mobile")?.hasError("pattern")) {
         this.alertModal.openModal(
-          "Please enter a valid 10-digit mobile number."
+          "Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9."
         );
         return;
       }
 
-      // Other required fields
-      this.alertModal.openModal("Please fill all the Fields");
+      // Password required
+      if (this.signupForm.get("password")?.hasError("required")) {
+        this.alertModal.openModal("Please enter your password.");
+        return;
+      }
 
+      // Password minimum length
+      if (this.signupForm.get("password")?.hasError("minlength")) {
+        this.alertModal.openModal(
+          "Password must contain at least 8 characters."
+        );
+        return;
+      }
+
+      // Password pattern
+      if (this.signupForm.get("password")?.hasError("pattern")) {
+        this.alertModal.openModal(
+          "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character (@, $, !, %, *, ?, or &)."
+        );
+        return;
+      }
+
+      // Gender validation
+      if (this.signupForm.get("gender")?.hasError("required")) {
+        this.alertModal.openModal("Please select your gender.");
+        return;
+      }
+
+      // Fallback
+      this.alertModal.openModal("Please fill all the fields.");
       return;
     }
 
@@ -195,16 +225,11 @@ export class SignupComponent implements OnInit {
     // -----------------------------
 
     this.newuser.Username = this.signupForm.get("username")?.value;
-
     this.newuser.email = this.signupForm.get("email")?.value;
-
     this.newuser.mobile = this.signupForm.get("mobile")?.value;
-
     this.newuser.password = this.signupForm.get("password")?.value;
-
     this.newuser.gender = this.signupForm.get("gender")?.value;
 
-    // Check what will actually be sent
     console.log("FINAL USER DATA:", this.newuser);
 
     // -----------------------------
@@ -214,24 +239,77 @@ export class SignupComponent implements OnInit {
     this.authService.signup(this.newuser).subscribe({
       next: () => {
         this.alertModal.openModal(
-          "Registration successful! Please check your email and verify your account."
+          "We've sent a verification link to " +
+            this.newuser.email +
+            ". Please check your inbox and click the link to activate your account."
         );
 
         this.errorMessage = "";
+        this.successMessage = "";
+
+        // Clear the form after successful signup
+        this.signupForm.reset({
+          username: "",
+          email: "",
+          mobile: "",
+          password: "",
+          gender: "",
+        });
+
+        // Reset the submitted state
+        this.submitted = false;
+
+        // Clear the local user data
+        this.newuser = {
+          Username: "",
+          email: "",
+          mobile: "",
+          password: "",
+          wallet: "2000",
+          status: "active",
+          User_cityid: "",
+          Role: "",
+          cartId: "0",
+          avatar: "",
+          gender: "",
+        };
       },
 
       error: (err) => {
-        this.errorMessage = "Registration failed. Please try again.";
+        console.error("SIGNUP ERROR:", err);
+
+        let message = "Registration failed.";
 
         if (err.error) {
-          if (err.error.Username) {
-            this.errorMessage = err.error.Username[0];
-          } else if (err.error.email) {
-            this.errorMessage = err.error.email[0];
-          } else if (err.error.mobile) {
-            this.errorMessage = err.error.mobile[0];
+          // General backend error
+          if (err.error.error) {
+            message = err.error.error;
+          }
+
+          // Username validation error
+          else if (err.error.Username) {
+            message = err.error.Username[0];
+          }
+
+          // Email validation error
+          else if (err.error.email) {
+            message = err.error.email[0];
+          }
+
+          // Mobile validation error
+          else if (err.error.mobile) {
+            message = err.error.mobile[0];
+          }
+
+          // Password validation error
+          else if (err.error.password) {
+            message = err.error.password[0];
           }
         }
+
+        this.errorMessage = message;
+
+        this.alertModal.openModal(message, false);
       },
     });
   }

@@ -19,8 +19,8 @@
                     <p></p>
                     <form [formGroup]="loginForm" (ngSubmit)="login()">
                         <div class="form-group mb-2">
-                            <input id="inputusername" type="username" formControlName="username"
-                                [ngClass]="{ 'is-invalid': submitted  }" placeholder="Username" required="" autofocus=""
+                            <input id="inputusername" type="username" formControlName="usernameOrEmail"
+                                [ngClass]="{ 'is-invalid': submitted  }" placeholder="Username/Email" required="" autofocus=""
                                 class="form-control rounded-pill border-0 shadow-sm px-4">
                         </div>
                         <div class="form-group mb-3">
@@ -28,8 +28,11 @@
                                 [ngClass]="{ 'is-invalid': submitted  }" placeholder="Password" required=""
                                 class="form-control rounded-pill border-0 shadow-sm px-4 text-primary">
                         </div>
+                        <div class="btncls">
                         <button type="submit"
                             class="btn btn-block text-uppercase mb-2 rounded-pill shadow-sm loginbtn">Login</button>
+                        <div class="forgotpwd"><a routerLink="/forgot-password">Forgot Password?</a></div>
+                        </div>
                     </form>
                     <div class="signuptxt"><a routerLink="/signup">Register</a></div>
                 </div>
@@ -38,12 +41,12 @@
         <div class="introvideo">
             <div class="template">
                 <div class='loadcontent'>
-                    <div  *ngIf="showImage==true" class="logoclkcls ">
+                    <div *ngIf="showImage==true" class="logoclkcls ">
                         <video src="./assets/video/Pyramid_Animation.mp4" width="100%" height="100%" #videoPlayer
                             (ended)="onVideoEnded()" [attr.controls]="false" autoplay></video>
-                      
+
                     </div>
-                    <div  *ngIf="showImage==false" class="logoclkcls">
+                    <div *ngIf="showImage==false" class="logoclkcls">
                         <img src="./assets/img/lastframe.png" alt="End Image" width="600">
                         <div class="play-button" (click)="playVideo()">
                             <span>&#9658;</span>

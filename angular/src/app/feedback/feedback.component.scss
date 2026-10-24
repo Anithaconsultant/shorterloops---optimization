@@ -1,0 +1,106 @@
+.feedback-container {
+  max-width: 700px;
+  margin: 60px auto;
+  padding: 32px;
+  border-radius: 12px;
+}
+
+.feedback-container h2 {
+  margin: 0 0 12px;
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.feedback-container p {
+  color: #5a5a5a;
+  line-height: 1.6;
+}
+
+.feedback-container textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 180px;
+  margin-top: 16px;
+  padding: 16px;
+  background: #ffffff;
+  color: #222635;
+  border: 1px solid #454c6000;
+  border-radius: 8px;
+  font: inherit;
+  resize: vertical;
+}
+
+.feedback-container textarea:focus {
+  outline: none;
+  border-color: #8b80ff;
+  box-shadow: 0 0 0 2px rgba(139, 128, 255, 0.2);
+}
+
+.feedback-container textarea::placeholder {
+  color: #9299aa;
+}
+
+.feedback-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.feedback-actions button {
+  padding: 11px 20px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.feedback-actions button[type="submit"] {
+  background: #636366;
+  color: #ffffff;
+}
+
+.feedback-actions button[type="submit"]:hover {
+  background: #292929;
+}
+
+.feedback-actions button[type="submit"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.feedback-actions button[type="button"] {
+  background: transparent;
+  color: #d0d4df;
+  border-color: #454c60;
+}
+
+.feedback-actions button[type="button"]:hover {
+  background: #282d3d;
+}
+
+.feedback-container .success-message {
+  color: #000000;
+  margin-top: 18px;
+}
+
+.feedback-container .error-message {
+  color: #000000;
+  margin-top: 18px;
+}
+
+@media (max-width: 600px) {
+  .feedback-container {
+    margin: 24px 16px;
+    padding: 22px;
+  }
+
+  .feedback-container h2 {
+    font-size: 23px;
+  }
+
+  .feedback-actions {
+    flex-wrap: wrap;
+  }
+}

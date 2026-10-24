@@ -214,6 +214,29 @@
     }
   }
 
+  .rescue-cart-btn {
+    background: #d9534f;
+    color: #fff;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 1000;
+    position: absolute;
+    left: -130px;
+    top: 27px;
+  }
+
+  .rescue-cart-btn:hover {
+    background: #c9302c;
+  }
+
+  .rescue-cart-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
   .bottletruck {
     width: 211px;
     height: 80px;

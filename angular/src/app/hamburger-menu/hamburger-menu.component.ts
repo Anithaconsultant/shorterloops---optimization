@@ -23,6 +23,7 @@ export class HamburgerMenuComponent implements OnInit {
   currentusername = "";
   currentusergender = "";
   currentuseravatar = "";
+  isLoggedIn = false;
   currentusercityId = "";
   switchYesOrNo!: number; // The variable is now a number
   private subscription!: Subscription;
@@ -39,6 +40,9 @@ export class HamburgerMenuComponent implements OnInit {
     this.currentuseravatar = this.logser.currentuser.avatar;
     this.currentusercityId = this.logser.currentuser.CityId;
     this.currentUserRole = this.logser.currentuser.Role;
+    this.isLoggedIn = !!(
+      this.logser.currentuser.UserId && this.logser.currentuser.Username
+    );
     this.subscription = this.sharedService.switchYesOrNo$.subscribe((value) => {
       this.switchYesOrNo = value;
     });
@@ -341,7 +345,16 @@ export class HamburgerMenuComponent implements OnInit {
   showCityRuleview(option: any) {
     this.router.navigate(["/cityrule"], { queryParams: { option: option } });
   }
+  openFeedback(content: any): void {
+    this.closeMenu();
 
+    this.modalService.open(content, {
+      centered: true,
+      size: "lg",
+      backdrop: true,
+      windowClass: "frontpage",
+    });
+  }
   openaboutshorter(aboutshorter: any) {
     this.modalService.open(aboutshorter, { windowClass: "frontpage" });
   }
@@ -381,10 +394,16 @@ export class HamburgerMenuComponent implements OnInit {
         next: (summary: any) => {
           console.log("CASHFLOW SUMMARY:", summary);
 
-          this.environmentTaxTotal = Number(summary.data.municipality['environment_tax'] || 0);
+          this.environmentTaxTotal = Number(
+            summary.data.municipality["environment_tax"] || 0
+          );
 
-          this.fineTotal = Number(summary.data.municipality['fine']  || 0);
-          console.log(this.environmentTaxTotal,this.fineTotal,summary.data.municipality['fine'] );  
+          this.fineTotal = Number(summary.data.municipality["fine"] || 0);
+          console.log(
+            this.environmentTaxTotal,
+            this.fineTotal,
+            summary.data.municipality["fine"]
+          );
         },
 
         error: (error: any) => {
@@ -496,7 +515,7 @@ export class HamburgerMenuComponent implements OnInit {
           console.log("REVERSE VENDING SUMMARY:", summary);
 
           this.DebitForReturningBottle = Number(
-            summary.data.reverse_vending['refund'] || 0
+            summary.data.reverse_vending["refund"] || 0
           );
         },
 

@@ -1,0 +1,33 @@
+<div class="feedback-container">
+  <h2>Give us your feedback</h2>
+  <p>Share your thoughts with us. We would love to hear from you.</p>
+
+  <form (ngSubmit)="submitFeedback()">
+    <textarea
+      [(ngModel)]="message"
+      name="message"
+      placeholder="Write your feedback here..."
+      rows="6"
+      maxlength="5000"
+      required>
+    </textarea>
+
+    <div class="feedback-actions">
+      <button type="submit" [disabled]="isSubmitting || !message.trim()">
+        {{ isSubmitting ? 'Sending...' : 'Submit Feedback' }}
+      </button>
+
+      <button type="button" (click)="cancelFeedback()"> 
+        Cancel
+      </button>
+    </div>
+
+    <p *ngIf="statusMessage" class="success-message">
+      {{ statusMessage }}
+    </p>
+
+    <p *ngIf="errorMessage" class="error-message">
+      {{ errorMessage }}
+    </p>
+  </form>
+</div>

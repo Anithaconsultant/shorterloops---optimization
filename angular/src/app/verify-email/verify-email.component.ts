@@ -1,17 +1,17 @@
 
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit ,ViewChild} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AuthService } from '../auth.service';
 import { LoginserviceService } from '../services/loginservice.service';
 import { SharedServiceService } from '../services/shared-service.service';
-
+import { AlertModalComponent } from "../alert-modal/alert-modal.component";
 @Component({
   selector: 'app-verify-email',
   templateUrl: './verify-email.component.html',
   styleUrls: ['./verify-email.component.scss']
 })
 export class VerifyEmailComponent implements OnInit {
-
+  @ViewChild("alertModal") alertModal!: AlertModalComponent;
   message = '';
   errorMessage = '';
   isLoading = true;
@@ -84,7 +84,9 @@ export class VerifyEmailComponent implements OnInit {
   private navigateBasedOnRoleAndCity(user: any): void {
 
     if (user.User_cityid == 0 && user.Role == '') {
-
+        this.alertModal.openModal(
+          "Registration Successful!!!"
+        );
       this.router.navigate(['home']);
 
     } else {

@@ -208,13 +208,31 @@ User = get_user_model()
 
 
 def start_timer_for_city(city):
-    if city.CityId in timers:
-        print(f"Timer already running for city {city.CityName}")
+    timer = timers.get(city.CityId)
+
+    if timer is not None and timer.is_alive():
+        print(
+            f"Timer already running for city {city.CityName}, "
+            f"thread={timer.name}"
+        )
         return
+
+    # Remove a stale thread reference, if one exists.
+    if timer is not None:
+        print(
+            f"Stale timer reference for city {city.CityName}; "
+            "restarting timer."
+        )
+        timers.pop(city.CityId, None)
+
     timer = CityTimer(city.CityId, city.Clocktickrate)
     timers[city.CityId] = timer
     timer.start()
 
+    print(
+        f"Timer started for city {city.CityName}, "
+        f"id={city.CityId}, alive={timer.is_alive()}"
+    )
 
 def stop_timer_for_city(city_id):
     if city_id in timers:
@@ -238,45 +256,158 @@ def start_timer_on_create(sender, instance, created, **kwargs):
         start_timer_for_city(instance)
 
 
-class CityTimer(threading.Thread):
+# class CityTimer(threading.Thread):
 
+#     def __init__(self, city_id, clocktickrate):
+#         super().__init__()
+
+#         self.city_id = city_id
+#         self.clocktickrate = clocktickrate
+
+#         # KEEP YOUR EXISTING TIMER CALCULATION
+#         self.intervalcalculation = 86400 / (self.clocktickrate * 60)
+
+#         self.running = True
+#         self.paused = False
+#         self.last_update_day = None
+
+#         # WebSocket / Redis channel layer
+#         self.channel_layer = get_channel_layer()
+
+   
+# def run(self):
+
+#     print(
+#         f"CityTimer STARTED: city={self.city_id}, "
+#         f"intervalcalculation={self.intervalcalculation}"
+#     )
+
+#     while self.running:
+#         try:
+#             time.sleep(1)
+
+#             with transaction.atomic():
+#                 city = City.objects.select_for_update().get(
+#                     pk=self.city_id
+#                 )
+
+#                 if city.timer_paused:
+#                     self.paused = True
+#                     continue
+
+#                 self.paused = False
+
+#                 old_time = city.CurrentTime
+#                 old_day = city.CurrentDay
+
+#                 city.CurrentTime += self.intervalcalculation
+
+#                 if city.CurrentTime >= 86400:
+#                     city.CurrentTime = 0
+#                     city.CurrentDay += 1
+
+#                 print(
+#                     f"TIMER DEBUG city={city.CityId}, "
+#                     f"old_time={old_time}, "
+#                     f"new_time={city.CurrentTime}, "
+#                     f"old_day={old_day}, "
+#                     f"new_day={city.CurrentDay}"
+#                 )
+
+#                 city.save()
+
+#                 async_to_sync(
+#                     self.channel_layer.group_send
+#                 )(
+#                     f"city_{city.CityId}",
+#                     {
+#                         "type": "city_timer_update",
+#                         "data": {
+#                             "CurrentTime": city.CurrentTime,
+#                             "CurrentDay": city.CurrentDay,
+#                         }
+#                     }
+#                 )
+
+#         except City.DoesNotExist:
+#             print(f"City {self.city_id} no longer exists.")
+#             self.running = False
+
+#         except Exception as error:
+#             print(
+#                 f"CityTimer ERROR city={self.city_id}: {error}"
+#             )
+#             continue
+
+#     print(f"CityTimer STOPPED for city {self.city_id}")
+
+#     def update_wallets(self, city_id):
+
+#         CustomUser.objects.filter(
+#             User_cityid=city_id
+#         ).update(
+#             wallet=F("wallet") + 2000
+#         )
+
+#         CustomUser.objects.filter(
+#             User_cityid=city_id
+#         ).update(
+#             update_count=F("update_count") + 1
+#         )
+
+#         print(
+#             f"Successfully updated wallets "
+#             f"for users in city ID: {city_id}"
+#         )
+
+#     def stop(self):
+
+#         self.running = False
+
+#     def pause(self):
+
+#         self.paused = True
+
+#     def resume(self):
+
+#         self.paused = False
+
+
+class CityTimer(threading.Thread):
     def __init__(self, city_id, clocktickrate):
-        super().__init__()
+        super().__init__(daemon=True)
 
         self.city_id = city_id
         self.clocktickrate = clocktickrate
-
-        # KEEP YOUR EXISTING TIMER CALCULATION
         self.intervalcalculation = 86400 / (self.clocktickrate * 60)
 
         self.running = True
         self.paused = False
         self.last_update_day = None
 
-        # WebSocket / Redis channel layer
         self.channel_layer = get_channel_layer()
 
     def run(self):
+        print(
+            f"CityTimer STARTED: city={self.city_id}, "
+            f"interval={self.intervalcalculation}"
+        )
 
-        print(f"CityTimer STARTED for city {self.city_id}")
-
+        print(
+            f"TIMER HEARTBEAT: "
+            f"city={self.city_id}, "
+            f"thread_alive={self.is_alive()}, "
+            f"interval={self.intervalcalculation}, "
+            f"time={time.time()}"
+        )
         while self.running:
-
             try:
                 time.sleep(1)
 
                 with transaction.atomic():
-
                     city = City.objects.select_for_update().get(
                         pk=self.city_id
                     )
-
-                    # No need for refresh_from_db().
-                    # select_for_update().get() already fetched the row.
-
-                    # -----------------------------------------
-                    # PAUSE CHECK
-                    # -----------------------------------------
 
                     if city.timer_paused:
                         self.paused = True
@@ -284,42 +415,28 @@ class CityTimer(threading.Thread):
 
                     self.paused = False
 
-
-                    # -----------------------------------------
-                    # UPDATE CITY TIME
-                    # -----------------------------------------
-
                     city.CurrentTime += self.intervalcalculation
 
                     if city.CurrentTime >= 86400:
                         city.CurrentTime = 0
                         city.CurrentDay += 1
 
-
-                    # -----------------------------------------
-                    # WALLET UPDATE
-                    # -----------------------------------------
-
+                    # Preserve the existing wallet update behavior.
                     if (
                         city.CurrentDay != 0
                         and city.CurrentDay % 30 == 0
                         and city.CurrentDay != self.last_update_day
                     ):
                         self.update_wallets(city.CityId)
-
                         self.last_update_day = city.CurrentDay
 
-
-                    # -----------------------------------------
-                    # SAVE
-                    # -----------------------------------------
-
                     city.save()
-
-
-                    # -----------------------------------------
-                    # SEND TIMER THROUGH WEBSOCKET
-                    # -----------------------------------------
+                    print(
+                    f"TIMER DB UPDATED: "
+                    f"city={city.CityId}, "
+                    f"CurrentDay={city.CurrentDay}, "
+                    f"CurrentTime={city.CurrentTime}"
+                    )
 
                     async_to_sync(
                         self.channel_layer.group_send
@@ -330,67 +447,46 @@ class CityTimer(threading.Thread):
                             "data": {
                                 "CurrentTime": city.CurrentTime,
                                 "CurrentDay": city.CurrentDay,
-                            }
-                        }
+                            },
+                        },
                     )
 
-
             except City.DoesNotExist:
-
                 print(
                     f"City {self.city_id} no longer exists. "
                     "Stopping timer."
                 )
-
                 self.running = False
 
-
             except Exception as error:
-
                 print(
-                    f"CityTimer ERROR for city "
-                    f"{self.city_id}: {error}"
+                    f"CityTimer ERROR city={self.city_id}: {error}"
                 )
-
-                # IMPORTANT:
-                # Do NOT stop the thread.
-                # Next loop will retry.
-                continue
-
+                time.sleep(1)
 
         print(f"CityTimer STOPPED for city {self.city_id}")
-    
+
     def update_wallets(self, city_id):
+        CustomUser.objects.filter(
+            User_cityid=city_id
+        ).update(wallet=F("wallet") + 2000)
 
         CustomUser.objects.filter(
             User_cityid=city_id
-        ).update(
-            wallet=F("wallet") + 2000
-        )
-
-        CustomUser.objects.filter(
-            User_cityid=city_id
-        ).update(
-            update_count=F("update_count") + 1
-        )
+        ).update(update_count=F("update_count") + 1)
 
         print(
-            f"Successfully updated wallets "
-            f"for users in city ID: {city_id}"
+            f"Successfully updated wallets for city ID: {city_id}"
         )
 
     def stop(self):
-
         self.running = False
 
     def pause(self):
-
         self.paused = True
 
     def resume(self):
-
         self.paused = False
-
 
 
 from asgiref.sync import async_to_sync
