@@ -26,7 +26,7 @@ export class LoginserviceService {
   };
   // baseurl = "https://dbl.iihs.in/api/";
    baseurl = "http://127.0.0.1:8000/api/";
-  //baseurl = "https://dev-dbl.iihs.co.in/api/";
+ // baseurl = "https://dev-dbl.iihs.co.in/api/";
 
   constructor(private http: HttpClient, private authService: AuthService) {}
 

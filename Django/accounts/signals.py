@@ -431,12 +431,12 @@ class CityTimer(threading.Thread):
                         self.last_update_day = city.CurrentDay
 
                     city.save()
-                    print(
-                    f"TIMER DB UPDATED: "
-                    f"city={city.CityId}, "
-                    f"CurrentDay={city.CurrentDay}, "
-                    f"CurrentTime={city.CurrentTime}"
-                    )
+                    # print(
+                    # f"TIMER DB UPDATED: "
+                    # f"city={city.CityId}, "
+                    # f"CurrentDay={city.CurrentDay}, "
+                    # f"CurrentTime={city.CurrentTime}"
+                    # )
 
                     async_to_sync(
                         self.channel_layer.group_send

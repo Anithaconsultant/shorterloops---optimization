@@ -50,7 +50,7 @@ export class AddcityComponent implements OnInit {
   }
 
   @ViewChild("alertModal") alertModal!: AlertModalComponent;
- 
+
   assetData: AssetData = {
     SB_B1idV_00001: {
       Bottle_Code: "B1.V",
@@ -2291,17 +2291,17 @@ export class AddcityComponent implements OnInit {
     CityId: "",
     CurrentDay: "",
   };
-  getCityType(): string {
-    if (this.selectedavatar == 1) {
-      return "clean";
-    }
-
-    if (this.selectedavatar == 2) {
-      return "dirty";
-    }
-
-    return "";
+getCityType(): string {
+  if (this.selectedavatar == 1) {
+    return "clean";
   }
+
+  if (this.selectedavatar == 2) {
+    return "dirty";
+  }
+
+  return "";
+}
   addcity() {
     this.submitted = true;
     if (this.addcityForm.invalid) {
@@ -2383,10 +2383,10 @@ export class AddcityComponent implements OnInit {
                     let assetCreationRequests = Object.keys(this.assetData).map(
                       (assetId) => {
                         const asset = this.assetData[assetId]; // Get the asset data for the current assetId
-                        const envTax = this.getEnvironmentalTax(
-                          asset,
-                          cityRuleMaster
-                        );
+                      const envTax = this.getEnvironmentalTax(
+                        asset,
+                        cityRuleMaster
+                      );
                         console.log(
                           asset.Bottle_Code,
                           asset.Current_PlantRefill_Count,
@@ -2432,7 +2432,7 @@ export class AddcityComponent implements OnInit {
                           selectedZeroRefillIndices.has(assetId) ? 0 : 5;
 
                         return this.logser.createAsset(this.assettableobj);
-                      }
+                    }
                     );
 
                     return forkJoin(assetCreationRequests);

@@ -946,19 +946,30 @@ def getfacilitycash(request, facilityName, cityid):
 @api_view(['GET', 'POST', 'PUT'])
 def leavefacility(request, userid):
     if request.method == 'PUT':
-       
         data = JSONParser().parse(request)
-        print("leavefacility",data);
-        getfacility = Facility.objects.filter(Owner_id=userid)
+
+        # Release the city mayor mapping for this user
+        City.objects.filter(MayorId=userid).update(MayorId=None)
+
+        # Deactivate the user's facility ownership
+        getfacility = Facility.objects.filter(Owner_id=str(userid))
+
         for record in getfacility:
-            serializer = facilitySerializer(record, data=data, partial=True)
+            serializer = facilitySerializer(
+                record, data=data, partial=True
+            )
             if serializer.is_valid():
                 serializer.save()
             else:
-                print("invalid data")
-        return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
+                return JsonResponse(
+                    serializer.errors,
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
-
+        return JsonResponse(
+            {"message": "City and facility mappings released"},
+            status=status.HTTP_200_OK
+        )
 @api_view(['GET', 'POST'])
 def cityrule(request):
     if request.method == 'POST':
@@ -1030,21 +1041,38 @@ def editcity(request, cityid):
         return JsonResponse(serializer.data, safe=False)
 
 
-@api_view(['GET', 'POST', 'PUT'])
+@api_view(['GET', 'PUT'])
 def updateusercity(request, userid):
     if request.method == 'PUT':
-        data = JSONParser().parse(request)
-        getuser = CustomUser.objects.filter(pk=userid).first()
-        serializer = CustomUserSerializer(getuser, data=data, partial=True)
+        try:
+            getuser = CustomUser.objects.get(pk=userid)
+        except CustomUser.DoesNotExist:
+            return JsonResponse(
+                {"error": "User not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = CustomUserSerializer(
+            getuser,
+            data=request.data,
+            partial=True
+        )
+
         if serializer.is_valid():
             serializer.save()
-        else:
-            print("invalid data")
-        return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
-    if request.method == 'GET':
-        data = CustomUser.objects.all()
-        serializer = CustomUserSerializer(data, many=True)
-        return JsonResponse(serializer.data, safe=False)
+            return JsonResponse(
+                serializer.data,
+                status=status.HTTP_200_OK
+            )
+
+        return JsonResponse(
+            {"errors": serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    data = CustomUser.objects.all()
+    serializer = CustomUserSerializer(data, many=True)
+    return JsonResponse(serializer.data, safe=False)
 
 
 @api_view(['GET'])

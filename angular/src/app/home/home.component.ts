@@ -126,7 +126,8 @@ export class HomeComponent implements OnInit {
 
 
     });
-  } openwhyshorter(whyshorter: any) {
+  }
+   openwhyshorter(whyshorter: any) {
 
     this.modalService.open(whyshorter, { windowClass: 'frontpage' });
   }

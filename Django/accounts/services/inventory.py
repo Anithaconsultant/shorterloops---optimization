@@ -87,7 +87,7 @@ def create_initial_inventory_for_city(city_id):
                     bottles_bought_by_consumers=0,
                     bottles_returned_good=0,
                     bottles_returned_damaged=0,
-                    manufacturing_day=asset.DOM,
+                    manufacturing_day=int(asset.DOM or 0),
                     content_price_per_ml=shampoo_price_per_ml,
                     bottle_price=bottle_price,
                     total_mrp=total_mrp,

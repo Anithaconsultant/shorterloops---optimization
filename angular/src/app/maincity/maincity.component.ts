@@ -2479,6 +2479,22 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
     const key = "City" + updatedAsset.AssetId;
 
     const oldModifiedKey = this.modifiedKeyMap[key];
+    console.log("========== ASSET ARRAY TRACE ==========");
+    console.log("Updating AssetId:", updatedAsset.AssetId);
+    console.log("Updating Bottle:", updatedAsset.Content_Code);
+    console.log("Old Modified Key:", oldModifiedKey);
+    console.log("New Asset Key:", key);
+
+    console.log("Before update - Purchased:", [...this.currentUserPurhcased]);
+
+    console.log("Before update - Refill:", [...this.refillbottles]);
+
+    console.log(
+      "Spiky in Refill:",
+      this.refillbottles.includes("City9_SB_B2idR_00002atspikyrpn")
+    );
+
+    console.log("=======================================");
 
     // Remove bottle from its previous location/array
     this.removeAssetFromArrays(oldModifiedKey, updatedAsset.AssetId);
@@ -2504,6 +2520,18 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
       bottle_status,
       bottle_remquantity
     );
+    console.log("AFTER ASSET UPDATE:", updatedAsset.AssetId);
+
+    console.log("After update - Purchased:", [...this.currentUserPurhcased]);
+
+    console.log("After update - Refill:", [...this.refillbottles]);
+
+    console.log(
+      "Spiky after update:",
+      this.refillbottles.includes("City9_SB_B2idR_00002atspikyrpn")
+    );
+
+    console.log("=======================================");
   }
 
   private removeAssetFromArrays(
@@ -2597,11 +2625,7 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
   alertnotified: boolean = false;
   private citySocket: WebSocket | null = null;
   private setupCityWebSocket(): void {
-    // const protocol = window.location.protocol === "https:" ? "wss" : "ws";
 
-    // const socketUrl = `${protocol}://${window.location.host}/ws/city/${cityId}/`;
-
-    // this.citySocket = new WebSocket(socketUrl);
 
     const cityId = this.logser.currentuser.CityId;
 
@@ -2629,7 +2653,7 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
     this.citySocket.onmessage = (event) => {
       const message = JSON.parse(event.data);
 
-      console.log("WEBSOCKET MESSAGE:", message);
+      //console.log("WEBSOCKET MESSAGE:", message);
 
       // console.log("CITY WEBSOCKET MESSAGE:", message);
 
@@ -2782,11 +2806,35 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
         this.commonobj[currentItem]["Bottle_loc"] = bottleloc;
       }
     }
+    console.log(this.currentUserCartId, bottle_remquantity);
+
     if (bottleloc == this.currentUserCartId && bottle_remquantity == 0) {
-      this.refillbottles.push(cat);
+      console.log("emptied bottles");
+      console.log(cat);
+
+      // Remove from purchased cart
+      this.currentUserPurhcased = this.currentUserPurhcased.filter(
+        (item: string) => item !== cat
+      );
+
+      // Add to empty/refill cart only once
+      if (!this.refillbottles.includes(cat)) {
+        this.refillbottles.push(cat);
+      }
+
+      console.log(this.refillbottles);
     } else if (bottleloc == this.currentUserCartId && bottle_remquantity > 0) {
-      this.currentUserPurhcased.push(cat);
+      // Remove from empty/refill cart
+      this.refillbottles = this.refillbottles.filter(
+        (item: string) => item !== cat
+      );
+
+      // Add to purchased cart only once
+      if (!this.currentUserPurhcased.includes(cat)) {
+        this.currentUserPurhcased.push(cat);
+      }
     }
+
     if (bottleloc == "City Dustbin") {
       this.dustbinbottles.push(cat);
     }
@@ -2810,368 +2858,6 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
       this.workonflags();
     }
   }
-  // checkCartPosition() {
-  //   const topValue = parseInt($(".cart").css("top").split("px")[0]);
-  //   const leftValue = parseInt($(".cart").css("left").split("px")[0]);
-  //   const TOLERANCE = 30;
-
-  //   const isWithinRange = (value: number, min: number, max: number) =>
-  //     value >= min - TOLERANCE && value <= max + TOLERANCE;
-
-  //   if (
-  //     isWithinRange(topValue, 2800, 2850) &&
-  //     isWithinRange(leftValue, 5290, 5891)
-  //   ) {
-  //     this.whichRoad = "refillingstation";
-  //     this.setTrue();
-
-  //     // 1. First check whether Refilling Station has an active owner
-  //     if (this.isFacilityAvailable("Shampoo Refilling Station Owner")) {
-  //       // 2. Existing bottle check
-  //       if (this.currentUserPurhcased.length > 0) {
-  //         this.playAudioElement(this.StopEntry.nativeElement, 0.8);
-
-  //         this.alertModal.openModal(
-  //           "Sorry! You are allowed to take only empty shampoo bottles inside this facility. " +
-  //             "Please leave your non-empty bottles on the shelf at your house and come. " +
-  //             "You may also empty the bottle or throw the bottle if you wish, before entering. " +
-  //             "Mind you! You may have to pay a fine if you throw the bottle.",
-  //           false
-  //         );
-
-  //         this.canMoveRight = false;
-  //       } else {
-  //         // 3. Facility active + bottle check passed
-  //         this.opensuperflag = 2;
-  //         this.refilledbottles.length = 0;
-
-  //         this.openrefillingstation();
-  //       }
-  //     } else {
-  //       // Facility is unavailable
-  //       // Stop player from moving into the facility
-  //       this.canMoveRight = false;
-  //     }
-  //   } else if (
-  //     isWithinRange(topValue, 2200, 2300) &&
-  //     isWithinRange(leftValue, 5290, 6891)
-  //   ) {
-  //     this.whichRoad = "reverseVendingMachine";
-  //     this.setTrue();
-  //     if (this.isFacilityAvailable("Bottle Reverse Vending Machine Owner")) {
-  //       if (this.currentUserPurhcased.length > 0) {
-  //         this.playAudioElement(this.StopEntry.nativeElement, 0.8);
-  //         this.alertModal.openModal(
-  //           "Sorry!  You are allowed to take only empty shampoo bottles inside this facility.     Please leave your non-empty bottles on the shelf at your house and come. You may also empty the bottle or throw the bottle if you wish, before entering.  Mind you! You may have to pay a fine if you throw the bottle.",
-  //           false
-  //         );
-  //         this.canMoveRight = false;
-  //       } else {
-  //         this.dopanzoom(-5250, -1862, "1");
-  //       }
-  //     } else {
-  //       // Facility is unavailable
-  //       // Stop player from moving into the facility
-  //       this.canMoveRight = false;
-  //     }
-  //   } else if (
-  //     isWithinRange(topValue, 3524, 3640) &&
-  //     isWithinRange(leftValue, 300, 7390)
-  //   ) {
-  //     this.whichRoad = "mayorhouseroad";
-  //     this.setTrue();
-  //   } else if (
-  //     isWithinRange(topValue, 2640, 3000) &&
-  //     isWithinRange(leftValue, 1500, 1700)
-  //   ) {
-  //     this.whichRoad = "Supermarketroad";
-  //     this.setTrue();
-  //     if (topValue < 2720) {
-  //       this.opensupermarket();
-  //     }
-  //   } else if (
-  //     isWithinRange(topValue, 4000, 4065) &&
-  //     isWithinRange(leftValue, 5300, 7390)
-  //   ) {
-  //     this.whichRoad = "lowercolonyrightroad";
-  //     this.setTrue();
-  //   } else if (
-  //     isWithinRange(topValue, 0, 4395) &&
-  //     isWithinRange(leftValue, 2700, 2800)
-  //   ) {
-  //     this.whichRoad = "lefthorizontalroad";
-  //     this.setTrue();
-  //   } else if (
-  //     isWithinRange(topValue, 0, 4395) &&
-  //     isWithinRange(leftValue, 5190, 5300)
-  //   ) {
-  //     if (
-  //       isWithinRange(topValue, 2800, 2850) &&
-  //       isWithinRange(leftValue, 5300, 5891)
-  //     ) {
-  //       if (this.opensuperflag != 2) {
-  //         this.opensuperflag = 2;
-  //         this.openrefillingstation();
-  //       }
-  //       this.setTrue();
-  //       this.whichRoad = "refillingstation";
-  //     } else if (
-  //       isWithinRange(topValue, 2200, 2300) &&
-  //       isWithinRange(leftValue, 5300, 5891)
-  //     ) {
-  //       this.dopanzoom(-5250, -1862, "1");
-  //       this.setTrue();
-  //       this.whichRoad = "reverseVendingMachine";
-  //     } else {
-  //       this.whichRoad = "rightroad";
-  //       this.setTrue();
-  //     }
-  //   } else if (
-  //     isWithinRange(topValue, 4000, 4065) &&
-  //     isWithinRange(leftValue, 300, 2800)
-  //   ) {
-  //     this.whichRoad = "leftcolonybottom";
-  //     this.setTrue();
-  //   } else if (
-  //     isWithinRange(topValue, 2950, 3050) &&
-  //     isWithinRange(leftValue, 0, 5400)
-  //   ) {
-  //     this.whichRoad = "municipalityroad";
-  //     this.setTrue();
-  //   } else {
-  //     this.canMoveLeft = false;
-  //     this.canMoveTop = false;
-  //     this.canMoveBottom = false;
-  //     this.canMoveRight = false;
-
-  //     if (this.whichRoad == "rightroad") {
-  //       if (leftValue <= 5190) {
-  //         this.canMoveBottom = true;
-  //         this.canMoveTop = true;
-  //         this.canMoveLeft = false;
-  //         this.canMoveRight = true;
-  //       }
-  //       if (leftValue >= 5300) {
-  //         this.canMoveTop = true;
-  //         this.canMoveBottom = true;
-  //         this.canMoveLeft = true;
-  //         this.canMoveRight = false;
-  //       }
-  //       if (topValue <= 0) {
-  //         this.canMoveRight = true;
-  //         this.canMoveLeft = true;
-  //         this.canMoveTop = false;
-  //         this.canMoveBottom = true;
-  //       }
-  //       if (topValue >= 4395) {
-  //         this.canMoveRight = true;
-  //         this.canMoveLeft = true;
-  //         this.canMoveTop = true;
-  //         this.canMoveBottom = false;
-  //       }
-  //     } else if (this.whichRoad == "refillingstation") {
-  //       if (leftValue <= 5700) {
-  //         this.canMoveBottom = true;
-  //         this.canMoveTop = true;
-  //         this.canMoveLeft = false;
-  //         this.canMoveRight = true;
-  //       }
-  //       if (leftValue >= 5790) {
-  //         this.canMoveTop = true;
-  //         this.canMoveBottom = true;
-  //         this.canMoveLeft = true;
-  //         this.canMoveRight = false;
-  //       }
-  //       if (topValue <= 2789) {
-  //         this.canMoveRight = true;
-  //         this.canMoveLeft = true;
-  //         this.canMoveTop = false;
-  //         this.canMoveBottom = true;
-  //       }
-  //       if (topValue >= 2723) {
-  //         this.canMoveRight = true;
-  //         this.canMoveLeft = true;
-  //         this.canMoveTop = true;
-  //         this.canMoveBottom = false;
-  //       }
-  //     } else if (this.whichRoad == "reverseVendingMachine") {
-  //       if (leftValue <= 5290) {
-  //         this.canMoveBottom = true;
-  //         this.canMoveTop = true;
-  //         this.canMoveLeft = false;
-  //         this.canMoveRight = true;
-  //       }
-  //       if (leftValue >= 6891) {
-  //         this.canMoveTop = true;
-  //         this.canMoveBottom = true;
-  //         this.canMoveLeft = true;
-  //         this.canMoveRight = false;
-  //       }
-  //       if (topValue <= 2300) {
-  //         this.canMoveRight = true;
-  //         this.canMoveLeft = true;
-  //         this.canMoveTop = false;
-  //         this.canMoveBottom = true;
-  //       }
-  //       if (topValue >= 2200) {
-  //         this.canMoveRight = true;
-  //         this.canMoveLeft = true;
-  //         this.canMoveTop = true;
-  //         this.canMoveBottom = false;
-  //       }
-  //     } else if (this.whichRoad == "mayorhouseroad") {
-  //       if (topValue <= 3524) {
-  //         this.canMoveBottom = true;
-  //         this.canMoveTop = false;
-  //         this.canMoveLeft = true;
-  //         this.canMoveRight = true;
-  //       }
-  //       if (topValue >= 3640) {
-  //         this.canMoveTop = true;
-  //         this.canMoveBottom = false;
-  //         this.canMoveLeft = true;
-  //         this.canMoveRight = true;
-  //       }
-  //       if (leftValue <= 300) {
-  //         this.canMoveRight = true;
-  //         this.canMoveLeft = false;
-  //         this.canMoveTop = true;
-  //         this.canMoveBottom = true;
-  //       }
-  //       if (leftValue >= 7390) {
-  //         this.canMoveRight = false;
-  //         this.canMoveLeft = true;
-  //         this.canMoveTop = true;
-  //         this.canMoveBottom = true;
-  //       }
-  //     } else if (this.whichRoad == "Supermarketroad") {
-  //       if (topValue <= 2640) {
-  //         this.canMoveBottom = true;
-  //         this.canMoveTop = false;
-  //         this.canMoveLeft = true;
-  //         this.canMoveRight = true;
-  //       }
-  //       if (topValue >= 3000) {
-  //         this.canMoveTop = true;
-  //         this.canMoveBottom = false;
-  //         this.canMoveLeft = true;
-  //         this.canMoveRight = true;
-  //       }
-  //       if (leftValue <= 1500) {
-  //         this.canMoveRight = true;
-  //         this.canMoveLeft = false;
-  //         this.canMoveTop = true;
-  //         this.canMoveBottom = true;
-  //       }
-  //       if (leftValue >= 1700) {
-  //         this.canMoveRight = false;
-  //         this.canMoveLeft = true;
-  //         this.canMoveTop = true;
-  //         this.canMoveBottom = true;
-  //       }
-  //     } else if (this.whichRoad == "lowercolonyrightroad") {
-  //       if (topValue <= 4010) {
-  //         this.canMoveBottom = true;
-  //         this.canMoveTop = false;
-  //         this.canMoveLeft = true;
-  //         this.canMoveRight = true;
-  //       }
-  //       if (topValue >= 4065) {
-  //         this.canMoveTop = true;
-  //         this.canMoveBottom = false;
-  //         this.canMoveLeft = true;
-  //         this.canMoveRight = true;
-  //       }
-  //       if (leftValue <= 5300) {
-  //         this.canMoveRight = true;
-  //         this.canMoveLeft = false;
-  //         this.canMoveTop = true;
-  //         this.canMoveBottom = true;
-  //       }
-  //       if (leftValue >= 7390) {
-  //         this.canMoveRight = false;
-  //         this.canMoveLeft = true;
-  //         this.canMoveTop = true;
-  //         this.canMoveBottom = true;
-  //       }
-  //     } else if (this.whichRoad == "lefthorizontalroad") {
-  //       if (topValue <= 4010) {
-  //         this.canMoveBottom = true;
-  //         this.canMoveTop = false;
-  //         this.canMoveLeft = true;
-  //         this.canMoveRight = true;
-  //       }
-  //       if (topValue >= 4065) {
-  //         this.canMoveTop = true;
-  //         this.canMoveBottom = false;
-  //         this.canMoveLeft = true;
-  //         this.canMoveRight = true;
-  //       }
-  //       if (leftValue <= 2700) {
-  //         this.canMoveRight = true;
-  //         this.canMoveLeft = false;
-  //         this.canMoveTop = true;
-  //         this.canMoveBottom = true;
-  //       }
-  //       if (leftValue >= 2800) {
-  //         this.canMoveRight = false;
-  //         this.canMoveLeft = true;
-  //         this.canMoveTop = true;
-  //         this.canMoveBottom = true;
-  //       }
-  //     } else if (this.whichRoad == "leftcolonybottom") {
-  //       if (topValue <= 4010) {
-  //         this.canMoveBottom = true;
-  //         this.canMoveTop = false;
-  //         this.canMoveLeft = true;
-  //         this.canMoveRight = true;
-  //       }
-  //       if (topValue >= 4065) {
-  //         this.canMoveTop = true;
-  //         this.canMoveBottom = false;
-  //         this.canMoveLeft = true;
-  //         this.canMoveRight = true;
-  //       }
-  //       if (leftValue <= 300) {
-  //         this.canMoveRight = true;
-  //         this.canMoveLeft = false;
-  //         this.canMoveTop = true;
-  //         this.canMoveBottom = true;
-  //       }
-  //       if (leftValue >= 2800) {
-  //         this.canMoveRight = false;
-  //         this.canMoveLeft = true;
-  //         this.canMoveTop = true;
-  //         this.canMoveBottom = true;
-  //       }
-  //     } else if (this.whichRoad == "municipalityroad") {
-  //       if (leftValue <= 0) {
-  //         this.canMoveBottom = true;
-  //         this.canMoveTop = true;
-  //         this.canMoveLeft = false;
-  //         this.canMoveRight = true;
-  //       }
-  //       if (leftValue >= 5400) {
-  //         this.canMoveTop = true;
-  //         this.canMoveBottom = true;
-  //         this.canMoveLeft = true;
-  //         this.canMoveRight = false;
-  //       }
-  //       if (topValue <= 2950) {
-  //         this.canMoveRight = true;
-  //         this.canMoveLeft = true;
-  //         this.canMoveTop = false;
-  //         this.canMoveBottom = true;
-  //       }
-  //       if (topValue >= 3050) {
-  //         this.canMoveRight = true;
-  //         this.canMoveLeft = true;
-  //         this.canMoveTop = true;
-  //         this.canMoveBottom = false;
-  //       }
-  //     }
-  //   }
-  // }
 
   checkCartPosition() {
     const topValue = parseInt($(".cart").css("top") || "0", 10);
@@ -3217,12 +2903,15 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
         ) {
           this.refillingStationEntryAlertShown = true;
           this.playAudioElement(this.StopEntry.nativeElement, 0.8);
-            this.alertModal.openModal(
+          this.alertModal.openModal(
             "Sorry! Only empty shampoo bottles are allowed inside this facility. " +
               "Please leave your non-empty bottles at home before entering."
           );
         }
       } else if (this.opensuperflag !== 2) {
+        // Stop the previous entry warning before welcoming the user.
+        this.stopAudioElement(this.StopEntry.nativeElement);
+
         this.opensuperflag = 2;
         this.refilledbottles.length = 0;
         this.openrefillingstation();
@@ -3248,7 +2937,7 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
 
         if (previousRoad !== "reverseVendingMachine") {
           this.playAudioElement(this.StopEntry.nativeElement, 0.8);
-            this.alertModal.openModal(
+          this.alertModal.openModal(
             "Sorry! Only empty shampoo bottles are allowed inside this facility. " +
               "Please leave your non-empty bottles at home before entering."
           );
@@ -3279,13 +2968,13 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
       if (topValue < 2720 && this.opensuperflag !== 1) {
         if (this.currentUserPurhcased.length > 0) {
           this.playAudioElement(this.StopEntry.nativeElement, 0.8);
-            this.alertModal.openModal(
+          this.alertModal.openModal(
             "Only empty shampoo bottles are allowed inside the supermarket. " +
               "Please leave your non-empty bottles at home before entering."
           );
         } else {
-          this.playAudioElement(this.Supermarket_Return.nativeElement, 0.8);
-          this.opensuperflag = 1;
+          //  this.playAudioElement(this.Supermarket_Return.nativeElement, 0.8);
+          //  this.opensuperflag = 1;
           this.opensupermarket();
         }
       }
@@ -3294,8 +2983,7 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
       isWithinRange(leftValue, 5300, 7390)
     ) {
       this.whichRoad = "lowercolonyrightroad";
-    }
-     else if (
+    } else if (
       isWithinRange(topValue, 2950, 3050) &&
       isWithinRange(leftValue, 0, 5400)
     ) {
@@ -3798,15 +3486,59 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
 
     let safePosition: { top: number; left: number };
 
-    // Choose a recovery position that matches the current workflow.
-    if (this.setflag === 0 || this.setflag === 1) {
-      // Conveyor approach corridor
-      safePosition = { top: 3300, left: 3000 };
-      this.cartlocmarket = "nearconveyor";
-    } else {
-      // Main supermarket corridor
-      safePosition = { top: 3300, left: 7000 };
-      this.cartlocmarket = "maincorider";
+    // Recover the cart inside its current corridor.
+    switch (this.cartlocmarket) {
+      case "nearconveyor":
+        safePosition = {
+          top: Math.max(3091, Math.min(top, 3532)),
+          left: Math.max(921, Math.min(left, 4899)),
+        };
+        break;
+
+      case "maincorider":
+        safePosition = {
+          top: Math.max(3091, Math.min(top, 3399)),
+          left: Math.max(5001, Math.min(left, 11399)),
+        };
+        break;
+
+      case "turningcorider":
+        safePosition = {
+          top: Math.max(1006, Math.min(top, 3239)),
+          left: Math.max(11251, Math.min(left, 11449)),
+        };
+        break;
+
+      case "othercorider":
+        safePosition = {
+          top: Math.max(1021, Math.min(top, 1269)),
+          left: Math.max(6051, Math.min(left, 11449)),
+        };
+        break;
+
+      case "exiting":
+        safePosition = {
+          top: Math.max(1041, Math.min(top, 3088)),
+          left: Math.max(931, Math.min(left, 1129)),
+        };
+        break;
+
+      case "cameout":
+        safePosition = {
+          top: Math.max(1021, Math.min(top, 1269)),
+          left: Math.max(1001, Math.min(left, 5699)),
+        };
+        break;
+
+      default:
+        // Use the corridor indicated by the current workflow.
+        if (this.setflag === 0 || this.setflag === 1) {
+          safePosition = { top: 3300, left: 3000 };
+          this.cartlocmarket = "nearconveyor";
+        } else {
+          safePosition = { top: 3300, left: 7000 };
+          this.cartlocmarket = "maincorider";
+        }
     }
 
     cart.css({
@@ -3814,7 +3546,6 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
       left: `${safePosition.left}px`,
     });
 
-    // Reset movement permissions before normal navigation resumes.
     this.markettop = true;
     this.marketbottom = true;
     this.marketleft = true;
@@ -3822,6 +3553,7 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
 
     console.log(
       "Supermarket cart rescued:",
+      this.cartlocmarket,
       safePosition.top,
       safePosition.left
     );
@@ -3839,31 +3571,20 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
       return;
     }
 
-    const top = parseFloat(cart.css("top"));
-    const left = parseFloat(cart.css("left"));
-
-    if (!Number.isFinite(top) || !Number.isFinite(left)) {
-      alert("Unable to determine refilling cart position.");
-      return;
-    }
-
-    // Place the cart in the exit corridor near the road.
+    // Place the cart just inside the exit corridor.
     const SAFE_TOP = 267;
-    const SAFE_LEFT = 50;
+    const SAFE_LEFT = 41;
 
     cart.css({
       top: `${SAFE_TOP}px`,
       left: `${SAFE_LEFT}px`,
     });
 
-    // Restore exit-corridor identity.
+    // Restore the correct exit-corridor identity.
     this.cartlocrefill = "exitpoint";
 
-    // Restore movement permissions.
-    this.refilltop = true;
-    this.refillbottom = true;
-    this.refillleft = true;
-    this.refillright = true;
+    // Recalculate movement permissions using existing logic.
+    this.refillcartposition();
 
     console.log("Refilling cart rescued to exit:", SAFE_TOP, SAFE_LEFT);
   }
@@ -4240,7 +3961,7 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
         this.cartlocmarket = "turningcorider";
         this.setmarkettrue();
       } else if (
-        topValue > 1005 &&
+        topValue > 900 &&
         topValue < 1270 &&
         leftValue > 6050 &&
         leftValue < 11450
@@ -4249,7 +3970,7 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
         this.setmarkettrue();
         if (
           leftValue > 6600 &&
-          leftValue < 7000 &&
+          leftValue < 7600 &&
           !this.billpaid &&
           (!this.arraysAreEqual(this.previousBottleTaken, this.bottletaken) ||
             this.takenItemsfromSupermarket != this.bottletaken.length) &&
@@ -4404,7 +4125,7 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
         }
       }
     }
-    ////console.log(this.cartlocmarket)
+    console.log(this.cartlocmarket, leftValue, topValue);
   }
 
   movetomaincity() {
@@ -5143,13 +4864,15 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
     this.playAudioElement(this.cityrail.nativeElement, 0.8);
     this.resetanimation = true;
     $("#refillcart").css({ left: "50px", top: "332px" });
-    setTimeout(function () {
-      that.playAudioElement(that.welcome.nativeElement, 0.8);
-    }, 2000);
-    let that = this;
-    setTimeout(function () {
-      that.playAudioElement(that.placebottle.nativeElement, 0.8);
-    }, 5000);
+    (async () => {
+      try {
+        await this.playAudioElement(this.welcome.nativeElement, 0.8);
+
+        await this.playAudioElement(this.placebottle.nativeElement, 0.8);
+      } catch (error) {
+        console.error("Refilling station audio sequence failed:", error);
+      }
+    })();
   }
 
   initiateanimation(placedBottle: string) {
@@ -6495,14 +6218,88 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
         event.currentIndex
       );
     } else {
+      console.log("========== REFILL DROP BEFORE ==========");
+
+      console.log("Dragged bottle:", event.item.element.nativeElement.id);
+
+      console.log(
+        "Previous container class:",
+        event.previousContainer.element.nativeElement.className
+      );
+
+      console.log(
+        "Target container class:",
+        event.container.element.nativeElement.className
+      );
+
+      console.log("Previous index:", event.previousIndex);
+      console.log("Current index:", event.currentIndex);
+
+      console.log("Previous container data:", [
+        ...event.previousContainer.data,
+      ]);
+
+      console.log("Target container data:", [...event.container.data]);
+
+      console.log("refillbottles before:", [...this.refillbottles]);
+
+      console.log("Purchased before:", [...this.currentUserPurhcased]);
+
+      console.log(
+        "Spiky present before:",
+        this.refillbottles.includes("City9_SB_B2idR_00002atspikyrpn")
+      );
+
+      console.log("========================================");
+
+      const currentlyDroped = event.item.element.nativeElement.id;
+
+      // Find the actual dragged bottle in the source array.
+      // Do not rely on previousIndex because it may not
+      // identify the dragged bottle correctly.
+
+      const actualIndex = event.previousContainer.data.findIndex(
+        (item: string) => item === currentlyDroped
+      );
+
+      console.log("DRAG TRANSFER VALIDATION:", {
+        currentlyDroped,
+        previousIndex: event.previousIndex,
+        actualIndex,
+        sourceData: [...event.previousContainer.data],
+      });
+
+      if (actualIndex === -1) {
+        console.error(
+          "Dragged bottle not found in source array:",
+          currentlyDroped
+        );
+
+        return;
+      }
+
       transferArrayItem(
         event.previousContainer.data,
         event.container.data,
-        event.previousIndex,
+        actualIndex,
         event.currentIndex
       );
+      console.log(
+        "SOURCE IS REFILLBOTTLES:",
+        event.previousContainer.data === this.refillbottles
+      );
+
+      console.log(
+        "TARGET IS REFILL STAGE:",
+        event.container.data === this.atRefillingMchn
+      );
+      console.log("REFILL DROP AFTER TRANSFER");
+      console.log("refillbottles:", [...this.refillbottles]);
+      console.log("Previous data:", [...event.previousContainer.data]);
+      console.log("Target data:", [...event.container.data]);
+      console.log("========================================");
+
       this.currentlyrefillingBottle = event.item.element.nativeElement.id;
-      let currentlyDroped = event.item.element.nativeElement.id;
       let currentDropzone = event.container.element.nativeElement.classList;
       if (currentDropzone.contains("refilllist")) {
         this.atRefillingMchn.length = 0;
@@ -6973,7 +6770,7 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
     if (this.opensuperflag === 1) {
       return {
         selector: ".supermarketcart",
-        step: 50,
+        step: 30,
         checkPosition: () => this.supercartposition(),
         canMove: {
           up: () => this.markettop,
@@ -7033,22 +6830,93 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
       return;
     }
 
+    const nextTop =
+      currentTop +
+      (direction === "up"
+        ? -config.step
+        : direction === "down"
+        ? config.step
+        : 0);
+
+    const nextLeft =
+      currentLeft +
+      (direction === "left"
+        ? -config.step
+        : direction === "right"
+        ? config.step
+        : 0);
+
+    // Strict boundaries for the refilling cart.
+    if (config.selector === "#refillcart") {
+      const isExitCorridor =
+        this.cartlocrefill === "exitpoint" &&
+        currentTop > 242 &&
+        currentTop < 292;
+
+      // Never cross the top or bottom boundaries.
+      if (nextTop < 217 || nextTop > 417) {
+        return;
+      }
+
+      // Never cross the right boundary.
+      if (nextLeft > 900) {
+        return;
+      }
+
+      // Keep the left boundary at 50px, except when
+      // moving left through the main-city exit corridor.
+      if (nextLeft < 50) {
+        const isLeavingForMainCity =
+          isExitCorridor && direction === "left" && nextLeft >= 15;
+
+        if (!isLeavingForMainCity) {
+          return;
+        }
+      }
+    }
+
+    const isSupermarketCart = config.selector === ".supermarketcart";
+
+    // Prevent reversing from the market into Door 1.
+    if (
+      isSupermarketCart &&
+      this.cartlocmarket === "maincorider" &&
+      direction === "left" &&
+      nextLeft < 5600
+    ) {
+      return;
+    }
+
     switch (direction) {
       case "up":
-        $cart.css("top", `${currentTop - config.step}px`);
+        $cart.css("top", `${nextTop}px`);
         break;
 
       case "down":
-        $cart.css("top", `${currentTop + config.step}px`);
+        $cart.css("top", `${nextTop}px`);
         break;
 
       case "left":
-        $cart.css("left", `${currentLeft - config.step}px`);
+        $cart.css("left", `${nextLeft}px`);
         break;
 
       case "right":
-        $cart.css("left", `${currentLeft + config.step}px`);
+        $cart.css("left", `${nextLeft}px`);
         break;
+    }
+
+    // Return to the main city immediately after crossing
+    // the refilling-station exit threshold.
+    if (
+      config.selector === "#refillcart" &&
+      direction === "left" &&
+      nextLeft >= 15 &&
+      nextLeft <= 40 &&
+      nextTop > 242 &&
+      nextTop < 292
+    ) {
+      this.movetomaincity();
+      return;
     }
   }
 
@@ -7125,195 +6993,6 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
     }
   }
 
-  // moveUpbtn(event: any): void {
-  //   event.preventDefault();
-  //   event.stopPropagation();
-  //   this.clearMovement();
-  //   if (this.opensuperflag == 0) {
-  //     this.checkCartPosition();
-  //     if (this.canMoveTop) {
-  //       let leftval = $(".cart").css("top");
-  //       this.isMoving = true;
-  //       this.intervalId = setInterval(() => {
-  //         this.checkCartPosition();
-  //         if (this.isMoving && this.canMoveTop) {
-  //           leftval = parseInt(leftval) - 20 + "px";
-  //           $(".cart").css({ top: leftval });
-  //         }
-  //       }, 50);
-  //     }
-  //   } else if (this.opensuperflag == 1) {
-  //     this.supercartposition();
-  //     if (this.markettop == true) {
-  //       let leftval = $(".supermarketcart").css("top");
-  //       this.isMoving = true;
-  //       this.intervalId = setInterval(() => {
-  //         this.supercartposition();
-  //         if (this.isMoving && this.markettop) {
-  //           leftval = parseInt(leftval) - 20 + "px";
-  //           $(".supermarketcart").css({ top: leftval });
-  //         }
-  //       }, 50);
-  //     }
-  //   } else if (this.opensuperflag == 2) {
-  //     this.refillcartposition();
-  //     if (this.refilltop == true) {
-  //       this.isMoving = true;
-  //       let leftval = $("#refillcart").css("top");
-  //       this.intervalId = setInterval(() => {
-  //         this.refillcartposition();
-  //         if (this.isMoving && this.refilltop) {
-  //           leftval = parseInt(leftval) - 20 + "px";
-  //           $("#refillcart").css({ top: leftval });
-  //         }
-  //       }, 50);
-  //     }
-  //   }
-  // }
-
-  // moveDownbtn(event: any): void {
-  //   event.preventDefault();
-  //   event.stopPropagation();
-  //   this.clearMovement();
-  //   if (this.opensuperflag == 0) {
-  //     this.checkCartPosition();
-  //     if (this.canMoveBottom) {
-  //       let leftval = $(".cart").css("top");
-  //       this.isMoving = true;
-  //       this.intervalId = setInterval(() => {
-  //         this.checkCartPosition();
-  //         if (this.isMoving && this.canMoveBottom) {
-  //           leftval = parseInt(leftval) + 20 + "px";
-  //           $(".cart").css({ top: leftval });
-  //         }
-  //       }, 50);
-  //     }
-  //   } else if (this.opensuperflag == 1) {
-  //     this.supercartposition();
-  //     if (this.marketbottom == true) {
-  //       let leftval = $(".supermarketcart").css("top");
-  //       this.isMoving = true;
-  //       this.intervalId = setInterval(() => {
-  //         this.supercartposition();
-  //         if (this.isMoving && this.marketbottom) {
-  //           leftval = parseInt(leftval) + 20 + "px";
-  //           $(".supermarketcart").css({ top: leftval });
-  //         }
-  //       }, 50);
-  //     }
-  //   } else if (this.opensuperflag == 2) {
-  //     this.refillcartposition();
-  //     if (this.refillbottom == true) {
-  //       this.isMoving = true;
-  //       let leftval = $("#refillcart").css("top");
-  //       this.intervalId = setInterval(() => {
-  //         this.refillcartposition();
-  //         if (this.isMoving && this.refillbottom) {
-  //           leftval = parseInt(leftval) + 20 + "px";
-  //           $("#refillcart").css({ top: leftval });
-  //         }
-  //       }, 50);
-  //     }
-  //   }
-  // }
-  // moveLeftbtn(event: any): void {
-  //   event.preventDefault();
-  //   event.stopPropagation();
-  //   this.clearMovement();
-  //   if (this.opensuperflag == 0) {
-  //     this.checkCartPosition();
-  //     if (this.canMoveLeft) {
-  //       let leftval = $(".cart").css("left");
-  //       this.isMoving = true;
-  //       this.intervalId = setInterval(() => {
-  //         this.checkCartPosition();
-  //         if (this.isMoving && this.canMoveLeft) {
-  //           leftval = parseInt(leftval) - 20 + "px";
-  //           $(".cart").css({ left: leftval });
-  //         }
-  //       }, 50);
-  //     }
-  //   } else if (this.opensuperflag == 1) {
-  //     this.supercartposition();
-  //     if (this.marketleft == true) {
-  //       let leftval = $(".supermarketcart").css("left");
-  //       this.isMoving = true;
-  //       this.intervalId = setInterval(() => {
-  //         this.supercartposition();
-  //         if (this.isMoving && this.marketleft) {
-  //           leftval = parseInt(leftval) - 20 + "px";
-  //           $(".supermarketcart").css({ left: leftval });
-  //         }
-  //       }, 50);
-  //     }
-  //   } else if (this.opensuperflag == 2) {
-  //     this.refillcartposition();
-  //     if (this.refillleft == true) {
-  //       this.isMoving = true;
-  //       let leftval = $("#refillcart").css("left");
-  //       this.intervalId = setInterval(() => {
-  //         this.refillcartposition();
-  //         if (this.isMoving && this.refillleft) {
-  //           leftval = parseInt(leftval) - 20 + "px";
-  //           $("#refillcart").css({ left: leftval });
-  //         }
-  //       }, 50);
-  //     }
-  //   }
-  // }
-  // moveRightbtn(event: any): void {
-  //   event.preventDefault();
-  //   event.stopPropagation();
-  //   this.clearMovement();
-  //   if (this.opensuperflag == 0) {
-  //     this.checkCartPosition();
-  //     if (this.canMoveRight) {
-  //       let leftval = $(".cart").css("left");
-  //       this.isMoving = true;
-  //       this.intervalId = setInterval(() => {
-  //         this.checkCartPosition();
-  //         if (this.isMoving && this.canMoveRight) {
-  //           leftval = parseInt(leftval) + 20 + "px";
-  //           $(".cart").css({ left: leftval });
-  //         }
-  //       }, 50);
-  //     }
-  //   } else if (this.opensuperflag == 1) {
-  //     this.supercartposition();
-  //     if (this.marketright == true) {
-  //       let leftval = $(".supermarketcart").css("left");
-  //       this.isMoving = true;
-  //       this.intervalId = setInterval(() => {
-  //         this.supercartposition();
-  //         if (this.isMoving && this.marketright) {
-  //           leftval = parseInt(leftval) + 20 + "px";
-  //           $(".supermarketcart").css({ left: leftval });
-  //         }
-  //       }, 50);
-  //     }
-  //   } else if (this.opensuperflag == 2) {
-  //     this.refillcartposition();
-  //     if (this.refillright == true) {
-  //       this.isMoving = true;
-  //       let leftval = $("#refillcart").css("left");
-  //       this.intervalId = setInterval(() => {
-  //         this.refillcartposition();
-  //         if (this.isMoving && this.refillright) {
-  //           leftval = parseInt(leftval) + 20 + "px";
-  //           $("#refillcart").css({ left: leftval });
-  //         }
-  //       }, 50);
-  //     }
-  //   }
-  // }
-
-  // clearMovement(): void {
-  //   this.isMoving = false;
-  //   if (this.intervalId) {
-  //     clearInterval(this.intervalId);
-  //     this.intervalId = null;
-  //   }
-  // }
   makeitEmpty() {
     this.isDisabled = true;
 
@@ -7783,7 +7462,10 @@ export class MaincityComponent implements AfterViewInit, OnInit, OnDestroy {
       return false;
     }
   }
-
+  stopAudioElement(audioElement: HTMLAudioElement): void {
+    audioElement.pause();
+    audioElement.currentTime = 0;
+  }
   playAudioElement(
     audioElement: HTMLAudioElement,
     volume: number
