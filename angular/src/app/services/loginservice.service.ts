@@ -25,8 +25,8 @@ export class LoginserviceService {
     cityavatar: "",
   };
   // baseurl = "https://dbl.iihs.in/api/";
-   baseurl = "http://127.0.0.1:8000/api/";
- // baseurl = "https://dev-dbl.iihs.co.in/api/";
+  //baseurl = "http://127.0.0.1:8000/api/";
+baseurl = "https://dev-dbl.iihs.co.in/api/";
 
   constructor(private http: HttpClient, private authService: AuthService) {}
 
@@ -389,12 +389,14 @@ export class LoginserviceService {
         User_cityid: edituser.cityid,
         Role: edituser.Role,
         cartId: edituser.cityid + "_100",
+        wallet:'2000',
       };
     } else {
       body = {
         User_cityid: edituser.cityid,
         Role: edituser.Role,
         cartId: edituser.cartId,
+        wallet:'2000',
       };
     }
     console.log(body);
@@ -767,5 +769,21 @@ export class LoginserviceService {
         new_password: newPassword,
       }
     );
+  }
+  getSustainabilityScorecard(
+    cityId: string | number,
+    role: string,
+    currentDay: number
+  ): Observable<any> {
+    const params = new HttpParams()
+      .set("role", role)
+      .set("current_day", String(currentDay));
+
+    return this.http
+      .get(`${this.baseurl}sustainability-score/${cityId}/`, {
+        headers: this.getAuthHeaders(),
+        params,
+      })
+      .pipe(catchError(this.handleError));
   }
 }

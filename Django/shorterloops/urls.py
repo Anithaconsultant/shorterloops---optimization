@@ -69,6 +69,7 @@ urlpatterns = [
     path('api/city-rule-master/<str:citytype>/',views.get_city_rule_master,name='city-rule-master'),
     path("api/feedback/",views.FeedbackEmailAPIView.as_view(),    name="feedback-email",),
 
+     path("api/sustainability-score/<str:cityid>/", views.sustainability_scorecard,  name="sustainability-scorecard",),
 
 
 ]

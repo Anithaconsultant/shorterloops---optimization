@@ -153,7 +153,7 @@
                         <th>Action</th>
                         <th>City</th>
                         <th>AssetId</th>
-                        <th>Brand Name</th>
+                        <th>Content Code</th>
                         <th>Bottle Type</th>
                         <th>Current Location</th>
                         <th>Status Code</th>
@@ -162,11 +162,12 @@
                         <th>From facility</th>
                         <th>To facility</th>
                         <th>Max Refill Count</th>
-                        <th>Current Refill Count</th>
+                        <th>Current Self Refill Count</th>
+                        <th>Current Plant Refill Count</th>
                         <th>Current Content Code</th>
                         <th>Remaining Quantity</th>
                         <th>Day of Latest Refill</th>
-                        <th>Refill Location</th>
+                        <th>User</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -183,11 +184,12 @@
                         <td>{{ log.FromFacility }}</td>
                         <td>{{ log.ToFacility }}</td>
                         <td>{{ log.refillCount }}</td>
-                        <td>{{ log.currentrefillCount }}</td>
+                        <td>{{ log.currentselfrefillCount }}</td>
+                        <td>{{ log.currentplantrefillCount }}</td>
                         <td>{{ log.Current_Content_Code }}</td>
                         <td>{{ log.remQuantity }}</td>
                         <td>{{ log.LatestFillDate }}</td>
-                        <td>--</td> <!-- Placeholder if no data for refill location -->
+                        <td>{{ log.userName }}</td> <!-- Placeholder if no data for refill location -->
                     </tr>
                 </tbody>
             </table>

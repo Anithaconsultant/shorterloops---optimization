@@ -14,8 +14,8 @@ interface AuthResponse {
   providedIn: "root",
 })
 export class AuthService {
- // private apiUrl = "https://dev-dbl.iihs.co.in/api/auth";
-  private apiUrl = "http://127.0.0.1:8000/api/auth";
+   private apiUrl = "https://dev-dbl.iihs.co.in/api/auth";
+  //private apiUrl = "http://127.0.0.1:8000/api/auth";
   private currentUserSubject = new BehaviorSubject<any>(null);
 
   constructor(private http: HttpClient, private router: Router) {

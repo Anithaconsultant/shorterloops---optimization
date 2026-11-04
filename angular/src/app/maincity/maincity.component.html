@@ -420,7 +420,7 @@
     </div>
   </div>
 
-  
+
   <div class="round-panel">
     <button type="button" class="rescue-cart-btn" (click)="rescueActiveCart()">
       Rescue Cart
@@ -428,13 +428,9 @@
 
     <!-- Up -->
     <div>
-     <div (mousedown)="moveUpbtn($event)"
-     (touchstart)="moveUpbtn($event)"
-     (mouseup)="clearMovement()"
-     (mouseleave)="clearMovement()"
-     (touchend)="clearMovement()"
-     (touchcancel)="clearMovement()"
-     class="button topbtn"></div>
+      <div (mousedown)="moveUpbtn($event)" (touchstart)="moveUpbtn($event)" (mouseup)="clearMovement()"
+        (mouseleave)="clearMovement()" (touchend)="clearMovement()" (touchcancel)="clearMovement()"
+        class="button topbtn"></div>
     </div>
 
     <!-- Left and Right -->
@@ -744,7 +740,12 @@
                     {{ sldBottleData[0].Current_PlantRefill_Count }}
                   </div>
                 </div>
-
+                   <div>
+                  <div class="Current_Content_Code">
+                    Current Content Code:
+                    {{ sldBottleData[0].Current_Content_Code }}
+                  </div>
+                </div>
                 <div>
                   <div class="Current_SelfRefill_Count">
                     Current Self Refill Count:
@@ -840,10 +841,190 @@
         </div>
       </div>
 
-      <div *ngIf="altertab == 3">
-        <div class="quotientimg">
-          <div class="textin">(Dummy Data)</div>
+      <div *ngIf="altertab == 3" class="sustainability-scorecard">
+
+        <div *ngIf="sustainabilityLoading">
+          Loading sustainability scores...
         </div>
+
+        <div *ngIf="sustainabilityError" class="score-error">
+          {{ sustainabilityError }}
+        </div>
+
+        <ng-container *ngIf="!sustainabilityLoading &&
+                       sustainabilityScorecard as scorecard">
+
+          <!-- SECTION 1: CURRENT 30-DAY BLOCK -->
+          <section class="score-section">
+            <h3>Your sustainability scores in the current 30-day block</h3>
+
+            <p>
+              Cycle {{ scorecard.current_cycle }}
+              (Days {{ scorecard.current.start_day }}–{{
+              scorecard.current.end_day
+              }})
+            </p>
+
+            <div class="score-row" *ngFor="let metric of scorecard.current.scores">
+
+              <span class="score-label">{{ metric.label }}</span>
+
+              <div class="score-symbols">
+                <span *ngFor="let icon of scoreIcons; let i = index" [ngClass]="{
+              'score-circle': metric.symbol === 'circle',
+              'score-star': metric.symbol === 'star',
+              'active': i < metric.level
+            }">
+                  {{ metric.symbol === 'circle' ? '●' : '★' }}
+                </span>
+              </div>
+
+              <span class="score-percent">
+                {{ metric.score === null ? '—' : metric.score + '%' }}
+              </span>
+            </div>
+
+            <p class="score-total">
+              Total bottles purchased: {{ scorecard.current.totalBottles }}
+            </p>
+
+            <h4>Bottle purchase breakdown</h4>
+
+            <table class="score-table">
+              <thead>
+                <tr>
+                  <th>Bottle category</th>
+                  <th>Purchased count</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr *ngFor="let bottle of scorecard.current.bottleCounts | keyvalue">
+                  <td>{{ bottle.key }}</td>
+                  <td>{{ bottle.value }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <!-- SECTION 2: HISTORICAL 30-DAY BLOCKS -->
+          <section class="score-section">
+            <h3>Your sustainability scores over 12 time blocks</h3>
+
+            <div class="table-scroll">
+              <table class="score-table history-table">
+                <thead>
+                  <tr>
+                    <th>Cycle / Day range</th>
+                    <th *ngFor="let label of scorecard.metricLabels">
+                      {{ label }}
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr *ngFor="let cycle of scorecard.history">
+                    <td>
+                      Cycle {{ cycle.cycle_number }}
+                      <br>
+                      <small>
+                        Days {{ cycle.start_day }}–{{ cycle.end_day }}
+                      </small>
+                    </td>
+
+                    <td *ngFor="let metric of cycle.scores">
+                      <div class="score-symbols">
+                        <span *ngFor="let icon of scoreIcons; let i = index" [ngClass]="{
+                      'score-circle': metric.symbol === 'circle',
+                      'score-star': metric.symbol === 'star',
+                      'active': i < metric.level
+                    }">
+                          {{ metric.symbol === 'circle' ? '●' : '★' }}
+                        </span>
+                      </div>
+
+                      <small>
+                        {{ metric.score === null ? '—' : metric.score + '%' }}
+                      </small>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h4>Avoided emissions over 12 time blocks</h4>
+
+            <div class="emission-history-row" *ngFor="let cycle of scorecard.history">
+
+              <span>
+                Cycle {{ cycle.cycle_number }}
+              </span>
+
+              <div class="emission-track">
+                <div class="emission-fill" [style.width.%]="cycle.avoidedEmissions?.score ?? 0">
+                </div>
+              </div>
+
+              <span class="score-percent">
+                {{
+                cycle.avoidedEmissions?.score == null
+                ? '—'
+                : cycle.avoidedEmissions.score + '%'
+                }}
+              </span>
+            </div>
+          </section>
+
+          <!-- SECTION 3: USER VERSUS CITY -->
+          <section class="score-section">
+            <h3>Your sustainability score relative to your city's score</h3>
+
+            <table class="score-table">
+              <thead>
+                <tr>
+                  <th>Metric</th>
+                  <th>You</th>
+                  <th>Your city</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr *ngFor="let item of scorecard.comparison">
+                  <td>{{ item.label }}</td>
+
+                  <td>
+                    <div class="score-symbols">
+                      <span *ngFor="let icon of scoreIcons; let i = index" [ngClass]="{
+                    'score-circle': item.you?.symbol === 'circle',
+                    'score-star': item.you?.symbol === 'star',
+                    'active': i < item.you?.level
+                  }">
+                        {{ item.you?.symbol === 'circle' ? '●' : '★' }}
+                      </span>
+                    </div>
+
+                    {{ item.you?.score === null ? '—' : item.you?.score + '%' }}
+                  </td>
+
+                  <td>
+                    <div class="score-symbols">
+                      <span *ngFor="let icon of scoreIcons; let i = index" [ngClass]="{
+                    'score-circle': item.city.symbol === 'circle',
+                    'score-star': item.city.symbol === 'star',
+                    'active': i < item.city.level
+                  }">
+                        {{ item.city.symbol === 'circle' ? '●' : '★' }}
+                      </span>
+                    </div>
+
+                    {{ item.city.score === null ? '—' : item.city.score + '%' }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+        </ng-container>
       </div>
       <div *ngIf="altertab == 4">
         <div class="cashflow">
@@ -888,7 +1069,7 @@
         <div class="bottle" (click)="altertab = 2; checkthebottlestatusfordisplay()"></div>
       </div>
       <div class="icncon" [ngClass]="{ highlighttab: altertab == 3 }">
-        <div class="recyclebtn" (click)="altertab = 3"></div>
+        <div class="recyclebtn" (click)="altertab = 3;loadSustainabilityScorecard()"></div>
       </div>
       <div class="btn btn-outline-dark pay" [ngClass]="{ disabled: billpaid || !canPay }"
         (click)="canPay && !billpaid && payamount()">

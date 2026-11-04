@@ -16,7 +16,7 @@ class RefillService:
     def refill(data):
 
         print("Refill Request Received")
-
+        print(data)
         userid = data.get("userid")
         cityid = data.get("cityid")
         bottle_id = data.get("bottle_id")
@@ -26,7 +26,7 @@ class RefillService:
 
         user_role = data.get("userrole")
         bottle_loc = data.get("bottleloc")
-
+        currentselerefillcount=data.get("currentselerefillcount")
         brand = data.get("brand")
         quantity = data.get("quantity")
 
@@ -177,7 +177,7 @@ class RefillService:
             Amount=str(round(refill_amount, 2)),
             Container_Amt="0",
             Content_Amt="0",
-            CreditFacility="Refilling Station",
+            CreditFacility="Shampoo Refilling Station",
             DebitFacility=user_role,
             Purpose="Refilling shampoo from the Refilling Station"
         )
@@ -196,7 +196,8 @@ class RefillService:
         asset.Latest_Refill_Date = transaction_day
 
         asset.Bottle_loc = bottle_loc
-        asset.Content_Code = brand
+        asset.Current_Content_Code = brand
+        asset.Current_SelfRefill_Count=currentselerefillcount
 
         asset.save(
             update_fields=[
@@ -207,7 +208,7 @@ class RefillService:
                 "Transaction_Date",
                 "Latest_Refill_Date",
                 "Bottle_loc",
-                "Content_Code",
+                "Current_Content_Code",
             ]
         )
 

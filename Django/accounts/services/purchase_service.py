@@ -1,6 +1,6 @@
 from django.db import transaction
 from accounts.models import Asset, Cashflow, CustomUser,Facility
-
+from accounts.signals import broadcast_asset_update
 
 class PurchaseService:
 
@@ -37,8 +37,17 @@ class PurchaseService:
             }
 
         # Use existing calculation method
-        calculation = PurchaseService.calculate_purchase(data)
+        user = (
+        CustomUser.objects
+            .select_for_update()
+            .get(UserId=userid)
+        )
 
+        calculation = PurchaseService.calculate_purchase(
+            data,
+            user.cartId,
+            assets
+        )
         if not calculation["success"]:
             return calculation
 
@@ -78,7 +87,20 @@ class PurchaseService:
 
         # Update every purchased asset
         for asset in assets:
-            PurchaseService.update_asset(asset,transaction_id,transaction_day,bottle_loc,user_role)
+            PurchaseService.update_asset(
+                asset,
+                transaction_id,
+                transaction_day,
+                bottle_loc,
+                user_role
+            )
+
+            transaction.on_commit(
+                lambda asset_id=asset.AssetId: broadcast_asset_update(
+                    Asset.objects.get(AssetId=asset_id)
+                ),
+                robust=True
+            )
         # Purchase Cashflow (_01)
        
      
@@ -242,7 +264,7 @@ class PurchaseService:
 
         return round(new_cash, 2)
     @staticmethod
-    def calculate_purchase(data):
+    def calculate_purchase(data,cart_id=None, assets=None):
 
         raw_ids = data.get("bottles", [])
 
@@ -253,11 +275,10 @@ class PurchaseService:
                 bottle.split("at")[0].replace("City", "")
             )
 
-        assets = list(
-            Asset.objects.filter(
-                AssetId__in=bottle_ids
+        if assets is None:
+            assets = list(
+                Asset.objects.filter(AssetId__in=bottle_ids)
             )
-        )
 
         if len(assets) != len(bottle_ids):
             return {
@@ -271,7 +292,8 @@ class PurchaseService:
         total_env = 0
 
         purchase_details = []
-
+        expected_location = "In" + str(cart_id) if cart_id is not None else None
+        
         for asset in assets:
 
             if asset.purchased:
@@ -285,7 +307,12 @@ class PurchaseService:
                     "success": False,
                     "message": f"{asset.AssetId} is not reserved."
                 }
-
+            print(expected_location,asset.Bottle_loc )
+            if expected_location is not None and asset.Bottle_loc != expected_location:
+                return {
+                    "success": False,
+                    "message": f"{asset.AssetId} is not reserved by this user."
+                }
             bottle_price = float(asset.Bottle_Price or 0)
             content_price = float(asset.Content_Price or 0)
 

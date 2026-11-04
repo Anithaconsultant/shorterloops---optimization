@@ -31,7 +31,8 @@ export class HomeComponent implements OnInit {
     'Role': '',
     'cartId': '',
     'avatar': '',
-    'gender': ''
+    'gender': '',
+    'wallet':'2000',
   }
 
 
@@ -93,7 +94,7 @@ export class HomeComponent implements OnInit {
         if (
           this.facility[key].Facility_cityid == this.selectedcityid &&
           this.facility[key].Owner_id != "" &&
-          this.facility[key].facilityName == this.selectedfacility
+          this.facility[key].Facilityname == this.selectedfacility
         ) {
           this.alertModal.openModal(
             "The current role is not available please select any other role"

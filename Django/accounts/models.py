@@ -199,56 +199,6 @@ class Cityrule(models.Model):
         def __str__(self):
             return f"Rule {self.rule_number} for City {self.cityId}"
 
-# class CityruleMaster(models.Model):
-#     class Meta:
-#         db_table = "CityruleMaster"
-#         managed = False
-
-#     ruleId = models.AutoField(primary_key=True)
-#     citytype = models.CharField(max_length=20)
-
-#     rule_number = models.IntegerField()
-#     day_number = models.CharField(max_length=70, blank=True)
-#     time_in_hours = models.FloatField(null=True, blank=True)
-
-#     virgin_plastic_price = models.FloatField(null=True, blank=True)
-#     recycled_plastic_price = models.FloatField(null=True, blank=True)
-
-#     envtx_p_shampoo = models.FloatField(null=True, blank=True)
-
-#     envtx_p_bvb = models.FloatField(null=True, blank=True)
-#     envtx_p_bvfb = models.FloatField(null=True, blank=True)
-#     envtx_p_brcb = models.FloatField(null=True, blank=True)
-#     envtx_p_brfb = models.FloatField(null=True, blank=True)
-
-#     envtx_p_uvb = models.FloatField(null=True, blank=True)
-#     envtx_p_uvfb = models.FloatField(null=True, blank=True)
-#     envtx_p_urcb = models.FloatField(null=True, blank=True)
-#     envtx_p_urfb = models.FloatField(null=True, blank=True)
-
-#     envtx_r_bvb = models.FloatField(null=True, blank=True)
-#     envtx_r_bvfb = models.FloatField(null=True, blank=True)
-#     envtx_r_brcb = models.FloatField(null=True, blank=True)
-#     envtx_r_brfb = models.FloatField(null=True, blank=True)
-
-#     envtx_r_uvb = models.FloatField(null=True, blank=True)
-#     envtx_r_uvfb = models.FloatField(null=True, blank=True)
-#     envtx_r_urcb = models.FloatField(null=True, blank=True)
-#     envtx_r_urfb = models.FloatField(null=True, blank=True)
-
-#     envtx_c_bvb = models.FloatField(null=True, blank=True)
-#     envtx_c_bvfb = models.FloatField(null=True, blank=True)
-#     envtx_c_brcb = models.FloatField(null=True, blank=True)
-#     envtx_c_brfb = models.FloatField(null=True, blank=True)
-
-#     envtx_c_uvb = models.FloatField(null=True, blank=True)
-#     envtx_c_uvfb = models.FloatField(null=True, blank=True)
-#     envtx_c_urcb = models.FloatField(null=True, blank=True)
-#     envtx_c_urfb = models.FloatField(null=True, blank=True)
-
-#     fine_for_throwing_bottle = models.FloatField(null=True, blank=True)
-#     dustbinning_fine = models.FloatField(null=True, blank=True)
-    
 from django.db import models
 
 class CityruleMaster(models.Model):

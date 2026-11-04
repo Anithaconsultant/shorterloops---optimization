@@ -8,7 +8,6 @@ from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 import json
-import base64
 import logging
 from django.db.models import QuerySet
 from django.core.exceptions import ObjectDoesNotExist
@@ -52,12 +51,22 @@ from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 logger = logging.getLogger(__name__)
 currentuser = ''
 cartcount = 100
-import string
-import random
+import string,random
 
+from .sustainability_scores import (
+    CURRENT_METRICS,
+    METRIC_LABELS,
+    build_cycle_metrics,
+    cycle_bounds,
+    cycle_index,
+    transaction_day,
+    score_value,
+)
 def generate_short_id(length=8):
     characters = string.ascii_letters + string.digits  # a-zA-Z0-9
     return ''.join(random.choices(characters, k=length))
@@ -68,7 +77,6 @@ class SignUpView(APIView):
 
     def post(self, request):
 
-        print(request.data)
 
         # --------------------------------------------------
         # CHECK EMAIL FORMAT
@@ -139,15 +147,7 @@ class SignUpView(APIView):
                 # --------------------------------------------------
                 user.email_verification_token = uuid4()
 
-                print(
-                    "VERIFICATION TOKEN:",
-                    user.email_verification_token
-                )
-
-                print(
-                    "TOKEN LENGTH:",
-                    len(str(user.email_verification_token))
-                )
+               
 
                 # --------------------------------------------------
                 # RECORD VERIFICATION EMAIL TIME
@@ -178,10 +178,10 @@ class SignUpView(APIView):
                     f"{user.email_verification_token}"
                 )
 
-                print(
-                    "VERIFICATION LINK:",
-                    verification_link
-                )
+                # print(
+                #     "VERIFICATION LINK:",
+                #     verification_link
+                # )
 
                 # --------------------------------------------------
                 # SEND VERIFICATION EMAIL
@@ -225,9 +225,6 @@ class SignUpView(APIView):
             )
         except SMTPException as e:
 
-            print("===== EMAIL SEND FAILED =====")
-            print("ERROR:", str(e))
-
             return Response(
                 {
                     "error":
@@ -242,9 +239,7 @@ class SignUpView(APIView):
             # --------------------------------------------------
             # EMAIL / DATABASE / OTHER FAILURE
             # --------------------------------------------------
-            print("===== SIGNUP FAILED =====")
-            print("ERROR:", str(e))
-
+           
             return Response(
                 {
                     "error":
@@ -259,8 +254,8 @@ class VerifyEmailView(APIView):
     permission_classes = []
 
     def get(self, request, token):
-        print("===== VERIFY VIEW CALLED =====")
-        print("===== TOKEN =====", token)
+      #  print("===== VERIFY VIEW CALLED =====")
+      #  print("===== TOKEN =====", token)
 
 
         try:
@@ -776,7 +771,7 @@ def get_ShampooPrice(request):
         return JsonResponse(serializer.data, safe=False)
     elif request.method == 'PUT':
         data = JSONParser().parse(request)
-        print(data)
+        #print(data)
         serval = {'UnitPrice': data['UnitPrice'],'Discount':data['Discount']}
         getasset = Shampooprice.objects.filter(BottleContent=data['BottleContent']).first()
         serializer = shampooSerializer(getasset, data=serval, partial=True)
@@ -789,49 +784,80 @@ def get_ShampooPrice(request):
 @api_view(['GET', 'PUT'])
 def returnasset(request, itemid):
 
-    print(itemid)
-
     if request.method == 'GET':
-
         data = Asset.objects.filter(AssetId=itemid)
         serializer = AssetSerializer(data, many=True)
-
         return JsonResponse(serializer.data, safe=False)
 
     elif request.method == 'PUT':
 
-        data = JSONParser().parse(request)
-
-        asset = Asset.objects.filter(AssetId=itemid).first()
-
-        if not asset:
-            return JsonResponse(
-                {"error": "Asset not found"},
-                status=status.HTTP_404_NOT_FOUND
+        with transaction.atomic():
+            asset = (
+                Asset.objects
+                .select_for_update()
+                .filter(AssetId=itemid)
+                .first()
             )
 
-        serializer = AssetSerializer(
-            asset,
-            data=data,
-            partial=True
-        )
+            # 1. Check existence FIRST
+            if asset is None:
+                return JsonResponse(
+                    {"error": "Asset not found"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
 
-        if serializer.is_valid():
+            # 2. Identify only the reserved -> shelf transition
+            is_shelf_release = (
+                asset.dragged is True
+                and request.data.get("dragged") is False
+                and request.data.get("Bottle_loc") == "Supermarket shelf"
+            )
+
+            # 3. Validate release ownership
+            if is_shelf_release:
+                user = request.user
+
+                if not user.is_authenticated:
+                    return JsonResponse(
+                        {"error": "Authentication required"},
+                        status=status.HTTP_401_UNAUTHORIZED
+                    )
+
+                expected_location = "In" + str(user.cartId)
+
+                if asset.Bottle_loc != expected_location:
+                    return JsonResponse(
+                        {
+                            "success": False,
+                            "message": "You cannot release another user's reserved bottle."
+                        },
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+
+            # 4. Preserve generic serializer update behavior
+            serializer = AssetSerializer(
+                asset,
+                data=request.data,
+                partial=True
+            )
+
+            if not serializer.is_valid():
+                return JsonResponse(
+                    serializer.errors,
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
             serializer.save()
 
-            # Broadcast the UPDATED asset
-            broadcast_asset_update(asset)
+            # 5. Broadcast after successful commit
+            transaction.on_commit(
+                lambda: broadcast_asset_update(asset)
+            )
 
             return JsonResponse(
                 serializer.data,
                 status=status.HTTP_200_OK
             )
-
-        return JsonResponse(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
-        )
 
 @api_view(['GET', 'POST'])
 def facility(request, mayorid):
@@ -893,19 +919,84 @@ def facility(request, mayorid):
 
 
 
-@api_view(['GET', 'POST', 'PUT'])
+@api_view(['PUT'])
 def updatefacility(request):
-    if request.method == 'PUT':
-        data = JSONParser().parse(request)
-        serval = {'Owner_id': data['Owner_id'], 'Owner_status': 'Active'}
-        getfacility = Facility.objects.filter(
-            Facilityname=data['Facilityname'], Facility_cityid=data['Facility_cityid']).first()
-        serializer = facilitySerializer(getfacility, data=serval, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-        else:
-            print("invalid data")
-        return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
+    data = request.data
+
+    facility_name = data.get('Facilityname')
+    city_id = data.get('Facility_cityid')
+    owner_id = data.get('Owner_id')
+
+    if not facility_name or city_id is None or not owner_id:
+        return JsonResponse(
+            {"error": "Missing facility ownership details"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        with transaction.atomic():
+            facility = Facility.objects.select_for_update().filter(
+                Facilityname=facility_name,
+                Facility_cityid=city_id
+            ).first()
+
+            if not facility:
+                return JsonResponse(
+                    {"error": "Facility not found"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            # Do not overwrite an existing owner.
+            if facility.Owner_id:
+                return JsonResponse(
+                    {"error": "Facility already has an owner"},
+                    status=status.HTTP_409_CONFLICT
+                )
+
+            facility.Owner_id = str(owner_id)
+            facility.Owner_status = "Active"
+            facility.save(
+                update_fields=["Owner_id", "Owner_status"]
+            )
+
+            payload = {
+                "FacilityId": facility.FacilityId,
+                "Facility_cityid": facility.Facility_cityid,
+                "Facilityname": facility.Facilityname,
+                "Owner_id": facility.Owner_id,
+                "Owner_status": facility.Owner_status,
+            }
+
+            city_id_for_event = facility.Facility_cityid
+
+            def broadcast_facility_owner():
+                channel_layer = get_channel_layer()
+
+                async_to_sync(channel_layer.group_send)(
+                    f"city_{city_id_for_event}",
+                    {
+                        "type": "facility_owner_updated",
+                        "data": payload
+                    }
+                )
+
+            transaction.on_commit(broadcast_facility_owner)
+
+        return JsonResponse(
+            payload,
+            status=status.HTTP_200_OK
+        )
+
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception(
+            "Facility ownership update failed"
+        )
+
+        return JsonResponse(
+            {"error": "Unable to update facility ownership"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 @api_view(['GET', 'POST', 'PUT'])
@@ -986,35 +1077,63 @@ def cityrule(request):
         return JsonResponse(serializer.data, safe=False)
 
 
+
 @api_view(['GET', 'POST', 'PUT'])
 @csrf_exempt
 def toggle_city_timer(request, cityid):
+
     if request.method == "POST":
         try:
             data = json.loads(request.body)
             timer_paused = data.get("timer_paused")
 
-            city = City.objects.get(pk=cityid)
-            city.timer_paused = timer_paused
-            city.save()
+            if not isinstance(timer_paused, bool):
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": "Invalid timer_paused value"
+                    },
+                    status=400,
+                )
 
-            print(f"Timer paused set to {timer_paused} for city {cityid}")
+            updated = City.objects.filter(
+                pk=cityid
+            ).update(
+                timer_paused=timer_paused
+            )
 
-            # Pause or resume the timer based on the timer_paused value
-            if timer_paused:
-                pause_timer_for_city(cityid)
-            else:
-                resume_timer_for_city(cityid)
+            if not updated:
+                return JsonResponse(
+                    {
+                        "success": False,
+                        "error": "City not found"
+                    },
+                    status=404,
+                )
 
-            return JsonResponse({"success": True, "message": f"Timer paused updated to {timer_paused}"})
-        except City.DoesNotExist:
-            return JsonResponse({"success": False, "error": "City not found"}, status=404)
+            return JsonResponse({
+                "success": True,
+                "message": (
+                    f"Timer paused updated to {timer_paused}"
+                ),
+            })
+
         except json.JSONDecodeError:
-            return JsonResponse({"success": False, "error": "Invalid JSON format"}, status=400)
-        except Exception as e:
-            return JsonResponse({"success": False, "error": str(e)}, status=500)
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error": "Invalid JSON format"
+                },
+                status=400,
+            )
 
-    return JsonResponse({"success": False, "error": "Invalid request method"}, status=405)
+    return JsonResponse(
+        {
+            "success": False,
+            "error": "Invalid request method"
+        },
+        status=405,
+    )
 
 
 @api_view(['GET', 'POST', 'PUT'])
@@ -1224,31 +1343,60 @@ def get_filter_options(request):
     return JsonResponse(data)
 
 
+
 @api_view(['GET', 'POST'])
-@csrf_exempt  # Only for development; use proper authentication in production
+@csrf_exempt
 def manage_city_timer(request, cityid):
+
     if request.method == "POST":
         try:
             data = json.loads(request.body)
-            action = data.get("action")  # 'pause' or 'resume'
-            if not cityid or action not in ["pause", "resume"]:
-                return JsonResponse({"error": "Invalid data"}, status=400)
+            action = data.get("action")
 
-            if not City.objects.filter(pk=cityid).exists():
-                return JsonResponse({"error": "City not found"}, status=404)
+            if action not in ["pause", "resume"]:
+                return JsonResponse(
+                    {"error": "Invalid data"},
+                    status=400
+                )
 
             if action == "pause":
-                pause_timer_for_city(cityid)
-                return JsonResponse({"message": f"Paused timer for city {cityid}"})
+                timer_paused = True
+            else:
+                timer_paused = False
 
-            elif action == "resume":
-                resume_timer_for_city(cityid)
-                return JsonResponse({"message": f"Resumed timer for city {cityid}"})
+            updated = City.objects.filter(
+                pk=cityid
+            ).update(
+                timer_paused=timer_paused
+            )
+
+            if not updated:
+                return JsonResponse(
+                    {"error": "City not found"},
+                    status=404
+                )
+
+            return JsonResponse({
+                "success": True,
+                "message": (
+                    f"{'Paused' if timer_paused else 'Resumed'} "
+                    f"timer for city {cityid}"
+                )
+            })
 
         except json.JSONDecodeError:
-            return JsonResponse({"error": "Invalid JSON"}, status=400)
+            return JsonResponse(
+                {"error": "Invalid JSON"},
+                status=400
+            )
 
-    return JsonResponse({"error": "Invalid request"}, status=405)
+    return JsonResponse(
+        {
+            "success": False,
+            "error": "Invalid request method"
+        },
+        status=405
+    )
 
 @api_view(['POST', 'GET','PUT'])
 def bottle_inventory_detail(request):
@@ -1261,7 +1409,7 @@ def bottle_inventory_detail(request):
         current_cycle = request.data.get('cycle_number')
         previous_cycle = request.data.get('previous_cycle_number')
 
-        print("POST data:", producer_code, bottle_type, city_id, request.data)
+        #print("POST data:", producer_code, bottle_type, city_id, request.data)
 
         current_cycle = int(current_cycle) if current_cycle is not None else None
         previous_cycle = int(previous_cycle) if previous_cycle is not None else None
@@ -1326,14 +1474,14 @@ def bottle_inventory_detail(request):
         city_id = request.query_params.get('city_id')
         cycle_number = request.query_params.get('cycle_number')
 
-        print(
-            "GET params =>",
-            "producer_code:", producer_code,
-            "bottle_type:", bottle_type,
-            "city_id:", city_id,
-            "cycle_number:", cycle_number,
-            "ALL:", request.query_params
-        )
+        # print(
+        #     "GET params =>",
+        #     "producer_code:", producer_code,
+        #     "bottle_type:", bottle_type,
+        #     "city_id:", city_id,
+        #     "cycle_number:", cycle_number,
+        #     "ALL:", request.query_params
+        # )
 
         # 🔴 strict validation (city_id must be string digit)
         if not producer_code or not bottle_type or not city_id:
@@ -1353,56 +1501,56 @@ def bottle_inventory_detail(request):
             qs = qs.filter(cycle_number=int(cycle_number))
 
         if not qs.exists():
-            print("STEP 1 producer:",
-                list(
-                    BottleInventory.objects
-                    .filter(producer_code=producer_code)
-                    .values(
-                        "id",
-                        "producer_code",
-                        "bottle_type",
-                        "Bottle_CityId_id",
-                        "cycle_number"
-                    )
-                )
-            )
+            # print("STEP 1 producer:",
+            #     list(
+            #         BottleInventory.objects
+            #         .filter(producer_code=producer_code)
+            #         .values(
+            #             "id",
+            #             "producer_code",
+            #             "bottle_type",
+            #             "Bottle_CityId_id",
+            #             "cycle_number"
+            #         )
+            #     )
+            # )
 
-            print("STEP 2 producer + bottle:",
-                list(
-                    BottleInventory.objects
-                    .filter(
-                        producer_code=producer_code,
-                        bottle_type=bottle_type
-                    )
-                    .values(
-                        "id",
-                        "producer_code",
-                        "bottle_type",
-                        "Bottle_CityId_id",
-                        "cycle_number"
-                    )
-                )
-            )
+            # print("STEP 2 producer + bottle:",
+            #     list(
+            #         BottleInventory.objects
+            #         .filter(
+            #             producer_code=producer_code,
+            #             bottle_type=bottle_type
+            #         )
+            #         .values(
+            #             "id",
+            #             "producer_code",
+            #             "bottle_type",
+            #             "Bottle_CityId_id",
+            #             "cycle_number"
+            #         )
+            #     )
+            # )
 
-            print("STEP 3 producer + bottle + city:",
-                list(
-                    BottleInventory.objects
-                    .filter(
-                        producer_code=producer_code,
-                        bottle_type=bottle_type,
-                        Bottle_CityId_id=int(city_id)
-                    )
-                    .values(
-                        "id",
-                        "producer_code",
-                        "bottle_type",
-                        "Bottle_CityId_id",
-                        "cycle_number"
-                    )
-                )
-            )
+            # print("STEP 3 producer + bottle + city:",
+            #     list(
+            #         BottleInventory.objects
+            #         .filter(
+            #             producer_code=producer_code,
+            #             bottle_type=bottle_type,
+            #             Bottle_CityId_id=int(city_id)
+            #         )
+            #         .values(
+            #             "id",
+            #             "producer_code",
+            #             "bottle_type",
+            #             "Bottle_CityId_id",
+            #             "cycle_number"
+            #         )
+            #     )
+            # )
 
-            print("FINAL QUERY:", list(qs.values()))
+            # print("FINAL QUERY:", list(qs.values()))
             return Response(
                 {'error': 'Inventory not found.'},
                 status=status.HTTP_404_NOT_FOUND
@@ -1422,7 +1570,7 @@ def bottle_inventory_detail(request):
         cycle_number = request.data.get('cycle_number')
         bottles_to_sell = request.data.get('bottles_to_sell_to_supermarket')
 
-        print("PUT data:", request.data)
+        #print("PUT data:", request.data)
 
         # 🔴 Validate required fields
         if not producer_code or not bottle_type or not city_id or not cycle_number:
@@ -1452,45 +1600,63 @@ def bottle_inventory_detail(request):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+
+
+
 @api_view(["POST"])
 @transaction.atomic
 def reserve_bottle(request, itemid):
-    
-    print(itemid)
     try:
-
         asset = (
             Asset.objects
             .select_for_update()
-            .get(
-                AssetId=itemid,
-                purchased=False
-            )
+            .get(AssetId=itemid, purchased=False)
         )
-
     except Asset.DoesNotExist:
-
         return Response({
             "success": False,
-            "message": "Bottle not found"
-        })
+            "message": "Bottle not found or already purchased"
+        }, status=404)
 
     if asset.dragged:
-
         return Response({
             "success": False,
             "message": "Bottle already reserved"
-        })
+        }, status=409)
 
-    cart = request.data.get("cart")
-    print(cart)
+    user = request.user
+
+    if not user.is_authenticated:
+        return Response({
+            "success": False,
+            "message": "Authentication required"
+        }, status=401)
+
+    if str(user.User_cityid) != str(asset.Asset_CityId_id):
+        return Response({
+            "success": False,
+            "message": "Bottle belongs to another city"
+        }, status=403)
+
+    cartq = user.cartId
+   # print(user)
+    data = json.loads(request.body)
+    cart = data.get("cart")
+   # print(cart,itemid,cartq)
+    if not cart or str(cart) == "0":
+        return Response({
+            "success": False,
+            "message": "User cart is not assigned"
+        }, status=400)
+
     asset.dragged = True
-    asset.Bottle_loc = "In" + cart
-    print(asset.Bottle_loc)
-    asset.save(update_fields=[
-        "dragged",
-        "Bottle_loc"
-    ])
+    asset.Bottle_loc = "In" + str(cart)
+
+    asset.save(update_fields=["dragged", "Bottle_loc"])
+
+    transaction.on_commit(
+        lambda: broadcast_asset_update(asset)
+    )
 
     return Response({
         "success": True,
@@ -1498,7 +1664,6 @@ def reserve_bottle(request, itemid):
         "dragged": asset.dragged,
         "bottle_loc": asset.Bottle_loc,
     })
-
 
 
 
@@ -1547,7 +1712,7 @@ def refill_bottle(request):
 
     except Exception as e:
 
-        print("Refill Error:", str(e))
+     #   print("Refill Error:", str(e))
 
         return Response(
             {
@@ -1578,7 +1743,7 @@ def complete_refill(request):
 
     except Exception as e:
 
-        print("Complete Refill Error:", str(e))
+     #   print("Complete Refill Error:", str(e))
 
         return Response(
             {
@@ -1610,7 +1775,7 @@ def apply_bottle_fine(request):
         )
 
     except Exception as e:
-        print("Fine Transaction Error:", str(e))
+       # print("Fine Transaction Error:", str(e))
 
         return Response(
             {
@@ -1645,10 +1810,10 @@ def bulk_clean_bottles(request):
 
     except Exception as e:
 
-        print(
-            "Bottle Cleaning Error:",
-            str(e)
-        )
+        # print(
+        #     "Bottle Cleaning Error:",
+        #     str(e)
+        # )
 
         return Response(
             {
@@ -1680,7 +1845,7 @@ def bulk_move_bottles(request):
 
     except Exception as e:
 
-        print("Bulk bottle move error:", e)
+       # print("Bulk bottle move error:", e)
 
         return Response(
             {
@@ -1732,10 +1897,10 @@ def cashflow_summary(request):
 
     except Exception as e:
 
-        print(
-            "Cashflow Summary Error:",
-            str(e)
-        )
+        # print(
+        #     "Cashflow Summary Error:",
+        #     str(e)
+        # )
 
         return Response(
             {
@@ -1774,10 +1939,10 @@ def supermarket_order(request):
 
     except Exception as e:
 
-        print(
-            "SUPERMARKET ORDER ERROR:",
-            str(e)
-        )
+        # print(
+        #     "SUPERMARKET ORDER ERROR:",
+        #     str(e)
+        # )
 
         return Response(
             {
@@ -1854,10 +2019,6 @@ class FeedbackEmailAPIView(APIView):
 
         # Read the verified email directly from CustomUser.
        
-        print("Authenticated user:", user)
-        print("User ID:", user.pk)
-        print("Email from DB:", repr(user.email))
-        print("Email verified:", repr(user.is_email_verified))
 
         recipient = getattr(
             settings, "FEEDBACK_RECEIVER_EMAIL", ""
@@ -2029,3 +2190,402 @@ class PasswordResetConfirmView(APIView):
             {"message": "Password reset successfully. Please log in."},
             status=status.HTTP_200_OK,
         )
+#@api_view(["GET"])
+# def sustainability_scorecard(request, cityid):
+#     try:
+#         current_day = max(
+#             0, int(request.query_params.get("current_day", 0))
+#         )
+#     except (TypeError, ValueError):
+#         return JsonResponse(
+#             {"error": "current_day must be a non-negative integer"},
+#             status=400,
+#         )
+
+#     role = request.query_params.get("role", "").strip()
+
+#     city_assets = list(
+#         Asset.objects.filter(Asset_CityId_id=cityid)
+#     )
+
+#     city_cashflows = list(
+#         Cashflow.objects.filter(
+#             TransactionId__startswith=f"{cityid}_"
+#         )
+#     )
+
+#     # Parse the transaction day only once per record.
+#     assets_with_days = [
+#         (asset, transaction_day(asset.Transaction_Id, cityid))
+#         for asset in city_assets
+#     ]
+
+#     cashflows_with_days = [
+#         (tx, transaction_day(tx.TransactionId, cityid))
+#         for tx in city_cashflows
+#     ]
+
+#     def assets_for_cycle(start_day, end_day):
+#         return [
+#             asset for asset, day in assets_with_days
+#             if day is not None and start_day <= day <= end_day
+#         ]
+
+#     def cashflows_for_cycle(start_day, end_day):
+#         return [
+#             tx for tx, day in cashflows_with_days
+#             if day is not None and start_day <= day <= end_day
+#         ]
+
+#     current_index = cycle_index(current_day)
+#     start_day, end_day = cycle_bounds(current_index)
+
+#     current_assets = assets_for_cycle(start_day, end_day)
+#     current_cashflows = cashflows_for_cycle(start_day, end_day)
+
+#     user_current = build_cycle_metrics(
+#         city_assets,
+#         current_assets,
+#         current_cashflows,
+#         role=role,
+#     )
+
+#     city_current = build_cycle_metrics(
+#         city_assets,
+#         current_assets,
+#         current_cashflows,
+#         role=None,
+#     )
+
+#     # PPT requires a maximum of 12 displayed time blocks.
+#     first_cycle = max(0, current_index - 11)
+#     history = []
+
+#     for index in range(first_cycle, current_index + 1):
+#         start, end = cycle_bounds(index)
+
+#         summary = build_cycle_metrics(
+#             city_assets,
+#             assets_for_cycle(start, end),
+#             cashflows_for_cycle(start, end),
+#             role=role,
+#         )
+
+#         history.append({
+#             "cycle_number": index + 1,
+#             "start_day": start,
+#             "end_day": end,
+#             "scores": summary["scores"],
+#             "avoidedEmissions": (
+#                 summary["metrics"]["avoidedEmissions"]
+#             ),
+#         })
+
+#     comparison_keys = [
+#         "affinityVirginMaterials",
+#         "affinityFancyPackaging",
+#         "reuseMindset",
+#         "careForMaterials",
+#         "civicSense",
+#         "savingsInWallet",
+#     ]
+
+#     comparison = []
+
+#     for key in comparison_keys:
+#         user_metric = user_current["metrics"][key]
+#         city_metric = city_current["metrics"][key]
+
+#         comparison.append({
+#             "key": key,
+#             "label": (
+#                 "Saving potential"
+#                 if key == "savingsInWallet"
+#                 else user_metric["label"]
+#             ),
+#             "you": user_metric,
+#             "city": city_metric,
+#         })
+
+#     return JsonResponse({
+#         "current_day": current_day,
+#         "current_cycle": current_index + 1,
+#         "current": {
+#             "start_day": start_day,
+#             "end_day": end_day,
+#             "totalBottles": user_current["totalBottles"],
+#             "bottleCounts": user_current["bottleCounts"],
+#             "scores": user_current["scores"],
+#         },
+#         "history": history,
+#         "comparison": comparison,
+#         "metricLabels": [
+#             user_current["metrics"][key]["label"]
+#             for key in CURRENT_METRICS
+#         ],
+#     })
+
+@api_view(["GET"])
+def sustainability_scorecard(request, cityid):
+    try:
+        current_day = int(
+            request.query_params.get("current_day", 0)
+        )
+
+        if current_day < 0:
+            raise ValueError
+
+    except (TypeError, ValueError):
+        return JsonResponse(
+            {"error": "current_day must be a non-negative integer"},
+            status=400,
+        )
+
+    role = request.query_params.get("role", "").strip()
+
+    # --------------------------------------------------
+    # 1. Fetch city assets and cashflows
+    # --------------------------------------------------
+
+    city_assets = list(
+        Asset.objects.filter(Asset_CityId_id=cityid)
+    )
+
+    city_cashflows = list(
+        Cashflow.objects.filter(
+            TransactionId__startswith=f"{cityid}_"
+        )
+    )
+
+    # --------------------------------------------------
+    # 2. Parse transaction days once
+    # --------------------------------------------------
+
+    assets_with_days = [
+        (
+            asset,
+            transaction_day(asset.Transaction_Id, cityid),
+        )
+        for asset in city_assets
+    ]
+
+    cashflows_with_days = [
+        (
+            tx,
+            transaction_day(tx.TransactionId, cityid),
+        )
+        for tx in city_cashflows
+    ]
+
+    # --------------------------------------------------
+    # 3. Cycle-specific filtering
+    # --------------------------------------------------
+
+    def assets_for_cycle(start_day, end_day):
+        return [
+            asset
+            for asset, day in assets_with_days
+            if day is not None
+            and start_day <= day <= end_day
+        ]
+
+    def cashflows_for_cycle(start_day, end_day):
+        return [
+            tx
+            for tx, day in cashflows_with_days
+            if day is not None
+            and start_day <= day <= end_day
+        ]
+
+    # --------------------------------------------------
+    # 4. Format one metric as a score object
+    # --------------------------------------------------
+
+    def get_score_object(summary, key):
+        scores = summary.get("scores") or {}
+        score = scores.get(key)
+
+        if isinstance(score, dict):
+            return {
+                "score": score.get("score"),
+                "level": score.get("level", 0),
+                "symbol": score.get("symbol", "star"),
+            }
+
+        # Handles missing or null scores safely.
+        return score_value(
+            (summary.get("metrics") or {}).get(key)
+        )
+
+    # --------------------------------------------------
+    # 5. Format scores as an ordered array for Angular
+    # --------------------------------------------------
+
+    def get_score_rows(summary):
+        rows = []
+
+        for key in CURRENT_METRICS:
+            score = get_score_object(summary, key)
+
+            rows.append({
+                "key": key,
+                "label": METRIC_LABELS.get(key, key),
+                "score": score["score"],
+                "level": score["level"],
+                "symbol": score["symbol"],
+            })
+
+        return rows
+
+    # --------------------------------------------------
+    # 6. Identify the current 30-day cycle
+    # --------------------------------------------------
+
+    current_index = cycle_index(current_day)
+
+    if current_index is None:
+        return JsonResponse(
+            {"error": "Invalid current_day"},
+            status=400,
+        )
+
+    start_day, end_day = cycle_bounds(current_index)
+
+    current_assets = assets_for_cycle(start_day, end_day)
+    current_cashflows = cashflows_for_cycle(start_day, end_day)
+
+    # --------------------------------------------------
+    # 7. Calculate user's current-cycle metrics
+    # --------------------------------------------------
+
+    user_current = build_cycle_metrics(
+        city_assets,
+        current_assets,
+        current_cashflows,
+        role=role,
+    )
+
+    # --------------------------------------------------
+    # 8. Calculate entire city's current-cycle metrics
+    # --------------------------------------------------
+
+    city_current = build_cycle_metrics(
+        city_assets,
+        current_assets,
+        current_cashflows,
+        role=None,
+    )
+
+    # --------------------------------------------------
+    # 9. Build historical cycles (maximum 12)
+    # --------------------------------------------------
+
+    first_cycle = max(0, current_index - 11)
+
+    history = []
+
+    for index in range(first_cycle, current_index + 1):
+
+        cycle_start, cycle_end = cycle_bounds(index)
+
+        cycle_assets = assets_for_cycle(
+            cycle_start,
+            cycle_end,
+        )
+
+        cycle_cashflows = cashflows_for_cycle(
+            cycle_start,
+            cycle_end,
+        )
+
+        summary = build_cycle_metrics(
+            city_assets,
+            cycle_assets,
+            cycle_cashflows,
+            role=role,
+        )
+
+        history.append({
+            "cycle_number": index + 1,
+            "start_day": cycle_start,
+            "end_day": cycle_end,
+
+            # Angular expects an array of score objects.
+            "scores": get_score_rows(summary),
+
+            # Angular expects an object, not a raw number or null.
+            "avoidedEmissions": get_score_object(
+                summary,
+                "avoidedEmissions",
+            ),
+        })
+
+    # --------------------------------------------------
+    # 10. Build user vs city comparison
+    # --------------------------------------------------
+
+    comparison_keys = [
+        "affinityVirginMaterials",
+        "affinityFancyPackaging",
+        "reuseMindset",
+        "careForMaterials",
+        "civicSense",
+        "savingsInWallet",
+    ]
+
+    comparison = []
+
+    for key in comparison_keys:
+
+        metric_label = METRIC_LABELS.get(key, key)
+
+        if key == "savingsInWallet":
+            metric_label = "Saving potential"
+
+        comparison.append({
+            "key": key,
+            "label": metric_label,
+
+            # Always return score objects, even when the value is null.
+            "you": score_value(
+                user_current["metrics"].get(key)
+            ),
+
+            "city": score_value(
+                city_current["metrics"].get(key)
+            ),
+        })
+
+    # --------------------------------------------------
+    # 11. Metric labels in the same order as score arrays
+    # --------------------------------------------------
+
+    metric_labels = [
+        METRIC_LABELS.get(key, key)
+        for key in CURRENT_METRICS
+    ]
+
+    # --------------------------------------------------
+    # 12. Final API response
+    # --------------------------------------------------
+
+    response_data = {
+        "current_day": current_day,
+        "current_cycle": current_index + 1,
+
+        "current": {
+            "start_day": start_day,
+            "end_day": end_day,
+            "totalBottles": user_current["totalBottles"],
+            "bottleCounts": user_current["bottleCounts"],
+
+            # Now an ordered array for Angular *ngFor.
+            "scores": get_score_rows(user_current),
+        },
+
+        "history": history,
+        "comparison": comparison,
+        "metricLabels": metric_labels,
+    }
+
+    return JsonResponse(response_data)
