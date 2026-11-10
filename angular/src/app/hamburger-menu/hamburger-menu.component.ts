@@ -75,7 +75,7 @@ export class HamburgerMenuComponent implements OnInit {
         },
       },
       {
-        label: "Check Ledger book",
+        label: "Check office ledger",
         action: (legderBook: any) => {
           this.calculateSums();
           this.openCashboxLedger(legderBook);
@@ -83,15 +83,15 @@ export class HamburgerMenuComponent implements OnInit {
       },
       { label: "Run the garbage truck daily", action: null, disabled: true },
       {
-        label: "Update Environment Taxes",
+        label: "Update city rules ",
         action: () => this.showCityRuleComponent("cityrule"),
       },
       {
-        label: "Update Notices and Announcements",
+        label: "Update Announcements",
         action: () => this.showCityRuleComponent("notification"),
       },
       {
-        label: "Show Asset Audit Trail",
+        label: "View bottle trail",
         action: () => this.showNewComponent(),
       },
       {
@@ -100,34 +100,34 @@ export class HamburgerMenuComponent implements OnInit {
         disabled: true,
       },
       {
-        label: "Audit the Universal Bottle Manufacturing Plant",
+        label: "Visit: Uni. bottle making plant",
         action: () => this.openAuditBottleMakingVideoModal(),
       },
       { label: "Audit the Refilling Station", action: null, disabled: true },
       {
-        label: "Audit the Universal Bottle Cleaning Plant",
+        label: "Visit: Uni. bottle cleaning plant",
         action: () => this.openAuditBottleCleaningVideoModal(),
       },
       {
-        label: "Audit the Plastic Recycling Plant",
+        label: "Visit: Bottle recycling plant",
         action: () => this.openAuditPlasticVideoModal(),
       },
     ],
 
     "Supermarket Owner": [
       {
-        label: "Switch Role as Customer",
+        label: "Switch Role as a Customer",
         action: () => this.onMenuItemClick(),
       },
       {
-        label: "Check Cashbox Status",
+        label: "Check office cashbox",
         action: (cashBox: any) => {
           this.calculatesupermarketSums();
           this.openCashbox(cashBox);
         },
       },
       {
-        label: "Check Ledger book",
+        label: "Check office ledger",
         action: (legderBook: any) => {
           this.calculatesupermarketSums();
           this.openCashboxLedger(legderBook);
@@ -137,27 +137,27 @@ export class HamburgerMenuComponent implements OnInit {
         label: "Bring Back Refilled Bottles",
         action: () => this.loadPlantBottles(),
       },
-      { label: "Order Shampoo", action: () => this.placeOrder() },
+      { label: "Restock inventory", action: () => this.placeOrder() },
       {
-        label: "Run the Bottle Collection Truck",
+        label: "Run Bottle Collection Truck",
         action: () => this.runBottleCollectionTruck(),
       },
     ],
 
     "Bottle Reverse Vending Machine Owner": [
       {
-        label: "Switch Role as Customer",
+        label: "Switch Role as a Customer",
         action: () => this.onMenuItemClick(),
       },
       {
-        label: "Check Cashbox Status",
+        label: "Check office cashbox",
         action: (cashBox: any) => {
           this.calculatereverseSums();
           this.openCashbox(cashBox);
         },
       },
       {
-        label: "Check Ledger book",
+        label: "Check office ledger",
         action: (legderBook: any) => {
           this.calculatereverseSums();
           this.openCashboxLedger(legderBook);
@@ -171,14 +171,14 @@ export class HamburgerMenuComponent implements OnInit {
         action: () => this.onMenuItemClick(),
       },
       {
-        label: "Check Cashbox Status",
+        label: "Check office cashbox",
         action: (cashBox: any) => {
           this.calculaterefillSums();
           this.openCashbox(cashBox);
         },
       },
       {
-        label: "Check Ledger book",
+        label: "Check office ledger",
         action: (legderBook: any) => {
           this.calculaterefillSums();
           this.openCashboxLedger(legderBook);
@@ -192,13 +192,13 @@ export class HamburgerMenuComponent implements OnInit {
         action: () => this.onMenuItemClick(),
       },
       {
-        label: "Check Cashbox Status",
+        label: "Check office cashbox",
         action: (cashBox: any) => {
           this.calculateUniversalManufacturingSums();
           this.openCashbox(cashBox);
         },
       },
-      { label: "Check Ledger book", action: null, disabled: true },
+      { label: "Check office ledger", action: null, disabled: true },
     ],
 
     "Plastic Recycling Plant Owner": [
@@ -207,13 +207,13 @@ export class HamburgerMenuComponent implements OnInit {
         action: () => this.onMenuItemClick(),
       },
       {
-        label: "Check Cashbox Status",
+        label: "Check office cashbox",
         action: (cashBox: any) => {
           this.calPlasticRecyclingSums();
           this.openCashbox(cashBox);
         },
       },
-      { label: "Check Ledger book", action: null, disabled: true },
+      { label: "Check office ledger", action: null, disabled: true },
     ],
 
     "Universal Bottle Cleaning Plant Owner": [
@@ -222,13 +222,13 @@ export class HamburgerMenuComponent implements OnInit {
         action: () => this.onMenuItemClick(),
       },
       {
-        label: "Check Cashbox Status",
+        label: "Check office cashbox",
         action: (cashBox: any) => {
           this.calUBCPSum();
           this.openCashbox(cashBox);
         },
       },
-      { label: "Check Ledger book", action: null, disabled: true },
+      { label: "Check office ledger", action: null, disabled: true },
     ],
 
     "B1 Shampoo Producer": [
@@ -237,14 +237,14 @@ export class HamburgerMenuComponent implements OnInit {
         action: () => this.onMenuItemClick(),
       },
       {
-        label: "Check Cashbox Status",
+        label: "Check office cashbox",
         action: (cashBox: any) => {
           this.calB1shampoo();
           this.openCashbox(cashBox);
         },
       },
       { label: "Produce Shampoo", action: () => this.placeOrder() },
-      { label: "Check Ledger book", action: null, disabled: true },
+      { label: "Check office ledger", action: null, disabled: true },
     ],
 
     "B2 Shampoo Producer": [
@@ -253,14 +253,14 @@ export class HamburgerMenuComponent implements OnInit {
         action: () => this.onMenuItemClick(),
       },
       {
-        label: "Check Cashbox Status",
+        label: "Check office cashbox",
         action: (cashBox: any) => {
           this.calB2shampoo();
           this.openCashbox(cashBox);
         },
       },
       { label: "Produce Shampoo", action: () => this.placeOrder() },
-      { label: "Check Ledger book", action: null, disabled: true },
+      { label: "Check office ledger", action: null, disabled: true },
     ],
 
     "B3 Shampoo Producer": [
@@ -269,14 +269,14 @@ export class HamburgerMenuComponent implements OnInit {
         action: () => this.onMenuItemClick(),
       },
       {
-        label: "Check Cashbox Status",
+        label: "Check office cashbox",
         action: (cashBox: any) => {
           this.calB3shampoo();
           this.openCashbox(cashBox);
         },
       },
       { label: "Produce Shampoo", action: () => this.placeOrder() },
-      { label: "Check Ledger book", action: null, disabled: true },
+      { label: "Check office ledger", action: null, disabled: true },
     ],
 
     "B4 Shampoo Producer": [
@@ -285,14 +285,14 @@ export class HamburgerMenuComponent implements OnInit {
         action: () => this.onMenuItemClick(),
       },
       {
-        label: "Check Cashbox Status",
+        label: "Check office cashbox",
         action: (cashBox: any) => {
           this.calB4shampoo();
           this.openCashbox(cashBox);
         },
       },
       { label: "Produce Shampoo", action: () => this.placeOrder() },
-      { label: "Check Ledger book", action: null, disabled: true },
+      { label: "Check office ledger", action: null, disabled: true },
     ],
 
     "B5 Shampoo Producer": [
@@ -301,21 +301,21 @@ export class HamburgerMenuComponent implements OnInit {
         action: () => this.onMenuItemClick(),
       },
       {
-        label: "Check Cashbox Status",
+        label: "Check office cashbox",
         action: (cashBox: any) => {
           this.calB5shampoo();
           this.openCashbox(cashBox);
         },
       },
       { label: "Produce Shampoo", action: () => this.placeOrder() },
-      { label: "Check Ledger book", action: null, disabled: true },
+      { label: "Check office ledger", action: null, disabled: true },
     ],
   };
 
   // extra global menu items
   extraMenu: MenuItem[] = [
     {
-      label: "View The Environment Tax Regimes",
+      label: "View city rules",
       action: () => this.showCityRuleview("displayrule"),
     },
   ];

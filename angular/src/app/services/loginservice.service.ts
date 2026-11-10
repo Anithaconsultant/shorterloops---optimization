@@ -12,6 +12,7 @@ export class LoginserviceService {
     Username: "",
     UserId: "",
     CityId: "",
+    email: "",
     Role: "",
     wallet: 0.0,
     cartId: "",
@@ -24,9 +25,9 @@ export class LoginserviceService {
     cityrate: "",
     cityavatar: "",
   };
-  // baseurl = "https://dbl.iihs.in/api/";
-  //baseurl = "http://127.0.0.1:8000/api/";
-baseurl = "https://dev-dbl.iihs.co.in/api/";
+  //baseurl = "https://dbl.iihs.in/api/";
+   baseurl = "http://127.0.0.1:8000/api/";
+ // baseurl = "https://dev-dbl.iihs.co.in/api/";
 
   constructor(private http: HttpClient, private authService: AuthService) {}
 
@@ -389,14 +390,14 @@ baseurl = "https://dev-dbl.iihs.co.in/api/";
         User_cityid: edituser.cityid,
         Role: edituser.Role,
         cartId: edituser.cityid + "_100",
-        wallet:'2000',
+        wallet: "2000",
       };
     } else {
       body = {
         User_cityid: edituser.cityid,
         Role: edituser.Role,
         cartId: edituser.cartId,
-        wallet:'2000',
+        wallet: "2000",
       };
     }
     console.log(body);

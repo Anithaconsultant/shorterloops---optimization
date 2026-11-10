@@ -324,7 +324,7 @@
   background: rgba(255, 255, 255, 0.4) !important;
   margin-top: -11px !important;
   color: #fff;
-  margin-left: -21px !important;
+  margin-left: 10px !important;
   border-radius: 0px;
 }
 
@@ -1107,4 +1107,35 @@
 .score-error {
   color: #b91c1c;
   padding: 12px 0;
+}
+.profile-menu {
+  min-width: 250px;
+  padding: 10px;
+  overflow: visible;
+}
+
+.user-details {
+  padding: 5px 10px;
+  text-align: left;
+  color: #000;
+}
+
+.user-details p {
+  margin-bottom: 8px;
+}
+
+.exit-toggle {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+}
+
+.innerdrop {
+  min-width: 230px;
+}
+.profile-menu .innerdrop {
+  position: static !important;
+  transform: none !important;
+  width: 100%;
 }

@@ -64,9 +64,13 @@ export class ChartComponent {
     scales: {
       x: {
         stacked: true, // Enable stacking on the x-axis
+        ticks: {
+          stepSize: 1,
+          precision: 0,
+        },
         title: {
           display: true,
-          text: "Bottle Brand and Package Type", // Y-axis label
+          text: "Shampoo Brands and Package Types", // Y-axis label
           font: {
             size: 16,
             weight: "bold",
@@ -77,7 +81,7 @@ export class ChartComponent {
         stacked: true, // Enable stacking on the y-axis
         title: {
           display: true,
-          text: "No. of Shampoo Bottles", // Y-axis label
+          text: "Number of Shampoo Bottles", // Y-axis label
           font: {
             size: 16,
             weight: "bold",
@@ -92,7 +96,7 @@ export class ChartComponent {
       },
       title: {
         display: true,
-        text: "Recycling Enthusiasm Across Brands and Package Types",
+        text: "Purchases and returns across shampoo bottle brands and package types",
         font: {
           size: 24,
           weight: "bold",
@@ -105,6 +109,7 @@ export class ChartComponent {
     scales: {
       x: {
         stacked: true,
+
         title: {
           display: true,
           text: "Bottle Brand and Package Type", // Y-axis label
@@ -116,10 +121,11 @@ export class ChartComponent {
       },
       y: {
         stacked: true,
+
         beginAtZero: true,
         title: {
           display: true,
-          text: "No. of Shampoo Bottles", // Y-axis label
+          text: "Number of Shampoo Bottles", // Y-axis label
           font: {
             size: 16,
             weight: "bold",
@@ -573,50 +579,50 @@ export class ChartComponent {
     this.quarterbarChartData = [
       {
         data: [
-          quarters.Q1.container,
-          quarters.Q2.container,
-          quarters.Q3.container,
-          quarters.Q4.container,
+          -quarters.Q1.container,
+          -quarters.Q2.container,
+          -quarters.Q3.container,
+          -quarters.Q4.container,
         ],
         label: "Container Amount",
         backgroundColor: "rgba(238, 23, 70, 0.7)",
       },
       {
         data: [
-          quarters.Q1.content,
-          quarters.Q2.content,
-          quarters.Q3.content,
-          quarters.Q4.content,
+          -quarters.Q1.content,
+          -quarters.Q2.content,
+         -quarters.Q3.content,
+          -quarters.Q4.content,
         ],
         label: "Content Amount",
         backgroundColor: "rgba(54, 162, 235, 0.7)",
       },
       {
         data: [
-          quarters.Q1.refill,
-          quarters.Q2.refill,
-          quarters.Q3.refill,
-          quarters.Q4.refill,
+          -quarters.Q1.refill,
+          -quarters.Q2.refill,
+          -quarters.Q3.refill,
+          -quarters.Q4.refill,
         ],
         label: "Refill Amount",
         backgroundColor: "rgba(255, 206, 86, 0.7)",
       },
       {
         data: [
-          -quarters.Q1.return,
-          -quarters.Q2.return,
-          -quarters.Q3.return,
-          -quarters.Q4.return,
+          quarters.Q1.return,
+          quarters.Q2.return,
+          quarters.Q3.return,
+          quarters.Q4.return,
         ],
         label: "Return Amount",
         backgroundColor: "rgba(255, 87, 34, 0.7)",
       },
       {
         data: [
-          quarters.Q1.tax,
-          quarters.Q2.tax,
-          quarters.Q3.tax,
-          quarters.Q4.tax,
+          -quarters.Q1.tax,
+          -quarters.Q2.tax,
+          -quarters.Q3.tax,
+          -quarters.Q4.tax,
         ],
         label: "Environment Tax",
         backgroundColor: "rgba(153, 102, 255, 0.7)",

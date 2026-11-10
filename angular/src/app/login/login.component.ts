@@ -180,6 +180,7 @@ export class LoginComponent implements OnInit {
     this.logser.currentuser.UserId = user.UserId;
     this.logser.currentuser.CityId = user.User_cityid;
     this.logser.currentuser.Role = user.Role;
+    this.logser.currentuser.email=user.email;
 
     if (user.Role !== "Governor") {
       this.logser.currentuser.wallet = user.wallet;

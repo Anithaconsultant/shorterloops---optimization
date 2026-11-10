@@ -132,7 +132,8 @@
           <div class="Universal_Bottle_Manufacturing_Plant_owner commoncls">
             CLOSED
           </div>
-          <div class="Shampoo_Refilling_Station_Owner commoncls">CLOSE</div>
+          <div class="Shampoo_Refilling_Station_Owner commoncls">CLOSED</div>
+          <div class="Bottle_Reverse_Vending_Machine_Owner commoncls">CLOSED</div>
         </div>
         <div class="mayorflag"></div>
 
@@ -243,8 +244,8 @@
 
 
             <div *ngFor="let item of bottletaken; trackBy: trackByBottleId" cdkDrag
-              [cdkDragData]="{ id: item, className: item.split('at')[1] }" [id]="item"
-              class="bottle {{ item.split('at')[1] }}">
+              [cdkDragData]="{ id: item, className: item.split('at')[1] }" [id]="item" [cdkDragDisabled]="billpaid"
+              class="bottle {{ item.split('at')[1] }}">{{billpaid}}
             </div>
 
           </div>
@@ -469,22 +470,29 @@
     <button (click)="toggleAudio()" class="muteBtn">
       {{ isMuted ? "🔇" : "🔊" }}
     </button>
-
     <div ngbDropdown class="picholder">
       <div type="button" class="displaypic" id="dropdown" ngbDropdownToggle></div>
-      <div ngbDropdownMenu aria-labelledby="dropdown">
+
+      <div ngbDropdownMenu aria-labelledby="dropdown" class="profile-menu">
+
+        <div class="user-details">
+          <p>Username : {{currentusername}}</p>
+          <p>Role : {{currentUserRole}}</p>
+          <p>Email : {{currentUserEmail}}</p>
+        </div>
+
         <div ngbDropdown class="d-inline-block">
-          <div type="button" class="btn" id="dropdownBasic1" ngbDropdownToggle>
+          <div type="button" class="btn exit-toggle" id="dropdownBasic1" ngbDropdownToggle>
             Exit
           </div>
+
           <div ngbDropdownMenu aria-labelledby="dropdownBasic1" class="innerdrop">
-            <button ngbDropdownItem (click)="leavecity()">Leave a City</button>
+            <button ngbDropdownItem (click)="leavecity()">Leave the City</button>
             <button ngbDropdownItem (click)="logout()">Logout</button>
-            <button ngbDropdownItem (click)="exit()">
-              Exit without Logout
-            </button>
+            <button ngbDropdownItem (click)="exit()">Exit without Logout</button>
           </div>
         </div>
+
       </div>
     </div>
   </div>
@@ -655,17 +663,17 @@
               <table>
                 <thead>
                   <tr>
-                    <th>AssetId</th>
-                    <th>Bottle Type</th>
+                    <th>Bottle ID</th>
+                    <th>Bottle Type Code</th>
                     <th>Bottle content</th>
-                    <th>Plant refill count / Max refill count</th>
-                    <th>Content Price (&#x20B9;)</th>
+                    <th>Plant refill count</th>
+                    <th>Shampoo price (&#x20B9;)</th>
                     <th>Original Bottle Price(&#x20B9;)</th>
-                    <th>Discount on Refill bottle(%)</th>
-                    <th>Env Tax(%)</th>
-                    <th>Redeem Value for returned Bottle(%)</th>
+                    <th>% Discount on refilled bottle</th>
+                    <th>Env tax on bottle (₹)</th>
+                    <th>Redeem amount for returned bottle (₹)</th>
                     <th>Transaction Type</th>
-                    <th>Amount</th>
+                    <th>Net Amount (&#8377;)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -673,7 +681,7 @@
                     <td>{{ item.AssetId }}</td>
                     <td>{{ item.Bottle_Code }}</td>
                     <td>{{ item.Content_Code }}</td>
-                    <td>{{ item.Current_PlantRefill_Count }}+ '/'+ {{item.Max_Refill_Count}}</td>
+                    <td>{{ item.Current_PlantRefill_Count }}</td>
                     <td>{{ item.Content_Price }}</td>
                     <td>{{ item.Bottle_Price }}</td>
                     <td>{{ item.Discount }}</td>
@@ -740,7 +748,7 @@
                     {{ sldBottleData[0].Current_PlantRefill_Count }}
                   </div>
                 </div>
-                   <div>
+                <div>
                   <div class="Current_Content_Code">
                     Current Content Code:
                     {{ sldBottleData[0].Current_Content_Code }}
@@ -1033,16 +1041,16 @@
               <thead>
                 <tr>
                   <th>Transaction ID</th>
-                  <th>Amount</th>
-                  <th>Debit Facility</th>
-                  <th>Credit Facility</th>
+                  <th>Amount (&#8377;) </th>
+                  <th>Facility Debited</th>
+                  <th>Facility Credited</th>
                   <th>Purpose</th>
                 </tr>
               </thead>
               <tbody>
                 <tr *ngFor="let item of cashflowdata">
                   <td>{{ item.TransactionId }}</td>
-                  <td>{{ item.Amount | number : "1.2-2" }}</td>
+                  <td style=" text-align: right;">{{ item.Amount | number : "1.2-2" }}</td>
                   <td>{{ item.DebitFacility }}</td>
                   <td>{{ item.CreditFacility }}</td>
                   <td>{{ item.Purpose }}</td>

@@ -1,46 +1,78 @@
 <div class="chart_Container">
   <div style="margin: auto; margin-top: 50px">
-    <canvas
-      baseChart
-      [datasets]="barChartData"
-      [labels]="barChartLabels"
-      [options]="barChartOptions"
-      [legend]="barChartLegend"
-      [type]="barChartType"
-    >
+    <canvas baseChart [datasets]="barChartData" [labels]="barChartLabels" [options]="barChartOptions"
+      [legend]="barChartLegend" [type]="barChartType">
     </canvas>
   </div>
+  <div class="chart-code-legend">
+
+    <div class="legend-section">
+      <strong>Package Types</strong>
+
+      <div class="legend-item">
+        <b>B1.V</b>
+        <span>Brand 1 – Custom bottle, virgin plastic</span>
+      </div>
+
+      <div class="legend-item">
+        <b>B1.R</b>
+        <span>Brand 1 – Custom bottle, recycled plastic</span>
+      </div>
+
+      <div class="legend-item">
+        <b>UB.V + B1</b>
+        <span>Brand 1 – Universal bottle, virgin plastic</span>
+      </div>
+
+      <div class="legend-item">
+        <b>UB.R + B1</b>
+        <span>Brand 1 – Universal bottle, recycled plastic</span>
+      </div>
+    </div>
+
+    <div class="legend-section">
+      <strong>Shampoo Brands</strong>
+
+      <div class="legend-item">
+        <b>B1</b>
+        <span>Shiny</span>
+      </div>
+
+      <div class="legend-item">
+        <b>B2</b>
+        <span>Spiky</span>
+      </div>
+
+      <div class="legend-item">
+        <b>B3</b>
+        <span>Bouncy</span>
+      </div>
+
+      <div class="legend-item">
+        <b>B4</b>
+        <span>Wavy</span>
+      </div>
+
+      <div class="legend-item">
+        <b>B5</b>
+        <span>Silky</span>
+      </div>
+    </div>
+
+  </div>
   <div style="margin: auto; margin-top: 50px">
-    <canvas
-      baseChart
-      [datasets]="datasets"
-      [labels]="locationLabels"
-      [options]="secondchartOptions"
-      [legend]="seconddisplayLegend"
-      [type]="chartType"
-    >
+    <canvas baseChart [datasets]="datasets" [labels]="locationLabels" [options]="secondchartOptions"
+      [legend]="seconddisplayLegend" [type]="chartType">
     </canvas>
   </div>
 
   <div style="margin: 50px auto">
-    <canvas
-      baseChart
-      [datasets]="oprChartdata"
-      [labels]="oprlabel"
-      [options]="chartOptions"
-      [legend]="true"
-      [type]="'bar'"
-    ></canvas>
+    <canvas baseChart [datasets]="oprChartdata" [labels]="oprlabel" [options]="chartOptions" [legend]="true"
+      [type]="'bar'"></canvas>
   </div>
   <div style="margin: 50px auto">
-    <canvas
-      baseChart
-      [datasets]="quarterbarChartData"
-       [labels]="quarterbarChartLabels"
-      [options]="quarterbarChartOptions"
-      [type]="'bar'"
-      [legend]="barChartLegend"
-    >
+    <canvas baseChart [datasets]="quarterbarChartData" [labels]="quarterbarChartLabels"
+      [options]="quarterbarChartOptions" [type]="'bar'" [legend]="barChartLegend">
     </canvas>
   </div>
 </div>

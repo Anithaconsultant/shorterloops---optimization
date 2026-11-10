@@ -1215,133 +1215,310 @@ def get_audit_logsuser(request, user):
 def filter_audit_logs(request):
     filters = {}
 
-    # Parse comma-separated values for multi-select fields
+    # -----------------------------------------
+    # City
+    # -----------------------------------------
     city = request.GET.get('city')
     if city:
         filters['CityId__in'] = city.split(',')
 
+    # -----------------------------------------
+    # Brand
+    # -----------------------------------------
     brand = request.GET.get('brand')
     if brand:
         filters['ContentCode__in'] = brand.split(',')
 
+    # -----------------------------------------
+    # Current Bottle Location
+    # -----------------------------------------
     current_location = request.GET.get('current_location')
     if current_location:
         filters['Bottle_loc__in'] = current_location.split(',')
 
+    # -----------------------------------------
+    # Exit Location
+    # -----------------------------------------
     exit_location = request.GET.get('exit_location')
     if exit_location:
         filters['ToFacility__in'] = exit_location.split(',')
 
+    # -----------------------------------------
+    # Entry Location
+    # -----------------------------------------
     entry_location = request.GET.get('entry_location')
     if entry_location:
         filters['FromFacility__in'] = entry_location.split(',')
 
+    # -----------------------------------------
+    # Current Status
+    # -----------------------------------------
     status = request.GET.get('status')
     if status:
         filters['assetStatus__in'] = status.split(',')
 
+    # -----------------------------------------
+    # Citizen's Role
+    # -----------------------------------------
     role_user = request.GET.get('role_user')
     role_user_filters = None
+
     if role_user:
         usernames = role_user.split(',')
-        role_user_filters = Q(userName__in=usernames) | Q(
-            FromFacility__in=usernames) | Q(ToFacility__in=usernames)
 
+        role_user_filters = (
+            Q(userName__in=usernames) |
+            Q(FromFacility__in=usernames) |
+            Q(ToFacility__in=usernames)
+        )
+
+    # -----------------------------------------
+    # Bottle Type
+    # -----------------------------------------
     bottle_type = request.GET.get('bottle_type')
     if bottle_type:
         filters['Bottle_Code__in'] = bottle_type.split(',')
 
+    # -----------------------------------------
+    # Current Self-Refill Count (RANGES)
+    # -----------------------------------------
     current_selfrefill = request.GET.get('current_selfrefill')
+
+    self_refill_query = Q()
+
     if current_selfrefill:
-        filters['Current_SelfRefill_Count__in'] = current_selfrefill.split(',')
 
+        selected_ranges = current_selfrefill.split(',')
+
+        for refill_range in selected_ranges:
+
+            if refill_range == '0-5':
+                self_refill_query |= Q(
+                    currentselfrefillCount__gte=0,
+                    currentselfrefillCount__lte=5
+                )
+
+            elif refill_range == '6-10':
+                self_refill_query |= Q(
+                    currentselfrefillCount__gte=6,
+                    currentselfrefillCount__lte=10
+                )
+
+            elif refill_range == '11-20':
+                self_refill_query |= Q(
+                    currentselfrefillCount__gte=11,
+                    currentselfrefillCount__lte=20
+                )
+
+            elif refill_range == '21-50':
+                self_refill_query |= Q(
+                    currentselfrefillCount__gte=21,
+                    currentselfrefillCount__lte=50
+                )
+
+            elif refill_range == 'Greater than 50':
+                self_refill_query |= Q(
+                    currentselfrefillCount__gt=50
+                )
+
+    # -----------------------------------------
+    # Current Plant-Refill Count
+    # -----------------------------------------
     current_plantrefill = request.GET.get('current_plantrefill')
-    if current_plantrefill:
-        filters['Current_PlantRefill_Count__in'] = current_plantrefill.split(
-            ',')
 
+    if current_plantrefill:
+        filters['Current_PlantRefill_Count__in'] = (
+            current_plantrefill.split(',')
+        )
+
+    # -----------------------------------------
+    # Transaction ID
+    # -----------------------------------------
     TransactionId = request.GET.get('TransactionId')
+
     if TransactionId:
         filters['TransactionId__in'] = TransactionId.split(',')
 
+    # -----------------------------------------
+    # Asset ID
+    # -----------------------------------------
     assetID = request.GET.get('assetID')
+
     if assetID:
         filters['AssetId__in'] = assetID.split(',')
 
+    # -----------------------------------------
+    # On Day
+    # -----------------------------------------
     day = request.GET.get('day')
+
     if day:
         filters['TransactionDate__in'] = day.split(',')
 
-     # Filter based on TransactionDate between start_day and end_day
+    # -----------------------------------------
+    # From Day and To Day
+    # -----------------------------------------
     startDay = request.GET.get('startDay')
     endDay = request.GET.get('endDay')
 
     if startDay and endDay:
-        # Filter for records where the day of TransactionDate is between start_day and end_day
-        filters['TransactionDate__range'] = [startDay, endDay]
+        filters['TransactionDate__range'] = [
+            startDay,
+            endDay
+        ]
 
+    # -----------------------------------------
+    # Apply all filters
+    # -----------------------------------------
+    filtered_logs = Auditlog.objects.filter(**filters)
+
+    # Apply self-refill range condition
+    if current_selfrefill and self_refill_query.children:
+        filtered_logs = filtered_logs.filter(self_refill_query)
+
+    # Apply role condition
     if role_user_filters:
-        filtered_logs = Auditlog.objects.filter(
-            Q(**filters) & role_user_filters)
-    else:
-        filtered_logs = Auditlog.objects.filter(**filters)
+        filtered_logs = filtered_logs.filter(role_user_filters)
 
-    if isinstance(filtered_logs, QuerySet):
-        pass
     data = list(filtered_logs.values())
 
     return JsonResponse(data, safe=False)
 
-
 def get_filter_options(request):
-    city_options = list(Auditlog.objects.values_list(
-        'CityId', flat=True).distinct())
-    brand_options = list(Auditlog.objects.values_list(
-        'ContentCode', flat=True).distinct())
-    current_locationOptions = list(
-        Auditlog.objects.values_list('Bottle_loc', flat=True).distinct())
-    exit_locationOptions = list(Auditlog.objects.values_list(
-        'ToFacility', flat=True).distinct())
-    entry_locationOptions = list(Auditlog.objects.values_list(
-        'FromFacility', flat=True).distinct())
-    status_options = list(Auditlog.objects.values_list(
-        'assetStatus', flat=True).distinct())
-    role_options = list(Auditlog.objects.values_list(
-        'userName', flat=True).distinct())
-    BottleTypeOptions = list(Auditlog.objects.values_list(
-        'Bottle_Code', flat=True).distinct())
-    currentSelfRefillOptions = list(Auditlog.objects.values_list(
-        'currentselfrefillCount', flat=True).distinct())
 
-    currentPlantRefillOptions = list(Auditlog.objects.values_list(
-        'currentplantrefillCount', flat=True).distinct())
-    TransactionIdOptions = list(Auditlog.objects.values_list(
-        'TransactionId', flat=True).distinct())
-    assetIdOptions = list(Auditlog.objects.values_list(
-        'AssetId', flat=True).distinct())
-    dayOptions = list(Auditlog.objects.values_list(
-        'TransactionDate', flat=True).distinct())
+    # Get City ID and City Name
+    city_ids = Auditlog.objects.values_list(
+        'CityId', flat=True
+    ).distinct()
+
+    city_options = list(
+        City.objects.filter(
+            CityId__in=city_ids
+        ).values('CityId', 'CityName', 'CurrentDay')
+    )
+
+    # Get filter options
+    brand_options = list(
+        Auditlog.objects.values_list(
+            'ContentCode', flat=True
+        ).distinct()
+    )
+
+    current_locationOptions = list(
+        Auditlog.objects.values_list(
+            'Bottle_loc', flat=True
+        ).distinct()
+    )
+
+    exit_locationOptions = list(
+        Auditlog.objects.values_list(
+            'ToFacility', flat=True
+        ).distinct()
+    )
+
+    entry_locationOptions = list(
+        Auditlog.objects.values_list(
+            'FromFacility', flat=True
+        ).distinct()
+    )
+
+    status_options = list(
+        Auditlog.objects.values_list(
+            'assetStatus', flat=True
+        ).distinct()
+    )
+
+    role_options = list(
+        Auditlog.objects.values_list(
+            'userName', flat=True
+        ).distinct()
+    )
+
+    # Bottle type codes: Virgin first, then Recycled
+    BottleTypeOptions = list(
+        Auditlog.objects.values_list(
+            'Bottle_Code', flat=True
+        ).distinct()
+    )
+
+    BottleTypeOptions = sorted(
+        [
+            code for code in BottleTypeOptions
+            if code is not None and code != ''
+        ],
+        key=lambda code: (
+            0 if code.upper().endswith('.V')
+            else 1 if code.upper().endswith('.R')
+            else 2,
+            code.upper()
+        )
+    )
+
+    currentSelfRefillOptions = [
+    '0-5',
+    '6-10',
+    '11-20',
+    '21-50',
+    'Greater than 50'
+]
+
+    currentPlantRefillOptions = list(
+        Auditlog.objects.values_list(
+            'currentplantrefillCount', flat=True
+        ).distinct()
+    )
+
+    TransactionIdOptions = list(
+        Auditlog.objects.values_list(
+            'TransactionId', flat=True
+        ).distinct()
+    )
+
+    assetIdOptions = list(
+        Auditlog.objects.values_list(
+            'AssetId', flat=True
+        ).distinct()
+    )
+
+    dayOptions = list(
+        Auditlog.objects.values_list(
+            'TransactionDate', flat=True
+        ).distinct()
+    )
+
+    # Remove NULL and empty values
+    def get_distinct_options(options):
+
+        if options and isinstance(options[0], dict):
+            return [
+                option for option in options
+                if all(
+                    value is not None and value != ''
+                    for value in option.values()
+                )
+            ]
+
+        return [
+            option for option in options
+            if option is not None and option != ''
+        ]
 
     data = {
-        'cityOptions': city_options,
-        'brandOptions': brand_options,
-        'current_locationOptions': current_locationOptions,
-        'exit_locationOptions': exit_locationOptions,
-        'entry_locationOptions': entry_locationOptions,
-        'statusOptions': status_options,
-        'roleOptions': role_options,
-        'BottleTypeOptions': BottleTypeOptions,
+        'cityOptions': get_distinct_options(city_options),
+        'brandOptions': get_distinct_options(brand_options),
+        'current_locationOptions': get_distinct_options(current_locationOptions),
+        'exit_locationOptions': get_distinct_options(exit_locationOptions),
+        'entry_locationOptions': get_distinct_options(entry_locationOptions),
+        'statusOptions': get_distinct_options(status_options),
+        'roleOptions': get_distinct_options(role_options),
+        'BottleTypeOptions': get_distinct_options(BottleTypeOptions),
         'currentSelfRefillOptions': currentSelfRefillOptions,
-        'currentRefillOptions': currentPlantRefillOptions,
-        'TransactionIdOptions': TransactionIdOptions,
-        'assetIdOptions': assetIdOptions,
-        'dayOptions': dayOptions,
-        'startDay': dayOptions,
-        'endDay': dayOptions
-
+        'currentRefillOptions': get_distinct_options(currentPlantRefillOptions),
+        'TransactionIdOptions': get_distinct_options(TransactionIdOptions),
+        'assetIdOptions': get_distinct_options(assetIdOptions)
     }
-    return JsonResponse(data)
 
+    return JsonResponse(data)
 
 
 @api_view(['GET', 'POST'])
@@ -1601,7 +1778,14 @@ def bottle_inventory_detail(request):
             )
 
 
-
+def get_distinct_options(field_name):
+    return list(
+        Auditlog.objects
+        .exclude(**{field_name: None})
+        .exclude(**{field_name: ''})
+        .values_list(field_name, flat=True)
+        .distinct()
+    )
 
 @api_view(["POST"])
 @transaction.atomic
