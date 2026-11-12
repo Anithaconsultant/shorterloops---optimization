@@ -341,6 +341,7 @@ class PurchaseService:
 
                 "Content_Code": asset.Content_Code,
                 "Current_PlantRefill_Count":asset.Current_PlantRefill_Count,
+                "Max_refill_Count":asset.Max_Refill_Count,
                 "Redeem_Good":asset.Redeem_Good,
 
                 "Bottle_Price": bottle_price,

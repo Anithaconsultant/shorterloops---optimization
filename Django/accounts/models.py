@@ -261,7 +261,7 @@ class CityruleMaster(models.Model):
 
     class Meta:
         db_table = "CityruleMaster"
-        managed = False
+        
 
     
 class Auditlog(models.Model):

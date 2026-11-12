@@ -328,6 +328,15 @@
   border-radius: 0px;
 }
 
+.bottle-description {
+  position: absolute;
+  color: #000;
+  top: -232px;
+  left: -145px;
+  width: 210px !important;
+  text-align: center;
+}
+
 .animationpanel {
   position: absolute;
   width: 300px;
@@ -993,6 +1002,7 @@
 
 
 }
+
 .sustainability-scorecard {
   padding: 12px;
   max-height: 46vh;
@@ -1108,6 +1118,7 @@
   color: #b91c1c;
   padding: 12px 0;
 }
+
 .profile-menu {
   min-width: 250px;
   padding: 10px;
@@ -1134,6 +1145,7 @@
 .innerdrop {
   min-width: 230px;
 }
+
 .profile-menu .innerdrop {
   position: static !important;
   transform: none !important;

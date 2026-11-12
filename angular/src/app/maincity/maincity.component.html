@@ -262,8 +262,9 @@
             [cdkDropListConnectedTo]="[bottlesshopped]" (cdkDropListDropped)="drop($event)"
             [cdkDropListEnterPredicate]="genericShelfPredicate(shelf.key)" [ngClass]="shelf.class + '_list'">
             <div *ngFor="let item of getShelfArray(shelf.key); trackBy: trackByBottleId" cdkDrag
-              [cdkDragData]="{ id: item, className: shelf.key }" [id]="item" class="bottle {{ shelf.class }}"
-              longPressDrag [cdkDragStartDelay]="250" (click)="opensticker(bottlesticker, $event)">
+              [cdkDragDisabled]="billpaid" [cdkDragData]="{ id: item, className: shelf.key }" [id]="item"
+              class="bottle {{ shelf.class }}" longPressDrag [cdkDragStartDelay]="250"
+              (click)="opensticker(bottlesticker, $event)">
             </div>
 
           </div>
@@ -532,7 +533,9 @@
       </div>
       <div class="backside {{ bottleclass | lowercase }}back">
         <div class="labelholder">
-
+          <div class="bottle-description">
+            {{ bottleDescription }}
+          </div>
           <div class="Quantity">
             {{ assetdata[0].Quantity }} {{ assetdata[0].Units }}
           </div>
@@ -594,7 +597,7 @@
             </tr>
             <tr>
               <td>Monthly Allowance</td>
-              <td>&#x20B9; 2000</td>
+              <td>&#x20B9; 2000.00</td>
             </tr>
             <tr>
               <td>Purchases</td>
@@ -668,6 +671,7 @@
                     <th>Bottle content</th>
                     <th>Plant refill count</th>
                     <th>Shampoo price (&#x20B9;)</th>
+                    <th>% Discount for self-refilling</th>
                     <th>Original Bottle Price(&#x20B9;)</th>
                     <th>% Discount on refilled bottle</th>
                     <th>Env tax on bottle (₹)</th>
@@ -681,8 +685,9 @@
                     <td>{{ item.AssetId }}</td>
                     <td>{{ item.Bottle_Code }}</td>
                     <td>{{ item.Content_Code }}</td>
-                    <td>{{ item.Current_PlantRefill_Count }}</td>
+                    <td>{{ item.Current_PlantRefill_Count }}/{{item.Max_refill_Count}}</td>
                     <td>{{ item.Content_Price }}</td>
+                    <td>{{0}}</td>
                     <td>{{ item.Bottle_Price }}</td>
                     <td>{{ item.Discount }}</td>
                     <td>{{ item.Env_Tax | number : "1.2-2" }}</td>
@@ -1051,8 +1056,13 @@
                 <tr *ngFor="let item of cashflowdata">
                   <td>{{ item.TransactionId }}</td>
                   <td style=" text-align: right;">{{ item.Amount | number : "1.2-2" }}</td>
-                  <td>{{ item.DebitFacility }}</td>
-                  <td>{{ item.CreditFacility }}</td>
+                  <td>
+                    {{ getDisplayFacility(item.DebitFacility, item.Purpose, 'debit') }}
+                  </td>
+
+                  <td>
+                    {{ getDisplayFacility(item.CreditFacility, item.Purpose, 'credit') }}
+                  </td>
                   <td>{{ item.Purpose }}</td>
                 </tr>
               </tbody>
